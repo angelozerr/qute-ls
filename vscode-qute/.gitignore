@@ -1,0 +1,9 @@
+out
+dist
+server/**
+jars/**
+node_modules
+.vscode-test/
+*.vsix
+.DS_Store
+

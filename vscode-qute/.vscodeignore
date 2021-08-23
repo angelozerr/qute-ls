@@ -1,0 +1,10 @@
+.vscode
+.gitignore
+.travis.yml
+.vscode-test/
+node_modules/
+src/
+out/
+images/
+tsconfig.json
+webpack.config.js

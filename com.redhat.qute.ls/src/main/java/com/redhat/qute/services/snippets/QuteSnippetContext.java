@@ -1,0 +1,21 @@
+package com.redhat.qute.services.snippets;
+
+import java.util.Map;
+
+import com.redhat.qute.parser.Node;
+import com.redhat.qute.parser.NodeKind;
+import com.redhat.qute.services.CompletionRequest;
+
+public abstract class QuteSnippetContext implements IQuteSnippetContext {
+
+	public static final QuteSnippetContext IN_TEXT = new QuteSnippetContext() {
+
+		@Override
+		public boolean isMatch(CompletionRequest request, Map<String, String> model) {
+			Node node = request.getNode();
+			return node.getKind() == NodeKind.Template || node.getKind() == NodeKind.Text;
+		}
+
+	};
+
+}
