@@ -44,7 +44,7 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 
 	private final QuteLanguageService quteLanguageService;
 	private final QuteTextDocumentService textDocumentService;
-	private final WorkspaceService workspaceService;
+	private final QuteWorkspaceService workspaceService;
 
 	private Integer parentProcessId;
 	private QuteLanguageClientAPI languageClient;
@@ -86,6 +86,7 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	@Override
 	public void initialized(InitializedParams params) {
 		capabilityManager.initializeCapabilities();
+		getCapabilityManager().registerExecuteCommand(getWorkspaceService().getCommandIds());
 	}
 
 	@Override
@@ -107,7 +108,7 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 		return this.textDocumentService;
 	}
 
-	public WorkspaceService getWorkspaceService() {
+	public QuteWorkspaceService getWorkspaceService() {
 		return this.workspaceService;
 	}
 
@@ -131,6 +132,10 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 
 	public QuteLanguageService getQuarkusLanguageService() {
 		return quteLanguageService;
+	}
+
+	public SharedSettings getSharedSettings() {
+		return textDocumentService.getSharedSettings();
 	}
 
 }

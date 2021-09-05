@@ -31,7 +31,9 @@
     "onLanguage:qute-html",
     "onLanguage:qute-json",
     "onLanguage:qute-yaml",
-    "onLanguage:qute-txt"
+    "onLanguage:qute-txt",
+    "onNotebook:qbook",
+    "workspaceContains:**/*.qbook"
   ],
   "main": "./dist/extension",
   "contributes": {
@@ -118,7 +120,19 @@
           "scope": "window"
         }
       }
-    }
+    },
+    "notebooks": [
+      {
+        "id": "qbook",
+        "type": "qbook",
+        "displayName": "Qute NoteBook",
+        "selector": [
+          {
+            "filenamePattern": "*.qbook"
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
@@ -137,7 +151,7 @@
     "@types/md5": "^2.1.33",
     "@types/mocha": "^5.2.6",
     "@types/node": "^10.14.16",
-    "@types/vscode": "^1.37.0",
+    "@types/vscode": "^1.57.0",
     "@types/which": "^1.3.1",
     "@types/xml2js": "^0.4.4",
     "chai": "^4.2.0",
@@ -168,7 +182,7 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "user-home": "^2.0.0",
-    "vscode-languageclient": "^5.2.1",
+    "vscode-languageclient": "^7.0.0",
     "which": "^1.3.1",
     "xml2js": "^0.4.19",
     "yauzl": "^2.10.0"

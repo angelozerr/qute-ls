@@ -17,7 +17,8 @@ import * as requirements from './languageServer/requirements';
 
 import { VSCodeCommands } from './definitions/constants';
 
-import { DidChangeConfigurationNotification, LanguageClientOptions, LanguageClient } from 'vscode-languageclient';
+import { DidChangeConfigurationNotification, LanguageClientOptions } from 'vscode-languageclient';
+import { LanguageClient } from 'vscode-languageclient/node';
 import { ExtensionContext, commands, window, workspace } from 'vscode';
 import { QuarkusContext } from './QuarkusContext';
 import { addExtensionsWizard } from './addExtensions/addExtensionsWizard';
@@ -28,6 +29,8 @@ import { tryStartDebugging } from './debugging/startDebugging';
 import { WelcomeWebview } from './webviews/WelcomeWebview';
 import { QuarkusConfig } from './QuarkusConfig';
 import { registerConfigurationUpdateCommand, registerOpenURICommand, CommandKind } from './lsp-commands';
+import { QBookSerializer } from './quteNotebook/qBookSerializer';
+import { QBookController } from './quteNotebook/qBookController';
 
 let languageClient: LanguageClient;
 let quteLanguageClient: LanguageClient;
@@ -61,6 +64,7 @@ export function activate(context: ExtensionContext) {
   }
 
   registerVSCodeCommands(context);
+  registerQuteNotebook(context);
 }
 
 export function deactivate() {
@@ -116,7 +120,9 @@ function connectToQuteLS(context: ExtensionContext) {
         { scheme: 'file', language: 'qute-html' },
         { scheme: 'file', language: 'qute-json' },
         { scheme: 'file', language: 'qute-yaml' },
-        { scheme: 'file', language: 'qute-text' }
+        { scheme: 'file', language: 'qute-txt' },
+        { scheme: 'untitled', language: 'qute-html' },
+        { scheme: 'vscode-notebook-cell', language: 'qute-html' }
       ],
       // wrap with key 'settings' so it can be handled same a DidChangeConfiguration
       initializationOptions: {
@@ -166,4 +172,13 @@ function connectToQuteLS(context: ExtensionContext) {
     }
     return quarkus;
   }
+}
+
+function registerQuteNotebook(context: ExtensionContext) {
+  context.subscriptions.push(
+    workspace.registerNotebookSerializer(
+      'qbook', new QBookSerializer(), { transientOutputs: true }
+    ),
+    new QBookController()
+  );
 }

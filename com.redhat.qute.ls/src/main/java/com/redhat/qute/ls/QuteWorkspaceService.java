@@ -9,9 +9,24 @@
 *******************************************************************************/
 package com.redhat.qute.ls;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
+import org.eclipse.lsp4j.ExecuteCommandParams;
+import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
 import org.eclipse.lsp4j.services.WorkspaceService;
+
+import com.redhat.qute.services.commands.IDelegateCommandHandler;
+import com.redhat.qute.services.commands.QuteGenerateCommandHandler;
 
 /**
  * Qute workspace service.
@@ -19,10 +34,13 @@ import org.eclipse.lsp4j.services.WorkspaceService;
  */
 public class QuteWorkspaceService implements WorkspaceService {
 
+	private final Map<String, IDelegateCommandHandler> commands;
+
 	private final QuteLanguageServer quteLanguageServer;
 
-	public QuteWorkspaceService(QuteLanguageServer quarkusLanguageServer) {
-		this.quteLanguageServer = quarkusLanguageServer;
+	public QuteWorkspaceService(QuteLanguageServer quteLanguageServer) {
+		this.quteLanguageServer = quteLanguageServer;
+		this.commands = registerCommands();
 	}
 
 	@Override
@@ -34,5 +52,38 @@ public class QuteWorkspaceService implements WorkspaceService {
 	public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
 
 	}
+	
+	@Override
+	public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
+		synchronized (commands) {
+			IDelegateCommandHandler handler = commands.get(params.getCommand());
+			if (handler == null) {
+				throw new ResponseErrorException(new ResponseError(ResponseErrorCode.InternalError,
+						"No command handler for the command: " + params.getCommand(), null));
+			}
+			return CompletableFutures.computeAsync(cancelChecker -> {
+				try {
+					return handler.executeCommand(params, quteLanguageServer.getSharedSettings(), cancelChecker);
+				} catch (Exception e) {
+					if (e instanceof ResponseErrorException) {
+						throw (ResponseErrorException) e;
+					} else if (e instanceof CancellationException) {
+						throw (CancellationException) e;
+					}
+					throw new ResponseErrorException(
+							new ResponseError(ResponseErrorCode.UnknownErrorCode, e.getMessage(), e));
+				}
+			});
+		}
+	}
 
+	private Map<String, IDelegateCommandHandler> registerCommands() {
+		 Map<String, IDelegateCommandHandler>  commands = new HashMap<>();
+		 commands.put(QuteGenerateCommandHandler.COMMAND_ID, new QuteGenerateCommandHandler());
+		return commands;
+	}
+
+	public List<String> getCommandIds() {
+		return new ArrayList<>(commands.keySet());
+	}
 }

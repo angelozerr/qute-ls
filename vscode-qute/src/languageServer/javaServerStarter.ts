@@ -1,5 +1,5 @@
 import { workspace } from 'vscode';
-import { Executable, ExecutableOptions } from 'vscode-languageclient';
+import { Executable, ExecutableOptions } from 'vscode-languageclient/node';
 import { RequirementsData } from './requirements';
 import * as os from 'os';
 import * as path from 'path';
@@ -23,7 +23,6 @@ function prepareExecutable(requirements: RequirementsData, serverName: string, d
   const executable: Executable = Object.create(null);
   const options: ExecutableOptions = Object.create(null);
   options.env = process.env;
-  options.stdio = 'pipe';
   executable.options = options;
   executable.command = path.resolve(requirements.java_home + '/bin/java');
   executable.args = prepareParams(serverName, debugPort);

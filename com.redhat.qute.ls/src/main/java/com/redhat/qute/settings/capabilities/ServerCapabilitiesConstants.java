@@ -37,6 +37,8 @@ public class ServerCapabilitiesConstants {
 
 	public static final String TEXT_DOCUMENT_HIGHLIGHT = "textDocument/documentHighlight";
 
+	public static final String WORKSPACE_EXECUTE_COMMAND = "workspace/executeCommand";
+
 	public static final String DOCUMENT_HIGHLIGHT_ID = UUID.randomUUID().toString();
 	public static final String COMPLETION_ID = UUID.randomUUID().toString();
 	public static final String HOVER_ID = UUID.randomUUID().toString();
@@ -47,6 +49,8 @@ public class ServerCapabilitiesConstants {
 	public static final String RANGE_FORMATTING_ID = UUID.randomUUID().toString();
 	public static final String CODE_ACTION_ID = UUID.randomUUID().toString();
 	public static final String CODE_LENS_ID = UUID.randomUUID().toString();
+
+	public static final String WORKSPACE_EXECUTE_COMMAND_ID = UUID.randomUUID().toString();
 
 	public static final CompletionOptions DEFAULT_COMPLETION_OPTIONS = new CompletionOptions(false,
 			Arrays.asList(".", "%", "="));
