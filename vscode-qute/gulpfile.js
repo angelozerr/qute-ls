@@ -21,6 +21,8 @@ const serverQuteName = 'com.redhat.qute.ls-uber.jar';
 const serverQuteDir = '../com.redhat.qute.ls';
 const extensions = ['com.redhat.microprofile.jdt.core', 'com.redhat.microprofile.jdt.quarkus'];
 const extensionDir = '../quarkus-ls/microprofile.jdt';
+const extensionsQute = ['com.redhat.qute.jdt'];
+const extensionQuteDir = '../../qute-ls/qute.jdt';
 
 gulp.task('buildServer', (done) => {
   cp.execSync(mvnw() + ' clean verify -DskipTests', { cwd: serverDir , stdio: 'inherit' });
@@ -39,6 +41,16 @@ gulp.task('buildQuteServer', (done) => {
 gulp.task('buildExtension', (done) => {
   cp.execSync(mvnw() + ' -pl "' + extensions.join(',') + '" clean verify -DskipTests' , { cwd: extensionDir, stdio: 'inherit' });
   extensions.forEach(extension => {
+    gulp.src(extensionDir + '/' + extension + '/target/' + extension + '-*.jar')
+      .pipe(rename(extension + '.jar'))
+      .pipe(gulp.dest('./jars'));
+  });
+  done();
+});
+
+gulp.task('buildQuteExtension', (done) => {
+  cp.execSync(mvnw() + ' -pl "' + extensionsQute.join(',') + '" clean verify -DskipTests' , { cwd: extensionQuteDir, stdio: 'inherit' });
+  extensionsQute.forEach(extension => {
     gulp.src(extensionDir + '/' + extension + '/target/' + extension + '-*.jar')
       .pipe(rename(extension + '.jar'))
       .pipe(gulp.dest('./jars'));

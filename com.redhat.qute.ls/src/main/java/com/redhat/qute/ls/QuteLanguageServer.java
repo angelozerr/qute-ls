@@ -12,6 +12,7 @@ package com.redhat.qute.ls;
 import static com.redhat.qute.utils.VersionHelper.getVersion;
 import static org.eclipse.lsp4j.jsonrpc.CompletableFutures.computeAsync;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -22,8 +23,10 @@ import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
-import org.eclipse.lsp4j.services.WorkspaceService;
 
+import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.QuteJavaClassParams;
+import com.redhat.qute.ls.api.QuteJavaClassProvider;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.ls.api.QuteLanguageServerAPI;
 import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
@@ -38,7 +41,8 @@ import com.redhat.qute.settings.capabilities.ServerCapabilitiesInitializer;
  * Qute language server.
  *
  */
-public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI {
+public class QuteLanguageServer
+		implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI, QuteJavaClassProvider {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteLanguageServer.class.getName());
 
@@ -51,7 +55,7 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	private QuteCapabilityManager capabilityManager;
 
 	public QuteLanguageServer() {
-		quteLanguageService = new QuteLanguageService();
+		quteLanguageService = new QuteLanguageService(this);
 		textDocumentService = new QuteTextDocumentService(this, new SharedSettings());
 		workspaceService = new QuteWorkspaceService(this);
 	}
@@ -138,4 +142,8 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 		return textDocumentService.getSharedSettings();
 	}
 
+	@Override
+	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassParams params) {
+		return getLanguageClient().getJavaClasses(params);
+	}
 }

@@ -143,7 +143,8 @@
     "test": "node ./out/test/runTest.js",
     "tslint": "./node_modules/.bin/tslint -p .",
     "build": "./node_modules/.bin/gulp build",
-    "build-qute": "./node_modules/.bin/gulp buildQuteServer"
+    "build-qute": "./node_modules/.bin/gulp buildQuteServer",
+    "build-qute-jdt": "./node_modules/.bin/gulp buildQuteExtension"
   },
   "devDependencies": {
     "@types/chai": "^4.2.3",

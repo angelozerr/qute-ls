@@ -120,11 +120,23 @@ public class QuteTextDocumentService implements TextDocumentService {
 	}
 
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
-		return getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
-			CompletionList list = getQuteLanguageService().doComplete(template, params.getPosition(),
-					sharedSettings.getCompletionSettings(), sharedSettings.getFormattingSettings(), cancelChecker);
-			return Either.forRight(list);
-		});
+		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
+				(cancelChecker, template) -> {
+					return getQuteLanguageService()
+							.doComplete(template, params.getPosition(), sharedSettings.getCompletionSettings(),
+									sharedSettings.getFormattingSettings(), cancelChecker) //
+							.thenApply(list -> {
+								return Either.forRight(list);
+							});
+
+				});
+
+//		
+//		CompletableFuture<CompletionList> t = getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
+//			return getQuteLanguageService().doComplete(template, params.getPosition(),
+//					sharedSettings.getCompletionSettings(), sharedSettings.getFormattingSettings(), cancelChecker)
+//					.getNow(null);
+//		});
 	}
 
 	@Override
@@ -242,6 +254,21 @@ public class QuteTextDocumentService implements TextDocumentService {
 			BiFunction<CancelChecker, M, R> code) {
 		CompletableFuture<CancelChecker> start = new CompletableFuture<>();
 		CompletableFuture<R> result = start.thenCombineAsync(loadModel, code);
+		CancelChecker cancelIndicator = () -> {
+			if (result.isCancelled())
+				throw new CancellationException();
+		};
+		start.complete(cancelIndicator);
+		return result;
+	}
+
+	private static <R, M> CompletableFuture<R> computeModelAsync2(CompletableFuture<M> loadModel,
+			BiFunction<CancelChecker, M, CompletableFuture<R>> code) {
+		CompletableFuture<CancelChecker> start = new CompletableFuture<>();
+		CompletableFuture<R> result = start.thenCombineAsync(loadModel, code)//
+				.thenCompose(a -> {
+					return a;
+				});
 		CancelChecker cancelIndicator = () -> {
 			if (result.isCancelled())
 				throw new CancellationException();

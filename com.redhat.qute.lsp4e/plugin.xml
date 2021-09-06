@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <!-- Qute Language -->
+   <extension
+         point="org.eclipse.core.contenttype.contentTypes">
+      <content-type
+            base-type="org.eclipse.core.runtime.text"
+            file-extensions="qute"
+            id="com.redhat.qute.lsp4e.html"
+            name="Qute HTML"
+            priority="high">
+      </content-type>
+   </extension>
+      
+   <extension
+         point="org.eclipse.ui.editors">
+      <editorContentTypeBinding
+            contentTypeId="com.redhat.qute.lsp4e.html"
+            editorId="org.eclipse.ui.genericeditor.GenericEditor">
+      </editorContentTypeBinding>
+   </extension>
+      
+   <extension
+         point="org.eclipse.lsp4e.languageServer">
+      <server
+            class="com.redhat.qute.lsp4e.QuteLanguageServer"
+            id="com.redhat.qute.lsp4e.html"
+            label="Qute Language Server"
+            clientImpl="com.redhat.qute.lsp4e.QuteLanguageClientImpl"
+            serverInterface="com.redhat.qute.ls.api.QuteLanguageServerAPI"
+            singleton="true" >
+      </server>
+      <contentTypeMapping
+            contentType="com.redhat.qute.lsp4e.html"
+            id="com.redhat.qute.lsp4e.html">
+      </contentTypeMapping>
+   </extension>
+   
+   <extension
+         point="org.eclipse.tm4e.registry.grammars">
+      <grammar
+            path="./syntaxes/qute.tmLanguage.json"
+            scopeName="grammar.qute">
+      </grammar>
+      <grammar
+            path="./syntaxes/qute-html.tmLanguage.json"
+            scopeName="text.html.qute">
+      </grammar>
+      <scopeNameContentTypeBinding
+            contentTypeId="com.redhat.qute.lsp4e.html"
+            scopeName="text.html.qute">
+      </scopeNameContentTypeBinding>
+   </extension>
+
+   <extension
+         point="org.eclipse.tm4e.languageconfiguration.languageConfigurations">
+      <languageConfiguration
+            contentTypeId="com.redhat.qute.lsp4e.html"
+            path="language-configurations/language-configuration.json">
+      </languageConfiguration>
+   </extension>
+        
+</plugin>

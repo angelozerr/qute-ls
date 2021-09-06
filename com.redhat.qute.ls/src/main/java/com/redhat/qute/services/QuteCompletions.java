@@ -11,7 +11,9 @@
 *******************************************************************************/
 package com.redhat.qute.services;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,12 +22,20 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.QuteJavaClassParams;
+import com.redhat.qute.ls.api.QuteJavaClassProvider;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.snippets.SnippetRegistry;
 import com.redhat.qute.parser.Node;
 import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.scanner.QuteScanner;
+import com.redhat.qute.parser.scanner.Scanner;
+import com.redhat.qute.parser.scanner.TokenType;
 import com.redhat.qute.services.snippets.IQuteSnippetContext;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
@@ -40,8 +50,14 @@ import com.redhat.qute.utils.QutePositionUtility;
 class QuteCompletions {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteCompletions.class.getName());
-	private boolean snippetsLoaded;
+
 	private SnippetRegistry snippetRegistry;
+
+	private final QuteJavaClassProvider classProvider;
+
+	public QuteCompletions(QuteJavaClassProvider classProvider) {
+		this.classProvider = classProvider;
+	}
 
 	/**
 	 * Returns completion list for the given position
@@ -53,19 +69,60 @@ class QuteCompletions {
 	 * @param cancelChecker      the cancel checker
 	 * @return completion list for the given position
 	 */
-	public CompletionList doComplete(Template template, Position position, QuteCompletionSettings completionSettings,
-			QuteFormattingSettings formattingSettings, CancelChecker cancelChecker) {
+	public CompletableFuture<CompletionList> doComplete(Template template, Position position,
+			QuteCompletionSettings completionSettings, QuteFormattingSettings formattingSettings,
+			CancelChecker cancelChecker) {
 		CompletionList list = new CompletionList();
 		CompletionRequest completionRequest = null;
 		try {
 			completionRequest = new CompletionRequest(template, position, completionSettings, formattingSettings);
 		} catch (BadLocationException e) {
 			LOGGER.log(Level.SEVERE, "Creation of CompletionRequest failed", e);
-			return list;
+			return CompletableFuture.completedFuture(list);
+		}
+
+		String text = template.getText();
+		int offset = completionRequest.getOffset();
+		Node node = completionRequest.getNode();
+		Scanner scanner = QuteScanner.createScanner(text, node.getStart());
+
+		TokenType token = scanner.scan();
+		while (token != TokenType.EOS && scanner.getTokenOffset() <= offset) {
+			cancelChecker.checkCanceled();
+			switch (token) {
+			case StartParameterDeclaration:
+			case ParameterDeclaration:
+				// if (scanner.getTokenEnd() == offset) {
+				QuteJavaClassParams params = new QuteJavaClassParams();
+				params.setUri(template.getUri());
+				String pattern = text.substring(node.getStart() + 2, offset);
+				params.setPattern(pattern);
+				return classProvider.getJavaClasses(params) //
+						.thenApply(result -> {
+							if (result == null) {
+								return null;
+							}
+							for (JavaClassInfo javaClassInfo : result) {
+								list.setItems(new ArrayList<>());
+								CompletionItem item = new CompletionItem();
+								item.setLabel(javaClassInfo.getClassName());
+								TextEdit textEdit = new TextEdit();
+								Range range = QutePositionUtility.createRange(node.getStart(), offset, template);
+								textEdit.setRange(range);
+								item.setTextEdit(Either.forLeft(textEdit));
+								list.getItems().add(item);
+							}
+							return null;
+						});
+			// }
+			default:
+			}
+
+			token = scanner.scan();
 		}
 
 		collectSnippetSuggestions(completionRequest, list);
-		return list;
+		return CompletableFuture.completedFuture(list);
 	}
 
 	/**

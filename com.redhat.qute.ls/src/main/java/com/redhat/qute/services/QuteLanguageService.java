@@ -12,7 +12,9 @@
 package com.redhat.qute.services;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentHighlight;
@@ -22,7 +24,9 @@ import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import com.redhat.qute.ls.api.QuteJavaClassProvider;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.Template;
 import com.redhat.qute.settings.QuteCompletionSettings;
@@ -44,8 +48,8 @@ public class QuteLanguageService {
 	private final QuteSymbolsProvider symbolsProvider;
 	private final QuteDiagnostics diagnostics;
 
-	public QuteLanguageService() {
-		this.completions = new QuteCompletions();
+	public QuteLanguageService(QuteJavaClassProvider classProvider) {
+		this.completions = new QuteCompletions(classProvider);
 		this.highlighting = new QuteHighlighting();
 		this.definition = new QuteDefinition();
 		this.documentLink = new QuteDocumentLink();
@@ -63,7 +67,7 @@ public class QuteLanguageService {
 	 * @param cancelChecker      the cancel checker
 	 * @return completion list for the given position
 	 */
-	public CompletionList doComplete(Template template, Position position, QuteCompletionSettings completionSettings,
+	public CompletableFuture<CompletionList> doComplete(Template template, Position position, QuteCompletionSettings completionSettings,
 			QuteFormattingSettings formattingSettings, CancelChecker cancelChecker) {
 		return completions.doComplete(template, position, completionSettings, formattingSettings, cancelChecker);
 	}
