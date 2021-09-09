@@ -21,10 +21,10 @@ import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.ls.commons.BadLocationException;
-import com.redhat.qute.parser.Node;
-import com.redhat.qute.parser.NodeKind;
-import com.redhat.qute.parser.Section;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Section;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.utils.QutePositionUtility;
 
 /**

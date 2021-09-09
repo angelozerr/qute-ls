@@ -6,12 +6,12 @@ import java.util.List;
 import org.eclipse.lsp4j.DocumentLink;
 import org.eclipse.lsp4j.Range;
 
-import com.redhat.qute.parser.Node;
-import com.redhat.qute.parser.NodeKind;
-import com.redhat.qute.parser.Parameter;
-import com.redhat.qute.parser.Section;
-import com.redhat.qute.parser.SectionKind;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Parameter;
+import com.redhat.qute.parser.template.Section;
+import com.redhat.qute.parser.template.SectionKind;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.utils.QutePositionUtility;
 
 public class QuteDocumentLink {

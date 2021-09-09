@@ -1,5 +1,5 @@
 {	"#each": {
-		"prefix": "each",
+		"prefix": ["each", "{#"],
 		"body": [
 			"{#each ${1:items}}",
 			"\t{it.${2:name}}$0",
@@ -10,7 +10,7 @@
 	"#eval": {
 		"prefix": "eval",
 		"body": [
-			"{#eval /}"
+			"{#eval ${1:content} /}$0"
 		],
 		"description": "Parse and evaluate a template dynamically"
 	},
@@ -32,6 +32,30 @@
 		],
 		"description": "If section"
 	},
+	"#else": {
+		"prefix": "else",
+		"body": [
+			"{#if ${1:condition}}",
+			"\t$2",
+			"{#else}",
+			"\t$0",
+			"{/if}"
+		],
+		"description": "Else section"
+	},
+	"#elseif": {
+		"prefix": "elseif",
+		"body": [
+			"{#if ${1:condition}}",
+			"\t$2",
+			"{#else if ${3:condition}}",
+			"\t$4",
+			"{#else}",
+			"\t$0",
+			"{/if}"
+		],
+		"description": "Else If section"
+	},
 	"#include": {
 		"prefix": "include",
 		"body": [
@@ -50,6 +74,13 @@
 		],
 		"description": "Insert section"
 	},
+	"#parameter": {
+		"prefix": "parameter",
+		"body": [
+			"{@${1:class}} {1:alias}}}"
+		],
+		"description": "Insert section"
+	},	
 	"#with": {
 		"prefix": "with",
 		"body": [

@@ -85,8 +85,6 @@ public interface IJDTUtils {
 
 	int toOffset(IBuffer buffer, int line, int column);
 
-	void discoverSource(IClassFile classFile, IProgressMonitor monitor) throws CoreException;
-
 	Location toLocation(IJavaElement element) throws JavaModelException;
 
 	//String getJavadoc(IMember member, DocumentFormat documentFormat) throws JavaModelException;

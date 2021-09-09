@@ -44,8 +44,8 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.redhat.qute.ls.commons.ModelTextDocument;
 import com.redhat.qute.ls.commons.ModelTextDocuments;
-import com.redhat.qute.parser.QuteParser;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.TemplateParser;
 import com.redhat.qute.services.QuteLanguageService;
 import com.redhat.qute.settings.QuteValidationSettings;
 import com.redhat.qute.settings.SharedSettings;
@@ -70,7 +70,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 	public QuteTextDocumentService(QuteLanguageServer quteLanguageServer, SharedSettings sharedSettings) {
 		this.quteLanguageServer = quteLanguageServer;
 		this.documents = new ModelTextDocuments<Template>((document, cancelChecker) -> {
-			return QuteParser.parse(document.getText(), document.getUri(), () -> cancelChecker.checkCanceled());
+			return TemplateParser.parse(document.getText(), document.getUri(), () -> cancelChecker.checkCanceled());
 		});
 		this.sharedSettings = sharedSettings;
 	}

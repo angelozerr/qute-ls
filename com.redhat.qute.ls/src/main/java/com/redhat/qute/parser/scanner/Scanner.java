@@ -14,14 +14,15 @@ package com.redhat.qute.parser.scanner;
  * Scanner API.
  *
  */
-public interface Scanner {
+public interface Scanner<T, S> {
 
-	TokenType scan();
+	T scan();
 
-	TokenType getTokenType();
+	T getTokenType();
 
 	/**
 	 * Starting offset position of the current token
+	 * 
 	 * @return int of token's start offset
 	 */
 	int getTokenOffset();
@@ -30,6 +31,7 @@ public interface Scanner {
 
 	/**
 	 * Ending offset position of the current token
+	 * 
 	 * @return int of token's end offset
 	 */
 	int getTokenEnd();
@@ -38,5 +40,5 @@ public interface Scanner {
 
 	String getTokenError();
 
-	ScannerState getScannerState();
+	S getScannerState();
 }

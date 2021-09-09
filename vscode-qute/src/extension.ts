@@ -42,7 +42,8 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(createTerminateDebugListener());
 
   connectToQuteLS(context).then(() => {
-
+    bindQuteRequest('qute/template/javaClasses');
+    bindQuteRequest('qute/template/javaClassMembers');
   }).catch((error) => {
     window.showErrorMessage(error.message, error.label).then((selection) => {
       if (error.label && error.label === selection && error.openUrl) {
@@ -180,5 +181,11 @@ function registerQuteNotebook(context: ExtensionContext) {
       'qbook', new QBookSerializer(), { transientOutputs: true }
     ),
     new QBookController()
+  );
+}
+
+function bindQuteRequest(request: string) {
+  quteLanguageClient.onRequest(request, async (params: any) =>
+    <any> await commands.executeCommand("java.execute.workspaceCommand", request, params)
   );
 }

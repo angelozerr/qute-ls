@@ -3,8 +3,8 @@ package com.redhat.qute.services;
 import org.eclipse.lsp4j.Position;
 
 import com.redhat.qute.ls.commons.BadLocationException;
-import com.redhat.qute.parser.Node;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 

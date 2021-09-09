@@ -28,7 +28,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.ls.api.QuteJavaClassProvider;
 import com.redhat.qute.ls.commons.TextDocument;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 import com.redhat.qute.settings.QuteValidationSettings;

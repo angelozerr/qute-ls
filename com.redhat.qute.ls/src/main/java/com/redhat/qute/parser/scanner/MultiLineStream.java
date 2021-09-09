@@ -126,17 +126,17 @@ public class MultiLineStream {
 		return true;
 	}
 
-	public int advanceIfAnyOfChars(int... ch) {
+	public boolean advanceIfAnyOfChars(char... ch) {
 		int i;
 		if (this.position + 1 > this.len) {
-			return -1;
+			return false;
 		}
 		for (i = 0; i < ch.length; i++) {
 			if (advanceIfChar(ch[i])) {
-				return ch[i];
+				return true;
 			}
 		}
-		return -1;
+		return false;
 	}
 
 	public String advanceIfRegExp(Pattern regex) {
@@ -172,11 +172,13 @@ public class MultiLineStream {
 	 * 
 	 * @return boolean: was the char found
 	 */
-	public boolean advanceUntilChar(int ch) {
+	public boolean advanceUntilChar(int... ch) {
 		while (this.position < this.len) {
-			if (peekChar() == ch) {
-				return true;
-			}
+			for (int c : ch) {
+				if (peekChar() == c) {
+					return true;
+				}	
+			}			
 			this.advance(1);
 		}
 		return false;

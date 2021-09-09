@@ -9,9 +9,9 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import com.redhat.qute.ls.commons.BadLocationException;
-import com.redhat.qute.parser.Node;
-import com.redhat.qute.parser.Section;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.Section;
+import com.redhat.qute.parser.template.Template;
 
 public class QutePositionUtility {
 

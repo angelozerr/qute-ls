@@ -22,8 +22,8 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
-import com.redhat.qute.parser.Node;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteValidationSettings;
 import com.redhat.qute.utils.QutePositionUtility;
 

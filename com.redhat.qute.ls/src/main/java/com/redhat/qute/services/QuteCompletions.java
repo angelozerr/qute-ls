@@ -16,9 +16,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
+import org.eclipse.lsp4j.InsertTextFormat;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -31,11 +34,15 @@ import com.redhat.qute.commons.QuteJavaClassParams;
 import com.redhat.qute.ls.api.QuteJavaClassProvider;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.snippets.SnippetRegistry;
-import com.redhat.qute.parser.Node;
-import com.redhat.qute.parser.Template;
-import com.redhat.qute.parser.scanner.QuteScanner;
 import com.redhat.qute.parser.scanner.Scanner;
-import com.redhat.qute.parser.scanner.TokenType;
+import com.redhat.qute.parser.template.Expression;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.ParameterDeclaration;
+import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.scanner.ScannerState;
+import com.redhat.qute.parser.template.scanner.TemplateScanner;
+import com.redhat.qute.parser.template.scanner.TokenType;
 import com.redhat.qute.services.snippets.IQuteSnippetContext;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
@@ -57,6 +64,15 @@ class QuteCompletions {
 
 	public QuteCompletions(QuteJavaClassProvider classProvider) {
 		this.classProvider = classProvider;
+
+		/*
+		 * new QuteJavaClassProvider() {
+		 * 
+		 * @Override public CompletableFuture<List<JavaClassInfo>>
+		 * getJavaClasses(QuteJavaClassParams params) { JavaClassInfo a = new
+		 * JavaClassInfo(); a.setClassName("org.acme.Foo"); return
+		 * CompletableFuture.completedFuture(Arrays.asList(a)); } };
+		 */
 	}
 
 	/**
@@ -84,37 +100,37 @@ class QuteCompletions {
 		String text = template.getText();
 		int offset = completionRequest.getOffset();
 		Node node = completionRequest.getNode();
-		Scanner scanner = QuteScanner.createScanner(text, node.getStart());
+		Scanner<TokenType, ScannerState> scanner = TemplateScanner.createScanner(text, node.getStart());
 
 		TokenType token = scanner.scan();
 		while (token != TokenType.EOS && scanner.getTokenOffset() <= offset) {
 			cancelChecker.checkCanceled();
 			switch (token) {
 			case StartParameterDeclaration:
+				if (scanner.getTokenEnd() == offset) {
+					int start = offset;
+					int end = offset;
+					return collectJavaClassesSuggestions(start, end, template, completionSettings);
+				}
+				break;
 			case ParameterDeclaration:
-				// if (scanner.getTokenEnd() == offset) {
-				QuteJavaClassParams params = new QuteJavaClassParams();
-				params.setUri(template.getUri());
-				String pattern = text.substring(node.getStart() + 2, offset);
-				params.setPattern(pattern);
-				return classProvider.getJavaClasses(params) //
-						.thenApply(result -> {
-							if (result == null) {
-								return null;
-							}
-							for (JavaClassInfo javaClassInfo : result) {
-								list.setItems(new ArrayList<>());
-								CompletionItem item = new CompletionItem();
-								item.setLabel(javaClassInfo.getClassName());
-								TextEdit textEdit = new TextEdit();
-								Range range = QutePositionUtility.createRange(node.getStart(), offset, template);
-								textEdit.setRange(range);
-								item.setTextEdit(Either.forLeft(textEdit));
-								list.getItems().add(item);
-							}
-							return null;
-						});
-			// }
+				if (scanner.getTokenOffset() <= offset && offset <= scanner.getTokenEnd()) {
+					int start = scanner.getTokenOffset();
+					int end = scanner.getTokenEnd();
+					return collectJavaClassesSuggestions(start, end, template, completionSettings);
+				}
+			case StartExpression:
+				if (scanner.getTokenEnd() == offset) {
+					JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
+					return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
+				}
+				break;
+			/*case Expression:
+				if (scanner.getTokenOffset() <= offset && offset <= scanner.getTokenEnd()) {
+					JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
+					return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
+				}
+				break;*/
 			default:
 			}
 
@@ -123,6 +139,157 @@ class QuteCompletions {
 
 		collectSnippetSuggestions(completionRequest, list);
 		return CompletableFuture.completedFuture(list);
+	}
+
+	private CompletableFuture<CompletionList> collectJavaClassesSuggestions(int start, int end, Template template,
+			QuteCompletionSettings completionSettings) {
+		QuteJavaClassParams params = new QuteJavaClassParams();
+		params.setUri(template.getUri());
+		String text = template.getText();
+		String pattern = text.substring(start, end);
+		params.setPattern(pattern);
+		return classProvider.getJavaClasses(params) //
+				.thenApply(result -> {
+					if (result == null) {
+						return null;
+					}
+					CompletionList list = new CompletionList();
+					list.setItems(new ArrayList<>());
+
+					for (JavaClassInfo javaClassInfo : result) {
+						String fullClassName = javaClassInfo.getClassName();
+						CompletionItem item = new CompletionItem();
+						item.setLabel(fullClassName);
+						TextEdit textEdit = new TextEdit();
+						Range range = QutePositionUtility.createRange(start, end, template);
+						textEdit.setRange(range);
+
+						String parameterDeclaration = fullClassName;
+						if (javaClassInfo.isPackage()) {
+							item.setKind(CompletionItemKind.Module);
+						} else {
+							item.setKind(CompletionItemKind.Class);
+							int index = fullClassName.lastIndexOf('.');
+							String className = index != -1 ? fullClassName.substring(index + 1, fullClassName.length())
+									: fullClassName;
+							String alias = String.valueOf(className.charAt(0)).toLowerCase()
+									+ className.substring(1, className.length());
+
+							StringBuilder insertText = new StringBuilder(fullClassName);
+							insertText.append(' ');
+							if (completionSettings.isCompletionSnippetsSupported()) {
+								item.setInsertTextFormat(InsertTextFormat.Snippet);
+								insertText.append("${1:");
+								insertText.append(alias);
+								insertText.append("}");
+							} else {
+								item.setInsertTextFormat(InsertTextFormat.PlainText);
+								insertText.append(alias);
+							}
+							parameterDeclaration = insertText.toString();
+
+						}
+						textEdit.setNewText(parameterDeclaration);
+						item.setTextEdit(Either.forLeft(textEdit));
+						list.getItems().add(item);
+					}
+					return list;
+				});
+	}
+
+	private CompletableFuture<CompletionList> collectDataModelSuggestions(JavaIdentifierParts parts, int offset,
+			Expression node, Template template, QuteCompletionSettings completionSettings) {
+		if (parts.isEmpty()) {
+			// Collect alias declared from parameter declaration
+			List<String> aliases = template.getChildren().stream() //
+					.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
+					.map(n -> ((ParameterDeclaration) n).getAlias()) //
+					.filter(alias -> alias != null) //
+					.collect(Collectors.toList());
+			int start = parts.getEndPartStart();
+			int end = parts.getEndPartEnd();
+			CompletionList list = new CompletionList();
+			for (String alias : aliases) {
+				CompletionItem item = new CompletionItem();
+				item.setLabel(alias);
+				TextEdit textEdit = new TextEdit();
+				Range range = QutePositionUtility.createRange(start, end, template);
+				textEdit.setRange(range);
+
+				textEdit.setNewText(alias);
+				item.setTextEdit(Either.forLeft(textEdit));
+				list.getItems().add(item);
+			}
+			return CompletableFuture.completedFuture(list);
+		}
+		CompletionList list = new CompletionList();
+		return CompletableFuture.completedFuture(list);
+
+	}
+
+	private static class JavaIdentifierParts extends ArrayList<String> {
+
+		private int endPartStart;
+
+		private int endPartEnd;
+
+		public int getEndPartStart() {
+			return endPartStart;
+		}
+
+		public void setEndPartStart(int endPartStart) {
+			this.endPartStart = endPartStart;
+		}
+
+		public int getEndPartEnd() {
+			return endPartEnd;
+		}
+
+		public void setEndPartEnd(int endPartEnd) {
+			this.endPartEnd = endPartEnd;
+		}
+
+	}
+
+	private static JavaIdentifierParts getJavaIdentifierParts(String text, int offset) {
+		JavaIdentifierParts parts = new JavaIdentifierParts();
+		// re-adjust offset from the right to get the right part from the cursor
+		int start = offset;
+		for (int i = start; i < text.length(); i++) {
+			char c = text.charAt(i);
+			if (Character.isJavaIdentifierPart(c)) {
+				offset++;
+			} else {
+				break;
+			}
+		}
+		offset--;
+		parts.setEndPartEnd(offset);
+		StringBuilder currentPart = new StringBuilder();
+		int i = offset;
+		for (; i >= 0; i--) {
+			char c = text.charAt(i);
+			if (Character.isJavaIdentifierPart(c)) {
+				currentPart.append(c);
+			} else if (c == '.') {
+				if (parts.isEmpty()) {
+					parts.setEndPartStart(i + 1);
+				}
+				parts.add(currentPart.toString());
+				currentPart.setLength(0);
+			} else {
+				break;
+			}
+		}
+		if (currentPart.length() > 0) {
+			if (parts.isEmpty()) {
+				parts.setEndPartStart(i);
+			}
+			parts.add(currentPart.toString());
+		} else {
+			parts.setEndPartStart(i);
+		}
+		return parts;
 	}
 
 	/**

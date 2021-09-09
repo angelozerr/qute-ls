@@ -23,10 +23,11 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.ls.commons.BadLocationException;
-import com.redhat.qute.parser.Node;
-import com.redhat.qute.parser.NodeKind;
-import com.redhat.qute.parser.Section;
-import com.redhat.qute.parser.Template;
+import com.redhat.qute.parser.template.Expression;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.ParameterDeclaration;
+import com.redhat.qute.parser.template.Section;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.utils.QutePositionUtility;
 
 /**
@@ -46,8 +47,20 @@ class QuteDefinition {
 				return Collections.emptyList();
 			}
 			List<LocationLink> locations = new ArrayList<>();
-			// Start end tag definition
-			findStartEndTagDefinition(offset, node, template, locations);
+			switch (node.getKind()) {
+			case Section:
+				// Start end tag definition
+				findDefinitionFromSection(offset, (Section) node, template, locations);
+				break;
+			case ParameterDeclaration:
+				findDefinitionFromParameterDeclaration(offset, (ParameterDeclaration) node, template, locations);
+				break;
+			case Expression:
+				findDefinitionFromExpression(offset, (Expression) node, template, locations);
+				break;				
+			default:
+				// do nothing
+			}
 			return locations;
 		} catch (BadLocationException e) {
 			LOGGER.log(Level.SEVERE, "In QuteDefinition the client provided Position is at a BadLocation", e);
@@ -67,14 +80,10 @@ class QuteDefinition {
 	 * @param locations the locations
 	 * @throws BadLocationException
 	 */
-	private static void findStartEndTagDefinition(int offset, Node node, Template template,
+	private static void findDefinitionFromSection(int offset, Section sectionTag, Template template,
 			List<LocationLink> locations) throws BadLocationException {
-		if (node.getKind() != NodeKind.Section) {
-			return;
-		}
 		Range originRange = null;
 		Range targetRange = null;
-		Section sectionTag = (Section) node;
 		if (sectionTag.isInStartTagName(offset)) {
 			originRange = QutePositionUtility.selectStartTagName(sectionTag);
 			targetRange = QutePositionUtility.selectEndTagName(sectionTag);
@@ -85,6 +94,20 @@ class QuteDefinition {
 		if (originRange != null && targetRange != null) {
 			locations.add(new LocationLink(template.getUri(), targetRange, targetRange, originRange));
 		}
+	}
+
+	private static void findDefinitionFromParameterDeclaration(int offset, ParameterDeclaration node, Template template,
+			List<LocationLink> locations) {
+		if (node.isInClassName(offset)) {
+			String className = node.getClassName();
+			
+		}
+	}
+
+	private void findDefinitionFromExpression(int offset, Expression node, Template template,
+			List<LocationLink> locations) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
