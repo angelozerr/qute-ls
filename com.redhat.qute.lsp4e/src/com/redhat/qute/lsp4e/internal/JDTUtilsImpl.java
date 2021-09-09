@@ -79,12 +79,6 @@ public class JDTUtilsImpl implements IJDTUtils {
 	}
 
 	@Override
-	public void discoverSource(IClassFile classFile, IProgressMonitor monitor) throws CoreException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public Location toLocation(IJavaElement element) throws JavaModelException {
 		// TODO Auto-generated method stub
 		return null;

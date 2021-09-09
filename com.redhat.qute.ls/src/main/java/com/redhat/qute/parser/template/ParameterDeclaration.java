@@ -38,29 +38,31 @@ public class ParameterDeclaration extends Node {
 	public String getClassName() {
 		Template template = getOwnerTemplate();
 		String text = template.getText();
-		StringBuilder className = new StringBuilder();
+		int classNameStart = getClassNameStart();
+		int classNameEnd = getClassNameEnd();
+		return text.substring(classNameStart, classNameEnd);
+	}
+
+	public int getClassNameStart() {
+		return getStartContent();
+	}
+
+	public int getClassNameEnd() {
+		Template template = getOwnerTemplate();
+		String text = template.getText();
 		for (int i = getStartContent(); i < getEndContent(); i++) {
 			char c = text.charAt(i);
 			if (c == ' ') {
-				break;
+				return i;
 			}
-			className.append(c);
 		}
-		return className.toString();
+		return getEndContent();
 	}
 
 	public boolean isInClassName(int offset) {
-		Template template = getOwnerTemplate();
-		String text = template.getText();
-		int i = getStartContent();
-		for (; i < getEndContent(); i++) {
-			char c = text.charAt(i);
-			if (c == ' ') {
-				i--;
-				break;
-			}
-		}
-		return offset <= i;
+		int classNameStart = getClassNameStart();
+		int classNameEnd = getClassNameEnd();
+		return offset >= classNameStart && offset <= classNameEnd;
 	}
 
 	public String getAlias() {

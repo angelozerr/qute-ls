@@ -14,7 +14,6 @@ package com.redhat.qute.services;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentHighlight;
@@ -24,9 +23,10 @@ import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
-import com.redhat.qute.ls.api.QuteJavaClassProvider;
+import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
+import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCompletionSettings;
@@ -48,10 +48,10 @@ public class QuteLanguageService {
 	private final QuteSymbolsProvider symbolsProvider;
 	private final QuteDiagnostics diagnostics;
 
-	public QuteLanguageService(QuteJavaClassProvider classProvider) {
+	public QuteLanguageService(QuteJavaClassesProvider classProvider, QuteJavaDefinitionProvider javaDefinitionProvider) {
 		this.completions = new QuteCompletions(classProvider);
 		this.highlighting = new QuteHighlighting();
-		this.definition = new QuteDefinition();
+		this.definition = new QuteDefinition(javaDefinitionProvider);
 		this.documentLink = new QuteDocumentLink();
 		this.symbolsProvider = new QuteSymbolsProvider();
 		this.diagnostics = new QuteDiagnostics();
@@ -77,7 +77,7 @@ public class QuteLanguageService {
 		return highlighting.findDocumentHighlights(template, position, cancelChecker);
 	}
 
-	public List<? extends LocationLink> findDefinition(Template template, Position position,
+	public CompletableFuture<List<? extends LocationLink>> findDefinition(Template template, Position position,
 			CancelChecker cancelChecker) {
 		return definition.findDefinition(template, position, cancelChecker);
 	}

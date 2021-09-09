@@ -7,6 +7,7 @@
       <delegateCommandHandler class="com.redhat.qute.jdt.internal.ls.QuteTemplateDelegateCommandHandler">
             <command id="qute/template/javaClasses"/>
             <command id="qute/template/javaClassMembers"/>
+            <command id="qute/template/javaDefinition"/>
        </delegateCommandHandler>
    </extension>
 

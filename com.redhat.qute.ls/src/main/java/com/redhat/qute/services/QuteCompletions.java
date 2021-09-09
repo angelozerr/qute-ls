@@ -30,8 +30,8 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.QuteJavaClassParams;
-import com.redhat.qute.ls.api.QuteJavaClassProvider;
+import com.redhat.qute.commons.QuteJavaClassesParams;
+import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.snippets.SnippetRegistry;
 import com.redhat.qute.parser.scanner.Scanner;
@@ -60,9 +60,9 @@ class QuteCompletions {
 
 	private SnippetRegistry snippetRegistry;
 
-	private final QuteJavaClassProvider classProvider;
+	private final QuteJavaClassesProvider classProvider;
 
-	public QuteCompletions(QuteJavaClassProvider classProvider) {
+	public QuteCompletions(QuteJavaClassesProvider classProvider) {
 		this.classProvider = classProvider;
 
 		/*
@@ -143,7 +143,7 @@ class QuteCompletions {
 
 	private CompletableFuture<CompletionList> collectJavaClassesSuggestions(int start, int end, Template template,
 			QuteCompletionSettings completionSettings) {
-		QuteJavaClassParams params = new QuteJavaClassParams();
+		QuteJavaClassesParams params = new QuteJavaClassesParams();
 		params.setUri(template.getUri());
 		String text = template.getText();
 		String pattern = text.substring(start, end);

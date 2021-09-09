@@ -11,6 +11,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -21,9 +22,11 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.JavaModelManager;
 import org.eclipse.jdt.internal.core.JavaProject;
 import org.eclipse.jdt.internal.core.search.BasicSearchEngine;
+import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.QuteJavaClassParams;
+import com.redhat.qute.commons.QuteJavaClassesParams;
+import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.jdt.utils.IJDTUtils;
 
 public class JavaDataModelManager {
@@ -34,28 +37,19 @@ public class JavaDataModelManager {
 		return INSTANCE;
 	}
 
-	public List<JavaClassInfo> getJavaClasses(QuteJavaClassParams params, IJDTUtils utils, IProgressMonitor monitor)
+	public List<JavaClassInfo> getJavaClasses(QuteJavaClassesParams params, IJDTUtils utils, IProgressMonitor monitor)
 			throws CoreException {
+		String fileUri = params.getUri();
+		IJavaProject javaProject = getJavaProject(fileUri, utils);
+		if (javaProject == null) {
+			return null;
+		}
+		
 		String className = params.getPattern() != null ? params.getPattern() + "*" : "*";
 		if (StringUtils.isEmpty(className)) {
 			// return null;
 		}
-		IFile file = utils.findFile(params.getUri());
-		if (file == null || file.getProject() == null) {
-			// The uri doesn't belong to an Eclipse project
-			return null;
-		}
-		// The uri belong to an Eclipse project
-		if (!(JavaProject.hasJavaNature(file.getProject()))) {
-			// The uri doesn't belong to a Java project
-			return null;
-		}
-
 		List<JavaClassInfo> classes = new ArrayList<>();
-
-		String projectName = file.getProject().getName();
-		IJavaProject javaProject = JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(projectName);
-
 		SearchPattern pattern = SearchPattern.createPattern(className, IJavaSearchConstants.CLASS, 0,
 				SearchPattern.R_CAMELCASE_MATCH);
 		pattern = SearchPattern.createOrPattern(pattern, SearchPattern.createPattern(className,
@@ -85,5 +79,37 @@ public class JavaDataModelManager {
 					}
 				}, monitor);
 		return classes;
+	}
+
+	public Location getJavaDefinition(QuteJavaDefinitionParams params, IJDTUtils utils,
+			IProgressMonitor monitor) throws JavaModelException {
+		String fileUri = params.getUri();
+		IJavaProject javaProject = getJavaProject(fileUri, utils);
+		if (javaProject == null) {
+			return null;
+		}
+		String className = params.getClassName();
+		IType type = javaProject.findType(className, monitor);
+		if (type == null) {
+			return null;
+		}
+		return utils.toLocation(type);
+	}
+	
+	private IJavaProject getJavaProject(String fileUri, IJDTUtils utils) {
+		IFile file = utils.findFile(fileUri);
+		if (file == null || file.getProject() == null) {
+			// The uri doesn't belong to an Eclipse project
+			return null;
+		}
+		// The uri belong to an Eclipse project
+		if (!(JavaProject.hasJavaNature(file.getProject()))) {
+			// The uri doesn't belong to a Java project
+			return null;
+		}
+
+		String projectName = file.getProject().getName();
+		IJavaProject javaProject = JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(projectName);
+		return javaProject;
 	}
 }

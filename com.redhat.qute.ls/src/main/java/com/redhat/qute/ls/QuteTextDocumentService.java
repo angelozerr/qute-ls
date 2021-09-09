@@ -131,12 +131,6 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 				});
 
-//		
-//		CompletableFuture<CompletionList> t = getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
-//			return getQuteLanguageService().doComplete(template, params.getPosition(),
-//					sharedSettings.getCompletionSettings(), sharedSettings.getFormattingSettings(), cancelChecker)
-//					.getNow(null);
-//		});
 	}
 
 	@Override
@@ -149,18 +143,22 @@ public class QuteTextDocumentService implements TextDocumentService {
 	@Override
 	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
 			DefinitionParams params) {
-		return getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
-			if (definitionLinkSupport) {
-				return Either.forRight(
-						getQuteLanguageService().findDefinition(template, params.getPosition(), cancelChecker));
-			}
-			List<? extends Location> locations = getQuteLanguageService()
-					.findDefinition(template, params.getPosition(), cancelChecker) //
-					.stream() //
-					.map(locationLink -> QutePositionUtility.toLocation(locationLink)) //
-					.collect(Collectors.toList());
-			return Either.forLeft(locations);
-		});
+		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
+				(cancelChecker, template) -> {
+					return getQuteLanguageService() //
+							.findDefinition(template, params.getPosition(), cancelChecker) //
+							.thenApply(definitions -> {
+								if (definitionLinkSupport) {
+									return Either.forRight(definitions);
+								}
+								List<? extends Location> locations = definitions //
+										.stream() //
+										.map(locationLink -> QutePositionUtility.toLocation(locationLink)) //
+										.collect(Collectors.toList());
+								return Either.forLeft(locations);
+							});
+
+				});
 	}
 
 	@Override

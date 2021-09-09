@@ -18,13 +18,15 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.lsp4e.LanguageClientImpl;
+import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
-import com.redhat.qute.commons.QuteJavaClassMemberParams;
-import com.redhat.qute.commons.QuteJavaClassParams;
+import com.redhat.qute.commons.QuteJavaClassMembersParams;
+import com.redhat.qute.commons.QuteJavaClassesParams;
+import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.jdt.JavaDataModelManager;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.lsp4e.internal.JDTUtilsImpl;
@@ -41,7 +43,7 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassParams params) {
+	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassesParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
@@ -54,11 +56,25 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<List<JavaClassMemberInfo>> getJavaClasseMembers(QuteJavaClassMemberParams params) {
+	public CompletableFuture<List<JavaClassMemberInfo>> getJavaClasseMembers(QuteJavaClassMembersParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			IProgressMonitor monitor = getProgressMonitor(cancelChecker);
 
 			return null;
+		});
+	}
+
+	@Override
+	public CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
+		return CompletableFutures.computeAsync((cancelChecker) -> {
+			try {
+				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
+				return JavaDataModelManager.getInstance().getJavaDefinition(params, JDTUtilsImpl.getInstance(),
+						monitor);
+			} catch (CoreException e) {
+				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
+				return null;
+			}
 		});
 	}
 

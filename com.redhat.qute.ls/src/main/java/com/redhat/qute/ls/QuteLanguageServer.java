@@ -19,14 +19,17 @@ import java.util.logging.Logger;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
+import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.QuteJavaClassParams;
-import com.redhat.qute.ls.api.QuteJavaClassProvider;
+import com.redhat.qute.commons.QuteJavaClassesParams;
+import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.ls.api.QuteJavaClassesProvider;
+import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.ls.api.QuteLanguageServerAPI;
 import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
@@ -41,8 +44,8 @@ import com.redhat.qute.settings.capabilities.ServerCapabilitiesInitializer;
  * Qute language server.
  *
  */
-public class QuteLanguageServer
-		implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI, QuteJavaClassProvider {
+public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI,
+		QuteJavaClassesProvider, QuteJavaDefinitionProvider {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteLanguageServer.class.getName());
 
@@ -55,7 +58,7 @@ public class QuteLanguageServer
 	private QuteCapabilityManager capabilityManager;
 
 	public QuteLanguageServer() {
-		quteLanguageService = new QuteLanguageService(this);
+		quteLanguageService = new QuteLanguageService(this, this);
 		textDocumentService = new QuteTextDocumentService(this, new SharedSettings());
 		workspaceService = new QuteWorkspaceService(this);
 	}
@@ -143,7 +146,12 @@ public class QuteLanguageServer
 	}
 
 	@Override
-	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassParams params) {
+	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassesParams params) {
 		return getLanguageClient().getJavaClasses(params);
+	}
+
+	@Override
+	public CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
+		return getLanguageClient().getJavaDefinition(params);
 	}
 }
