@@ -19,7 +19,7 @@ public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 	}
 
 	ParameterScanner(String input, int initialOffset, ScannerState initialState) {
-		super(input, initialOffset, initialState, TokenType.Unknown);
+		super(input, initialOffset, initialState, TokenType.Unknown, TokenType.EOS);
 	}
 
 	@Override

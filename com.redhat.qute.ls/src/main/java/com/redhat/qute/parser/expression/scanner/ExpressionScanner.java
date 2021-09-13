@@ -3,28 +3,27 @@ package com.redhat.qute.parser.expression.scanner;
 import java.util.function.Predicate;
 
 import com.redhat.qute.parser.scanner.AbstractScanner;
-import com.redhat.qute.parser.scanner.Scanner;
+
 public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> {
 
 	private static final Predicate<Integer> JAVA_IDENTIFIER_PART_PREDICATE = ch -> {
 		return Character.isJavaIdentifierPart(ch);
 	};
-	
-	public static Scanner<TokenType, ScannerState> createScanner(String input) {
+
+	public static ExpressionScanner createScanner(String input) {
 		return createScanner(input, 0);
 	}
 
-	public static Scanner<TokenType, ScannerState> createScanner(String input, int initialOffset) {
+	public static ExpressionScanner createScanner(String input, int initialOffset) {
 		return createScanner(input, initialOffset, ScannerState.WithinExpression);
 	}
 
-	public static Scanner<TokenType, ScannerState> createScanner(String input, int initialOffset,
-			ScannerState initialState) {
+	public static ExpressionScanner createScanner(String input, int initialOffset, ScannerState initialState) {
 		return new ExpressionScanner(input, initialOffset, initialState);
 	}
 
 	ExpressionScanner(String input, int initialOffset, ScannerState initialState) {
-		super(input, initialOffset, initialState, TokenType.Unknown);
+		super(input, initialOffset, initialState, TokenType.Unknown, TokenType.EOS);
 	}
 
 	@Override
@@ -49,10 +48,14 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 		}
 
 		case WithinParts: {
-			if(stream.peekChar() == '.') {
+			if (stream.advanceIfChar('.')) {
 				return finishToken(offset, TokenType.Dot);
 			}
-			//return internalScan();
+			if (hasNextJavaIdentifierPart()) {
+				state = ScannerState.WithinParts;
+				return finishToken(offset, TokenType.Part);
+			}
+			// return internalScan();
 		}
 
 		default:

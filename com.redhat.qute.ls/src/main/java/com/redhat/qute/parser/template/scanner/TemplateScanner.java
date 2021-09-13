@@ -25,7 +25,7 @@ public class TemplateScanner extends AbstractScanner<TokenType, ScannerState> {
 	}
 
 	TemplateScanner(String input, int initialOffset, ScannerState initialState) {
-		super(input, initialOffset, initialState, TokenType.Unknown);
+		super(input, initialOffset, initialState, TokenType.Unknown, TokenType.EOS);
 	}
 
 	@Override
@@ -104,7 +104,7 @@ public class TemplateScanner extends AbstractScanner<TokenType, ScannerState> {
 				state = ScannerState.WithinString;
 				return finishToken(stream.pos() - 1, TokenType.StartString);
 			}
-			return internalScan(); //(offset, TokenType.Expression);
+			return internalScan(); // (offset, TokenType.Expression);
 		}
 
 		case WithinString: {
@@ -115,7 +115,7 @@ public class TemplateScanner extends AbstractScanner<TokenType, ScannerState> {
 			stream.advanceUntilChar('"', '\'');
 			return finishToken(offset, TokenType.String);
 		}
-		
+
 		case AfterOpeningStartTag: {
 			if (hasNextTagName()) {
 				state = ScannerState.WithinTag;

@@ -11,14 +11,14 @@ public abstract class Node {
 	 * Null value used for offset.
 	 */
 	protected static final int NULL_VALUE = -1;
-	
+
 	private int start;
 	private int end;
 	private boolean closed;
 	private Node parent;
 	private List<Node> children;
 
-	Node(int start, int end) {
+	public Node(int start, int end) {
 		this.start = start;
 		this.end = end;
 		this.closed = false;
@@ -48,7 +48,7 @@ public abstract class Node {
 		return end;
 	}
 
-	void setEnd(int end) {
+	protected void setEnd(int end) {
 		this.end = end;
 	}
 
@@ -60,7 +60,7 @@ public abstract class Node {
 		return closed;
 	}
 
-	void addChild(Node child) {
+	protected void addChild(Node child) {
 		child.setParent(this);
 		if (children == null) {
 			children = new ArrayList<>();
@@ -101,6 +101,11 @@ public abstract class Node {
 
 	public Node findNodeAt(int offset) {
 		List<Node> children = getChildren();
+		Node node = findNodeAt(children, offset);
+		return node != null ? node : this;
+	}
+
+	public static Node findNodeAt(List<Node> children, int offset) {
 		int idx = findFirst(children, c -> offset <= c.start) - 1;
 		if (idx >= 0) {
 			Node child = children.get(idx);
@@ -108,7 +113,7 @@ public abstract class Node {
 				return child.findNodeAt(offset);
 			}
 		}
-		return this;
+		return null;
 	}
 
 	/**

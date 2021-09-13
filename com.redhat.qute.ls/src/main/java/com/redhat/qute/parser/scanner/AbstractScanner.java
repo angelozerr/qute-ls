@@ -7,6 +7,8 @@ public abstract class AbstractScanner<T, S> implements Scanner<T, S> {
 	protected final MultiLineStream stream;
 
 	private final T unknownTokenType;
+	
+	private final T eosTokenType;
 
 	protected S state;
 
@@ -15,9 +17,10 @@ public abstract class AbstractScanner<T, S> implements Scanner<T, S> {
 	private T tokenType;
 	private String tokenError;
 
-	protected AbstractScanner(String input, int initialOffset, S initialState, T unknownTokenType) {
+	protected AbstractScanner(String input, int initialOffset, S initialState, T unknownTokenType, T eosTokenType) {
 		stream = new MultiLineStream(input, initialOffset);
 		this.unknownTokenType = unknownTokenType;
+		this.eosTokenType = eosTokenType;
 		state = initialState;
 		tokenOffset = 0;
 		tokenType = unknownTokenType;
@@ -28,7 +31,7 @@ public abstract class AbstractScanner<T, S> implements Scanner<T, S> {
 		int offset = stream.pos();
 		S oldState = state;
 		T token = internalScan();
-		if (token != TokenType.EOS && offset == stream.pos()) {
+		if (token != eosTokenType && offset == stream.pos()) {
 			log("Scanner.scan has not advanced at offset " + offset + ", state before: " + oldState + " after: "
 					+ state);
 			stream.advance(1);

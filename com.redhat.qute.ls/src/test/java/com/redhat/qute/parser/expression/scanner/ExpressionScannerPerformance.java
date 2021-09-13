@@ -25,14 +25,20 @@ public class ExpressionScannerPerformance {
 	public static void main(String[] args) {
 		String text = "foo.bar";
 		// Continuously parses the large nasa.xml file with the XML scanner
-		while (true) {
+		//while (true) {
 			long start = System.currentTimeMillis();
 			Scanner<TokenType, ScannerState> scanner = ExpressionScanner.createScanner(text);
-			TokenType token = scanner.scan();
+			TokenType token = scan(scanner);
 			while (token != TokenType.EOS) {
-				token = scanner.scan();
+				token = scan(scanner);
 			}
 			System.err.println("Parsed in " + (System.currentTimeMillis() - start) + " ms.");
-		}
+		//}
+	}
+
+	private static TokenType scan(Scanner<TokenType, ScannerState> scanner) {
+		TokenType token = scanner.scan();
+		System.err.println(scanner.getTokenType() + ": " + scanner.getTokenText());
+		return token;
 	}
 }

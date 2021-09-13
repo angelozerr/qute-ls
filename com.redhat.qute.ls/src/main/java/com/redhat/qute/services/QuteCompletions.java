@@ -34,6 +34,8 @@ import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.snippets.SnippetRegistry;
+import com.redhat.qute.parser.expression.Part;
+import com.redhat.qute.parser.expression.Parts.PartKind;
 import com.redhat.qute.parser.scanner.Scanner;
 import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
@@ -58,6 +60,8 @@ class QuteCompletions {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteCompletions.class.getName());
 
+	private static final CompletableFuture<CompletionList> EMPTY_COMPLETION = CompletableFuture
+			.completedFuture(new CompletionList());
 	private SnippetRegistry snippetRegistry;
 
 	private final QuteJavaClassesProvider classProvider;
@@ -94,12 +98,19 @@ class QuteCompletions {
 			completionRequest = new CompletionRequest(template, position, completionSettings, formattingSettings);
 		} catch (BadLocationException e) {
 			LOGGER.log(Level.SEVERE, "Creation of CompletionRequest failed", e);
-			return CompletableFuture.completedFuture(list);
+			return EMPTY_COMPLETION;
+		}
+		Node node = completionRequest.getNode();
+		if (node == null) {
+			return EMPTY_COMPLETION;
+		}
+		if (NodeKind.Expression == node.getKind()) {
+			return doCompleteExpression(completionRequest, cancelChecker);
 		}
 
 		String text = template.getText();
 		int offset = completionRequest.getOffset();
-		Node node = completionRequest.getNode();
+
 		Scanner<TokenType, ScannerState> scanner = TemplateScanner.createScanner(text, node.getStart());
 
 		TokenType token = scanner.scan();
@@ -119,22 +130,47 @@ class QuteCompletions {
 					int end = scanner.getTokenEnd();
 					return collectJavaClassesSuggestions(start, end, template, completionSettings);
 				}
+				break;
 			case StartExpression:
 				if (scanner.getTokenEnd() == offset) {
+					/*
+					 * int partStart = 0; int partEnd = 0;
+					 * Scanner<com.redhat.qute.parser.expression.scanner.TokenType,
+					 * com.redhat.qute.parser.expression.scanner.ScannerState> exprScanner =
+					 * ExpressionScanner.createScanner(text, scanner.getTokenOffset());
+					 * com.redhat.qute.parser.expression.scanner.TokenType exprToken =
+					 * exprScanner.scan(); while (exprToken !=
+					 * com.redhat.qute.parser.expression.scanner.TokenType.EOS &&
+					 * exprScanner.getTokenOffset() <= offset) {
+					 * 
+					 * exprToken = exprScanner.scan(); }
+					 */
 					JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
 					return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
 				}
 				break;
-			/*case Expression:
+			case EndExpression:
 				if (scanner.getTokenOffset() <= offset && offset <= scanner.getTokenEnd()) {
 					JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
 					return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
 				}
-				break;*/
+
+				/*
+				 * case Expression: if (scanner.getTokenOffset() <= offset && offset <=
+				 * scanner.getTokenEnd()) { JavaIdentifierParts parts =
+				 * getJavaIdentifierParts(text, offset); return
+				 * collectDataModelSuggestions(parts, offset, (Expression) node, template,
+				 * completionSettings); } break;
+				 */
 			default:
 			}
 
 			token = scanner.scan();
+		}
+
+		if (token == TokenType.EndExpression) {
+			JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
+			return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
 		}
 
 		collectSnippetSuggestions(completionRequest, list);
@@ -199,7 +235,7 @@ class QuteCompletions {
 
 	private CompletableFuture<CompletionList> collectDataModelSuggestions(JavaIdentifierParts parts, int offset,
 			Expression node, Template template, QuteCompletionSettings completionSettings) {
-		if (parts.isEmpty()) {
+		if (parts.size() <= 1) {
 			// Collect alias declared from parameter declaration
 			List<String> aliases = template.getChildren().stream() //
 					.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
@@ -212,11 +248,9 @@ class QuteCompletions {
 			for (String alias : aliases) {
 				CompletionItem item = new CompletionItem();
 				item.setLabel(alias);
-				TextEdit textEdit = new TextEdit();
+				item.setKind(CompletionItemKind.Property);
 				Range range = QutePositionUtility.createRange(start, end, template);
-				textEdit.setRange(range);
-
-				textEdit.setNewText(alias);
+				TextEdit textEdit = new TextEdit(range, alias);
 				item.setTextEdit(Either.forLeft(textEdit));
 				list.getItems().add(item);
 			}
@@ -263,19 +297,21 @@ class QuteCompletions {
 				break;
 			}
 		}
-		offset--;
+		if (start != offset) {
+			offset--;
+		}
 		parts.setEndPartEnd(offset);
 		StringBuilder currentPart = new StringBuilder();
 		int i = offset;
 		for (; i >= 0; i--) {
 			char c = text.charAt(i);
 			if (Character.isJavaIdentifierPart(c)) {
-				currentPart.append(c);
+				currentPart.insert(0, c);
 			} else if (c == '.') {
 				if (parts.isEmpty()) {
 					parts.setEndPartStart(i + 1);
 				}
-				parts.add(currentPart.toString());
+				parts.add(0, currentPart.toString());
 				currentPart.setLength(0);
 			} else {
 				break;
@@ -285,11 +321,51 @@ class QuteCompletions {
 			if (parts.isEmpty()) {
 				parts.setEndPartStart(i);
 			}
-			parts.add(currentPart.toString());
+			parts.add(0, currentPart.toString());
 		} else {
 			parts.setEndPartStart(i);
 		}
 		return parts;
+	}
+
+	private CompletableFuture<CompletionList> doCompleteExpression(CompletionRequest completionRequest,
+			CancelChecker cancelChecker) {
+		int offset = completionRequest.getOffset();
+		Expression expression = (Expression) completionRequest.getNode();
+		Node nodeExpression = expression.findNodeExpressionAt(offset);
+
+		if (nodeExpression == null || nodeExpression.getKind() == NodeKind.ExpressionPart) {
+			Part part = (Part) nodeExpression;
+			if (part != null && part.getPartKind() != PartKind.Object) {
+				// Completion for root namespace, method
+			} else {
+				// Completion for root object
+				int partStart = part != null ? part.getStart() : offset;
+				int partEnd = part != null ? part.getEnd() : offset;
+				// Collect alias declared from parameter declaration
+				Template template = completionRequest.getTemplate();
+				List<String> aliases = template.getChildren().stream() //
+						.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
+						.map(n -> ((ParameterDeclaration) n).getAlias()) //
+						.filter(alias -> alias != null) //
+						.collect(Collectors.toList());
+				CompletionList list = new CompletionList();
+				for (String alias : aliases) {
+					CompletionItem item = new CompletionItem();
+					item.setLabel(alias);
+					item.setKind(CompletionItemKind.Reference);
+					Range range = QutePositionUtility.createRange(partStart, partEnd, template);
+					TextEdit textEdit = new TextEdit(range, alias);
+					item.setTextEdit(Either.forLeft(textEdit));
+					list.getItems().add(item);
+				}
+				return CompletableFuture.completedFuture(list);
+			}
+		}
+//		for (int i = partIndex; i < parts.getChildCount(); i--) {
+//			// Part part=
+//		}
+		return EMPTY_COMPLETION;
 	}
 
 	/**
