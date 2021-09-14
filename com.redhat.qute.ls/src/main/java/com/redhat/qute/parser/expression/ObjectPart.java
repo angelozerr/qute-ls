@@ -15,7 +15,6 @@ public class ObjectPart extends Part {
 		return PartKind.Object;
 	}
 
-	@Override
 	public String getClassName() {
 		String alias = super.getTextContent();
 		Template template = super.getOwnerTemplate();

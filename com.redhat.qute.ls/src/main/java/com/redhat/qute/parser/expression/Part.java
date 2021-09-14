@@ -5,7 +5,7 @@ import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 
 public abstract class Part extends Node {
-	
+
 	private String textContent;
 
 	public Part(int start, int end) {
@@ -22,6 +22,11 @@ public abstract class Part extends Node {
 		return NodeKind.ExpressionPart;
 	}
 
+	@Override
+	public Parts getParent() {
+		return (Parts) super.getParent();
+	}
+
 	public abstract PartKind getPartKind();
 
 	public String getTextContent() {
@@ -30,7 +35,5 @@ public abstract class Part extends Node {
 		}
 		return textContent = getOwnerTemplate().getText(getStart(), getEnd());
 	}
-
-	public abstract String getClassName();
 
 }

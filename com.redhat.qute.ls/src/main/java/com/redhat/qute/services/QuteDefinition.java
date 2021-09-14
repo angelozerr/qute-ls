@@ -25,11 +25,10 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.commons.JavaClassMemberInfo;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.ls.commons.BadLocationException;
-import com.redhat.qute.parser.expression.MemberPart;
 import com.redhat.qute.parser.expression.Part;
+import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
@@ -156,14 +155,20 @@ class QuteDefinition {
 				break;
 			case Property:
 			case Method:
-				CompletableFuture<JavaClassMemberInfo> member = javaCache.resolveMemberPart((MemberPart) part, template);
-				/*if (member != null) {
-					QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(member.getClassName(),
-							template.getUri());
-					params.setMethod(member.getMethod());
-					params.setField(member.getField());
-					return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
-				}*/
+				Parts parts = part.getParent();
+				int partIndex = parts.getPreviousPartIndex(part);
+				return javaCache.getResolvedClass(parts, partIndex, template) //
+						.thenCompose(resolvedClass -> {
+							if (resolvedClass != null) {
+								String property = part.getTextContent();
+								QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(
+										resolvedClass.getClassName(), template.getUri());
+								// params.setMethod(member.getMethod());
+								params.setField(property);
+								return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
+							}
+							return CompletableFuture.completedFuture(Collections.emptyList());
+						});
 			default:
 			}
 

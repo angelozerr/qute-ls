@@ -6,9 +6,4 @@ public abstract class MemberPart extends Part {
 		super(start, end);
 	}
 
-	@Override
-	public String getClassName() {
-		return null;
-	}
-
 }

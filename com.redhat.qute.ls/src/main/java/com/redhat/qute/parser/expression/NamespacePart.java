@@ -12,8 +12,4 @@ public class NamespacePart extends Part {
 		return PartKind.Namespace;
 	}
 
-	@Override
-	public String getClassName() {
-		return null;
-	}
 }

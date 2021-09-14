@@ -11,7 +11,7 @@ export class QBookController {
   constructor() {
 
     this._controller = vscode.notebooks.createNotebookController(this.id,
-                                                                'qnb',
+                                                                'qbook',
                                                                 this.label);
 
     this._controller.supportedLanguages = this.supportedLanguages;

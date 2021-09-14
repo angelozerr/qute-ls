@@ -77,9 +77,9 @@
 	"#parameter": {
 		"prefix": "parameter",
 		"body": [
-			"{@${1:class}} {1:alias}}}"
+			"{@${1:class} ${2:alias}}"
 		],
-		"description": "Insert section"
+		"description": "Insert parameter declaration"
 	},	
 	"#with": {
 		"prefix": "with",

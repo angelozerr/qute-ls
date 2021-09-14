@@ -31,10 +31,10 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
-import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.snippets.SnippetRegistry;
+import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.scanner.Scanner;
@@ -61,8 +61,10 @@ class QuteCompletions {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteCompletions.class.getName());
 
-	private static final CompletableFuture<CompletionList> EMPTY_COMPLETION = CompletableFuture
-			.completedFuture(new CompletionList());
+	private static final CompletionList EMPTY_COMPLETION = new CompletionList();
+
+	private static final CompletableFuture<CompletionList> EMPTY_FUTURE_COMPLETION = CompletableFuture
+			.completedFuture(EMPTY_COMPLETION);
 	private SnippetRegistry snippetRegistry;
 
 	private final JavaDataModelCache javaCache;
@@ -90,11 +92,11 @@ class QuteCompletions {
 			completionRequest = new CompletionRequest(template, position, completionSettings, formattingSettings);
 		} catch (BadLocationException e) {
 			LOGGER.log(Level.SEVERE, "Creation of CompletionRequest failed", e);
-			return EMPTY_COMPLETION;
+			return EMPTY_FUTURE_COMPLETION;
 		}
 		Node node = completionRequest.getNode();
 		if (node == null) {
-			return EMPTY_COMPLETION;
+			return EMPTY_FUTURE_COMPLETION;
 		}
 		if (NodeKind.Expression == node.getKind()) {
 			return doCompleteExpression(completionRequest, cancelChecker);
@@ -205,55 +207,64 @@ class QuteCompletions {
 			case Property:
 			case Method:
 				// ex : { item.n| }
-				Parts parts = (Parts) part.getParent();
+				// ex : { item.n|ame }
+				Parts parts = part.getParent();
 				return doCompleteExpressionForMemberPart(part, parts, completionRequest);
 			default:
 				break;
 			}
-			return EMPTY_COMPLETION;
+			return EMPTY_FUTURE_COMPLETION;
 		}
 
 		if (nodeExpression.getKind() == NodeKind.ExpressionParts) {
 			char previous = completionRequest.getTemplate().getText().charAt(offset - 1);
 			switch (previous) {
-			case ':':
+			case ':': {
 				// ex : { data:| }
-				return doCompleteExpressionForObjectPart(null, completionRequest);
-			case '.':
-				// ex : { item.| }
+				// ex : { data:|name }
 				Parts parts = (Parts) nodeExpression;
-				return doCompleteExpressionForMemberPart(null, parts, completionRequest);
+				Part part = parts.getPartAt(offset + 1);
+				return doCompleteExpressionForObjectPart(part, completionRequest);
+			}
+			case '.': {
+				// ex : { item.| }
+				// ex : { item.|name }
+				Parts parts = (Parts) nodeExpression;
+				Part part = parts.getPartAt(offset + 1);
+				return doCompleteExpressionForMemberPart(part, parts, completionRequest);
+			}
 			}
 		}
-		return EMPTY_COMPLETION;
+		return EMPTY_FUTURE_COMPLETION;
 	}
 
 	private CompletableFuture<CompletionList> doCompleteExpressionForMemberPart(Part part, Parts parts,
 			CompletionRequest completionRequest) {
-		Part firstPart = (Part) parts.getChild(0);
-		String className = firstPart.getClassName();
+		ObjectPart objectPart = parts.getObjectPart();
+		String className = objectPart.getClassName();
 		if (className == null) {
-			return EMPTY_COMPLETION;
+			return EMPTY_FUTURE_COMPLETION;
 		}
 		int start = part != null ? part.getStart() : parts.getEnd();
 		int end = part != null ? part.getEnd() : parts.getEnd();
 		Template template = completionRequest.getTemplate();
-		QuteResolvedJavaClassParams params = new QuteResolvedJavaClassParams();
-		params.setUri(completionRequest.getTemplate().getUri());
-		params.setClassName(className);
-		return javaCache.getResolvedJavaClass(params)//
+		int partIndex = parts.getPreviousPartIndex(part);
+		return javaCache.getResolvedClass(parts, partIndex, template) //
 				.thenApply(resolvedClass -> {
 					if (resolvedClass == null) {
-						return null;
+						return EMPTY_COMPLETION;
 					}
 					CompletionList list = new CompletionList();
 					list.setItems(new ArrayList<>());
-					for (JavaClassMemberInfo javaClassInfo : resolvedClass.getMembers()) {
-						String fullClassName = javaClassInfo.getField();
+					Range range = QutePositionUtility.createRange(start, end, template);
+					for (JavaClassMemberInfo member : resolvedClass.getMembers()) {
+						String fullClassName = member.getField();
+						if (fullClassName == null) {
+							fullClassName = member.getMethod();
+						}
 						CompletionItem item = new CompletionItem();
 						item.setLabel(fullClassName);
 						TextEdit textEdit = new TextEdit();
-						Range range = QutePositionUtility.createRange(start, end, template);
 						textEdit.setRange(range);
 						textEdit.setNewText(fullClassName);
 						item.setTextEdit(Either.forLeft(textEdit));

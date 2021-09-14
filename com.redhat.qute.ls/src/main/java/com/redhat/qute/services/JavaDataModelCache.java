@@ -30,8 +30,8 @@ public class JavaDataModelCache {
 
 	private final QuteJavaDefinitionProvider definitionProvider;
 
-	public JavaDataModelCache(QuteJavaClassesProvider classProvider, QuteResolvedJavaClassProvider resolvedClassProvider,
-			QuteJavaDefinitionProvider definitionProvider) {
+	public JavaDataModelCache(QuteJavaClassesProvider classProvider,
+			QuteResolvedJavaClassProvider resolvedClassProvider, QuteJavaDefinitionProvider definitionProvider) {
 		this.classProvider = classProvider;
 		this.resolvedClassProvider = resolvedClassProvider;
 		this.definitionProvider = definitionProvider;
@@ -41,12 +41,12 @@ public class JavaDataModelCache {
 		return classProvider.getJavaClasses(params);
 	}
 
-	private CompletableFuture<JavaClassInfo> getResolvedClass(String className, String templateFileUri) {
-		QuteJavaClassesParams params = new QuteJavaClassesParams(className, templateFileUri);
-		return getJavaClasses(params) //
-				.thenApply(classes -> {
-					return classes != null && !classes.isEmpty() ? classes.get(0) : null;
-				});
+	private CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(String className, String templateFileUri) {
+		if (StringUtils.isEmpty(className)) {
+			return CompletableFuture.completedFuture(null);
+		}
+		QuteResolvedJavaClassParams params = new QuteResolvedJavaClassParams(className, templateFileUri);
+		return getResolvedJavaClass(params);
 	}
 
 	public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(QuteResolvedJavaClassParams params) {
@@ -57,45 +57,35 @@ public class JavaDataModelCache {
 		return definitionProvider.getJavaDefinition(params);
 	}
 
-	public JavaClassInfo resolveObjectPart(ObjectPart part, Template template) {
-		Parts parts = (Parts) part.getParent();
-		int partIndex = parts.getChildren().indexOf(part);
-		for (int i = 0; i < partIndex; i++) {
-
-		}
-		return null;
-	}
-
-	public CompletableFuture<JavaClassMemberInfo> resolveMemberPart(MemberPart part, Template template) {
-		String field = part.getPartKind() == PartKind.Property ? part.getTextContent() : null;
-		String method = part.getPartKind() == PartKind.Method ? part.getTextContent() : null;
-		if (field == null && method == null) {
-			return CompletableFuture.completedFuture(null);
-		}
-		
-		Parts parts = (Parts) part.getParent();
-		int partIndex = parts.getChildren().indexOf(part);
-		String className = null;
-		
-		CompletableFuture<JavaClassMemberInfo> future = null;
-		for (int i = 0; i < partIndex; i++) {
+	public CompletableFuture<ResolvedJavaClassInfo> getResolvedClass(Parts parts, int partIndex, Template template) {
+		CompletableFuture<ResolvedJavaClassInfo> future = null;
+		for (int i = 0; i <= partIndex; i++) {
 			Part current = ((Part) parts.getChild(i));
-			if (current.getPartKind() == PartKind.Object) {
-				className = ((ObjectPart) current).getClassName();
-			} else {
-				if (StringUtils.isEmpty(className)) {
-					break;
-				}				
-				className = null;
+			switch (current.getPartKind()) {
+			case Object:
+				String className = ((ObjectPart) current).getClassName();
+				future = getResolvedJavaClass(className, template.getUri());
+				break;
+			case Property:
+				if (future != null) {
+					future = future //
+							.thenCompose(resolvedClass -> {
+								if (resolvedClass == null) {
+									return null;
+								}
+								String property = current.getTextContent();
+								JavaClassMemberInfo member = resolvedClass.findMember(property);
+								if (member == null) {
+									return null;
+								}
+								String memberType = member.getType();
+								return getResolvedJavaClass(memberType, template.getUri());
+							});
+				}
+				break;
 			}
 		}
-		if (StringUtils.isEmpty(className)) {
-			return CompletableFuture.completedFuture(null);
-		}
-		if (future == null) {
-			//return getJavaClassMembers(null)
-		}
-		
-		return CompletableFuture.completedFuture(null);
+		return future != null ? future : CompletableFuture.completedFuture(null);
 	}
+
 }

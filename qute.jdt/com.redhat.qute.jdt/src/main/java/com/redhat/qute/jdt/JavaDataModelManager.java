@@ -98,6 +98,12 @@ public class JavaDataModelManager {
 		if (type == null) {
 			return null;
 		}
+		String fieldName = params.getField();
+		if (fieldName != null) {
+			IField field = type.getField(fieldName);
+			return field != null && field.exists() ? utils.toLocation(field) : null;
+		}
+
 		return utils.toLocation(type);
 	}
 
@@ -131,6 +137,7 @@ public class JavaDataModelManager {
 	}
 
 	private IJavaProject getJavaProject(String fileUri, IJDTUtils utils) {
+		fileUri = fileUri.replace("vscode-notebook-cell", "file");
 		IFile file = utils.findFile(fileUri);
 		if (file == null || file.getProject() == null) {
 			// The uri doesn't belong to an Eclipse project
