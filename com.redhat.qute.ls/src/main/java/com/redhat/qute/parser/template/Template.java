@@ -1,5 +1,7 @@
 package com.redhat.qute.parser.template;
 
+import java.util.Optional;
+
 import org.eclipse.lsp4j.Position;
 
 import com.redhat.qute.ls.commons.BadLocationException;
@@ -72,5 +74,17 @@ public class Template extends Node {
 
 	public String getText() {
 		return textDocument.getText();
+	}
+
+	public ParameterDeclaration findParameterByAlias(String alias) {
+		Optional<ParameterDeclaration> result = super.getChildren().stream() //
+				.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
+				.filter(parameter -> alias.equals(((ParameterDeclaration) parameter).getAlias())) //
+				.map(n -> ((ParameterDeclaration) n)) //
+				.findFirst();
+		if (result.isPresent()) {
+			return result.get();
+		}
+		return null;
 	}
 }

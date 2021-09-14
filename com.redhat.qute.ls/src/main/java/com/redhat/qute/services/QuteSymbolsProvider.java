@@ -20,7 +20,6 @@ import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.Section;
@@ -107,12 +106,7 @@ class QuteSymbolsProvider {
 	}
 
 	private static Range getSymbolRange(Node node) {
-		try {
-			return QutePositionUtility.toRange(node);
-		} catch (BadLocationException e) {
-			e.printStackTrace();
-			return null;
-		}
+		return QutePositionUtility.createRange(node);
 	}
 
 	private boolean isNodeSymbol(Node node) {

@@ -41,8 +41,7 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 				return finishToken(offset, TokenType.Whitespace);
 			}
 			if (hasNextJavaIdentifierPart()) {
-				state = ScannerState.WithinParts;
-				return finishToken(offset, TokenType.Part);
+				return finishTokenPart(offset);
 			}
 			return finishToken(offset, TokenType.Unknown);
 		}
@@ -51,9 +50,11 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 			if (stream.advanceIfChar('.')) {
 				return finishToken(offset, TokenType.Dot);
 			}
+			if (stream.advanceIfChar(':')) {
+				return finishToken(offset, TokenType.ColonSpace);
+			}
 			if (hasNextJavaIdentifierPart()) {
-				state = ScannerState.WithinParts;
-				return finishToken(offset, TokenType.Part);
+				return finishTokenPart(offset);
 			}
 			// return internalScan();
 		}
@@ -62,6 +63,19 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 		}
 		stream.advance(1);
 		return finishToken(offset, TokenType.Unknown, errorMessage);
+	}
+
+	private TokenType finishTokenPart(int offset) {
+		int next = stream.peekChar(1);
+		if (next == ':') {
+			state = ScannerState.WithinParts;
+			return finishToken(offset, TokenType.NamespacePart);
+		}
+		if (state == ScannerState.WithinParts) {
+			return finishToken(offset, TokenType.PropertyPart);
+		}
+		state = ScannerState.WithinParts;
+		return finishToken(offset, TokenType.ObjectPart);
 	}
 
 	private boolean hasNextJavaIdentifierPart() {

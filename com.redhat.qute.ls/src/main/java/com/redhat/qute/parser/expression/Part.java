@@ -4,13 +4,12 @@ import com.redhat.qute.parser.expression.Parts.PartKind;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 
-public class Part extends Node {
-
-	private PartKind partKind;
+public abstract class Part extends Node {
+	
+	private String textContent;
 
 	public Part(int start, int end) {
 		super(start, end);
-		this.partKind = PartKind.Object;
 	}
 
 	@Override
@@ -23,12 +22,15 @@ public class Part extends Node {
 		return NodeKind.ExpressionPart;
 	}
 
-	void setPartKind(PartKind partKind) {
-		this.partKind = partKind;
+	public abstract PartKind getPartKind();
+
+	public String getTextContent() {
+		if (textContent != null) {
+			return textContent;
+		}
+		return textContent = getOwnerTemplate().getText().substring(getStart(), getEnd());
 	}
 
-	public PartKind getPartKind() {
-		return partKind;
-	}
+	public abstract String getClassName();
 
 }

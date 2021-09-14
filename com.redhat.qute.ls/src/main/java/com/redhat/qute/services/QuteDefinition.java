@@ -25,10 +25,11 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
-import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.commons.BadLocationException;
+import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
@@ -42,10 +43,10 @@ class QuteDefinition {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteDefinition.class.getName());
 
-	private final QuteJavaDefinitionProvider javaDefinitionProvider;
+	private final JavaDataModelCache javaCache;
 
-	public QuteDefinition(QuteJavaDefinitionProvider javaDefinitionProvider) {
-		this.javaDefinitionProvider = javaDefinitionProvider;
+	public QuteDefinition(JavaDataModelCache javaCache) {
+		this.javaCache = javaCache;
 	}
 
 	public CompletableFuture<List<? extends LocationLink>> findDefinition(Template template, Position position,
@@ -56,26 +57,23 @@ class QuteDefinition {
 			if (node == null) {
 				return CompletableFuture.completedFuture(Collections.emptyList());
 			}
-			List<LocationLink> locations = new ArrayList<>();
 			switch (node.getKind()) {
 			case Section:
 				// Start end tag definition
-				findDefinitionFromSection(offset, (Section) node, template, locations);
-				break;
+				return findDefinitionFromSection(offset, (Section) node, template);
 			case ParameterDeclaration:
 				// Return Java class definition
 				return findDefinitionFromParameterDeclaration(offset, (ParameterDeclaration) node, template);
 			case Expression:
-				findDefinitionFromExpression(offset, (Expression) node, template, locations);
-				break;
+				return findDefinitionFromExpression(offset, (Expression) node, template);
 			default:
 				// do nothing
 			}
-			return CompletableFuture.completedFuture(locations);
 		} catch (BadLocationException e) {
 			LOGGER.log(Level.SEVERE, "In QuteDefinition the client provided Position is at a BadLocation", e);
-			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
+		return CompletableFuture.completedFuture(Collections.emptyList());
+
 	}
 
 	/**
@@ -86,12 +84,13 @@ class QuteDefinition {
 	 * @param document
 	 * @param template
 	 * 
-	 * @param request   the definition request
-	 * @param locations the locations
+	 * @param request  the definition request
+	 * @return
 	 * @throws BadLocationException
 	 */
-	private static void findDefinitionFromSection(int offset, Section sectionTag, Template template,
-			List<LocationLink> locations) throws BadLocationException {
+	private static CompletableFuture<List<? extends LocationLink>> findDefinitionFromSection(int offset,
+			Section sectionTag, Template template) throws BadLocationException {
+		List<LocationLink> locations = new ArrayList<>();
 		Range originRange = null;
 		Range targetRange = null;
 		if (sectionTag.isInStartTagName(offset)) {
@@ -104,6 +103,7 @@ class QuteDefinition {
 		if (originRange != null && targetRange != null) {
 			locations.add(new LocationLink(template.getUri(), targetRange, targetRange, originRange));
 		}
+		return CompletableFuture.completedFuture(locations);
 	}
 
 	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromParameterDeclaration(int offset,
@@ -113,16 +113,15 @@ class QuteDefinition {
 			QuteJavaDefinitionParams params = new QuteJavaDefinitionParams();
 			params.setClassName(className);
 			params.setUri(template.getUri());
-			return javaDefinitionProvider.getJavaDefinition(params) //
+			return javaCache.getJavaDefinition(params) //
 					.thenApply(location -> {
 						if (location != null) {
 							String targetUri = location.getUri();
 							Range targetRange = location.getRange();
-							Range targetSelectionRange = targetRange;
 							Range originSelectionRange = QutePositionUtility.createRange(
 									parameterDeclaration.getClassNameStart(), parameterDeclaration.getClassNameEnd(),
 									template);
-							LocationLink locationLink = new LocationLink(targetUri, targetRange, targetSelectionRange,
+							LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
 									originSelectionRange);
 							return Arrays.asList(locationLink);
 						}
@@ -132,10 +131,31 @@ class QuteDefinition {
 		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
-	private void findDefinitionFromExpression(int offset, Expression node, Template template,
-			List<LocationLink> locations) {
-		// TODO Auto-generated method stub
+	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromExpression(int offset,
+			Expression expression, Template template) {
+		Node expressionNode = expression.findNodeExpressionAt(offset);
+		if (expressionNode != null && expressionNode.getKind() == NodeKind.ExpressionPart) {
+			Part part = (Part) expressionNode;
 
+			switch (part.getPartKind()) {
+			case Object:
+				ParameterDeclaration parameter = template.findParameterByAlias(part.getTextContent());
+				if (parameter != null) {
+					String targetUri = template.getUri();
+					Range targetRange = QutePositionUtility.selectAlias(parameter);
+					Range originSelectionRange = QutePositionUtility.createRange(part);
+					LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
+							originSelectionRange);
+					return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+				}
+				break;
+			case Property:
+			case Method:
+			default:
+			}
+
+		}
+		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
 }

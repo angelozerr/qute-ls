@@ -56,11 +56,16 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<List<JavaClassMemberInfo>> getJavaClasseMembers(QuteJavaClassMembersParams params) {
+	public CompletableFuture<List<JavaClassMemberInfo>> getJavaClassMembers(QuteJavaClassMembersParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
-			IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-
-			return null;
+			try {
+				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
+				return JavaDataModelManager.getInstance().getJavaClassMembers(params, JDTUtilsImpl.getInstance(),
+						monitor);
+			} catch (CoreException e) {
+				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
+				return Collections.emptyList();
+			}
 		});
 	}
 

@@ -5,11 +5,11 @@ import java.util.logging.Logger;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
-import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
 
@@ -21,19 +21,37 @@ public class QutePositionUtility {
 		return new Location(locationLink.getTargetUri(), locationLink.getTargetRange());
 	}
 
-
-	public static Range selectStartTagName(Section section) throws BadLocationException {
+	public static Range selectStartTagName(Section section) {
 		Template template = section.getOwnerTemplate();
 		int startOffset = section.getStartTagOpenOffset() + 2; // {#
 		int endOffset = startOffset + section.getTag().length();
 		return createRange(startOffset, endOffset, template);
 	}
 
-	public static Range selectEndTagName(Section sectionTag) throws BadLocationException {
+	public static Range selectEndTagName(Section sectionTag) {
 		Template template = sectionTag.getOwnerTemplate();
 		int startOffset = sectionTag.getEndTagOpenOffset() + 2; // {\
 		int endOffset = startOffset + sectionTag.getTag().length();
 		return createRange(startOffset, endOffset, template);
+	}
+
+	public static Range selectClassName(ParameterDeclaration parameter) {
+		Template template = parameter.getOwnerTemplate();
+		int startOffset = parameter.getClassNameStart();
+		int endOffset = parameter.getClassNameEnd();
+		return createRange(startOffset, endOffset, template);
+	}
+	
+	public static Range selectAlias(ParameterDeclaration parameter) {
+		Template template = parameter.getOwnerTemplate();
+		int startOffset = parameter.getAliasStart();
+		int endOffset = parameter.getAliasEnd();
+		return createRange(startOffset, endOffset, template);
+	}
+
+	public static Range createRange(Node node) {
+		Template template = node.getOwnerTemplate();
+		return createRange(node.getStart(), node.getEnd(), template);
 	}
 
 	public static Range createRange(int startOffset, int endOffset, Template template) {
@@ -44,11 +62,5 @@ public class QutePositionUtility {
 			return null;
 		}
 	}
-	
-	public static Range toRange(Node node) throws BadLocationException {
-		Template template = node.getOwnerTemplate();
-		Position start = template.positionAt(node.getStart());
-		Position end = template.positionAt(node.getEnd());
-		return new Range(start, end);
-	}
+
 }

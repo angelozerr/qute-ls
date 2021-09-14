@@ -26,8 +26,11 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.QuteJavaClassMembersParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.ls.api.QuteJavaClassMembersProvider;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
@@ -35,6 +38,8 @@ import com.redhat.qute.ls.api.QuteLanguageServerAPI;
 import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
 import com.redhat.qute.ls.commons.client.ExtendedClientCapabilities;
 import com.redhat.qute.ls.commons.client.InitializationOptionsExtendedClientCapabilities;
+import com.redhat.qute.services.JavaDataModelCache;
+import com.redhat.qute.services.MockJavaDataModelCache;
 import com.redhat.qute.services.QuteLanguageService;
 import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.settings.capabilities.QuteCapabilityManager;
@@ -45,7 +50,7 @@ import com.redhat.qute.settings.capabilities.ServerCapabilitiesInitializer;
  *
  */
 public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI,
-		QuteJavaClassesProvider, QuteJavaDefinitionProvider {
+		QuteJavaClassesProvider, QuteJavaClassMembersProvider, QuteJavaDefinitionProvider {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteLanguageServer.class.getName());
 
@@ -56,11 +61,17 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	private Integer parentProcessId;
 	private QuteLanguageClientAPI languageClient;
 	private QuteCapabilityManager capabilityManager;
-
+	
 	public QuteLanguageServer() {
-		quteLanguageService = new QuteLanguageService(this, this);
+		JavaDataModelCache cache = createJavaCache();
+		quteLanguageService = new QuteLanguageService(cache);
 		textDocumentService = new QuteTextDocumentService(this, new SharedSettings());
 		workspaceService = new QuteWorkspaceService(this);
+	}
+
+	private JavaDataModelCache createJavaCache() {
+		//return new MockJavaDataModelCache();
+		return new JavaDataModelCache(this, this, this);
 	}
 
 	@Override
@@ -153,5 +164,10 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	@Override
 	public CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
 		return getLanguageClient().getJavaDefinition(params);
+	}
+
+	@Override
+	public CompletableFuture<List<JavaClassMemberInfo>> getJavaClassMembers(QuteJavaClassMembersParams params) {
+		return getLanguageClient().getJavaClassMembers(params);
 	}
 }

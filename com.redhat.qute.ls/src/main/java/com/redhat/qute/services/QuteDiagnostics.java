@@ -20,7 +20,6 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.Template;
@@ -76,16 +75,10 @@ class QuteDiagnostics {
 
 	private static void validate(Node parent, List<Diagnostic> diagnostics) {
 		if (!parent.isClosed()) {
-			try {
-				Range range = QutePositionUtility.toRange(parent);
-				String message = parent.getKind() + parent.getNodeName() + " is not closed";
-				Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, "qute", null);
-				diagnostics.add(diagnostic);
-
-			} catch (BadLocationException e) {
-				e.printStackTrace();
-			}
-
+			Range range = QutePositionUtility.createRange(parent);
+			String message = parent.getKind() + parent.getNodeName() + " is not closed";
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, "qute", null);
+			diagnostics.add(diagnostic);
 		}
 		for (Node child : parent.getChildren()) {
 			validate(child, diagnostics);

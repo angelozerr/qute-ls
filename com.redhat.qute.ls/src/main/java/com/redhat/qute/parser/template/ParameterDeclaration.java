@@ -68,18 +68,27 @@ public class ParameterDeclaration extends Node {
 	public String getAlias() {
 		Template template = getOwnerTemplate();
 		String text = template.getText();
-		StringBuilder alias = new StringBuilder();
-		int spaceIndex = -1;
+		int aliasStart = getAliasStart();
+		if (aliasStart == -1) {
+			return null;
+		}
+		int aliasEnd = getAliasEnd();
+		return text.substring(aliasStart, aliasEnd);
+	}
+
+	public int getAliasStart() {
+		Template template = getOwnerTemplate();
+		String text = template.getText();
 		for (int i = getStartContent(); i < getEndContent(); i++) {
 			char c = text.charAt(i);
-			if (spaceIndex == -1) {
-				if (c == ' ') {
-					spaceIndex = i;
-				}
-			} else {
-				alias.append(c);
+			if (c == ' ' && (i + 1) < getEndContent()) {
+				return i + 1;
 			}
 		}
-		return alias.toString();
+		return -1;
+	}
+	
+	public int getAliasEnd() {
+		return getEndContent();
 	}
 }

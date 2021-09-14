@@ -11,7 +11,7 @@ import com.redhat.qute.commons.QuteJavaClassMembersParams;
 public interface QuteJavaClassMembersProvider {
 
 	@JsonRequest("qute/template/javaClassMembers")
-	default CompletableFuture<List<JavaClassMemberInfo>> getJavaClasseMembers(QuteJavaClassMembersParams params) {
+	default CompletableFuture<List<JavaClassMemberInfo>> getJavaClassMembers(QuteJavaClassMembersParams params) {
 		return CompletableFuture.completedFuture(null);
 	}
 

@@ -13,6 +13,8 @@ import org.eclipse.jdt.ls.core.internal.IDelegateCommandHandler;
 import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.QuteJavaClassMembersParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.jdt.JavaDataModelManager;
@@ -28,12 +30,16 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 	private static final String QUTE_TEMPLATE_JAVA_CLASSES_COMMAND_ID = "qute/template/javaClasses";
 
 	private static final String QUTE_TEMPLATE_JAVA_DEFINITION_COMMAND_ID = "qute/template/javaDefinition";
-	
+
+	private static final String QUTE_TEMPLATE_JAVA_CLASS_MEMBERS_COMMAND_ID = "qute/template/javaClassMembers";
+
 	@Override
 	public Object executeCommand(String commandId, List<Object> arguments, IProgressMonitor monitor) throws Exception {
 		switch (commandId) {
 		case QUTE_TEMPLATE_JAVA_CLASSES_COMMAND_ID:
 			return getJavaClasses(arguments, commandId, monitor);
+		case QUTE_TEMPLATE_JAVA_CLASS_MEMBERS_COMMAND_ID:
+			return getJavaClassMembers(arguments, commandId, monitor);
 		case QUTE_TEMPLATE_JAVA_DEFINITION_COMMAND_ID:
 			return getJavaDefinition(arguments, commandId, monitor);
 		}
@@ -50,6 +56,39 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 	 * @throws CoreException
 	 * @throws JavaModelException
 	 */
+	private static List<JavaClassMemberInfo> getJavaClassMembers(List<Object> arguments, String commandId,
+			IProgressMonitor monitor) throws JavaModelException, CoreException {
+		// Create java file information parameter
+		QuteJavaClassMembersParams params = createQuteJavaClassMembersParams(arguments, commandId);
+		// Return file information from the parameter
+		return JavaDataModelManager.getInstance().getJavaClassMembers(params, JDTUtilsLSImpl.getInstance(), monitor);
+	}
+
+	private static QuteJavaClassMembersParams createQuteJavaClassMembersParams(List<Object> arguments,
+			String commandId) {
+		Map<String, Object> obj = getFirst(arguments);
+		if (obj == null) {
+			throw new UnsupportedOperationException(String
+					.format("Command '%s' must be called with one QuteJavaClassMembersParams argument!", commandId));
+		}
+		// Get project name from the java file URI
+		String javaFileUri = getString(obj, "uri");
+		if (javaFileUri == null) {
+			throw new UnsupportedOperationException(String.format(
+					"Command '%s' must be called with required QuteJavaClassMembersParams.uri (java file URI)!",
+					commandId));
+		}
+		String className = getString(obj, "className");
+		if (className == null) {
+			throw new UnsupportedOperationException(String.format(
+					"Command '%s' must be called with required QuteJavaClassMembersParams.className !", commandId));
+		}
+		QuteJavaClassMembersParams params = new QuteJavaClassMembersParams();
+		params.setUri(javaFileUri);
+		params.setClassName(className);
+		return params;
+	}
+
 	private static List<JavaClassInfo> getJavaClasses(List<Object> arguments, String commandId,
 			IProgressMonitor monitor) throws JavaModelException, CoreException {
 		// Create java file information parameter
@@ -80,7 +119,7 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 		params.setPattern(pattern);
 		return params;
 	}
-	
+
 	/**
 	 * Returns the Java definition for the given class / method.
 	 *
@@ -91,8 +130,8 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 	 * @throws CoreException
 	 * @throws JavaModelException
 	 */
-	private static Location getJavaDefinition(List<Object> arguments, String commandId,
-			IProgressMonitor monitor) throws JavaModelException, CoreException {
+	private static Location getJavaDefinition(List<Object> arguments, String commandId, IProgressMonitor monitor)
+			throws JavaModelException, CoreException {
 		// Create java definition parameter
 		QuteJavaDefinitionParams params = createQuteJavaDefinitionParams(arguments, commandId);
 		// Return file information from the parameter
@@ -102,19 +141,20 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 	private static QuteJavaDefinitionParams createQuteJavaDefinitionParams(List<Object> arguments, String commandId) {
 		Map<String, Object> obj = getFirst(arguments);
 		if (obj == null) {
-			throw new UnsupportedOperationException(
-					String.format("Command '%s' must be called with one QuteJavaDefinitionParams argument!", commandId));
+			throw new UnsupportedOperationException(String
+					.format("Command '%s' must be called with one QuteJavaDefinitionParams argument!", commandId));
 		}
 		// Get project name from the java file URI
 		String javaFileUri = getString(obj, "uri");
 		if (javaFileUri == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteJavaDefinitionParams.uri (java file URI)!", commandId));
+					"Command '%s' must be called with required QuteJavaDefinitionParams.uri (java file URI)!",
+					commandId));
 		}
 		String className = getString(obj, "className");
 		if (className == null) {
-			throw new UnsupportedOperationException(String
-					.format("Command '%s' must be called with required QuteJavaDefinitionParams.className !", commandId));
+			throw new UnsupportedOperationException(String.format(
+					"Command '%s' must be called with required QuteJavaDefinitionParams.className !", commandId));
 		}
 		String method = getString(obj, "method");
 		QuteJavaDefinitionParams params = new QuteJavaDefinitionParams();

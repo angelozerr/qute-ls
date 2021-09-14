@@ -3,7 +3,6 @@ package com.redhat.qute.parser.template;
 import java.util.List;
 
 import com.redhat.qute.parser.expression.ExpressionParser;
-import com.redhat.qute.parser.expression.Parts;
 
 public class Expression extends Node {
 

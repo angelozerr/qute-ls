@@ -22,38 +22,50 @@ public class ExpressionParser {
 		Template template = expression.getOwnerTemplate();
 		String text = template.getText();
 		int start = expression.getStart() + 1;
-		int end = expression.getEnd();
+		int end = expression.getEnd() - 1;
 		ExpressionScanner scanner = ExpressionScanner.createScanner(text, start);
 		TokenType token = scanner.scan();
 		List<Node> expressionContent = new ArrayList<>();
-		Parts parts = null;
-		while (token != TokenType.EOS && getAdjustedOffset(scanner.getTokenOffset(), start) <= end) {
+		Parts currentParts = null;
+		while (token != TokenType.EOS && scanner.getTokenOffset() <= end) {
 			cancelChecker.checkCanceled();
-			int tokenOffset = getAdjustedOffset(scanner.getTokenOffset(), start);
-			int tokenEnd = getAdjustedOffset(scanner.getTokenEnd(), start);
+			int tokenOffset = scanner.getTokenOffset();
+			int tokenEnd = scanner.getTokenEnd();
 			switch (token) {
-			case Part:
-				
-				Part part = new Part(tokenOffset, tokenEnd);
-				if (parts == null) {
-					parts = new Parts(tokenOffset, tokenEnd);
-					expressionContent.add(parts);
-				}
-				parts.addPart(part);
+			case Whitespace:
+				currentParts = null;
+				break;
+			case NamespacePart:
+				currentParts = new Parts(tokenOffset, tokenEnd);
+				currentParts.setExpressionParent(expression);
+				expressionContent.add(currentParts);
+				NamespacePart namespacePart = new NamespacePart(tokenOffset, tokenEnd);
+				currentParts.addPart(namespacePart);
+				break;
+			case ObjectPart:
+				currentParts = new Parts(tokenOffset, tokenEnd);
+				currentParts.setExpressionParent(expression);
+				expressionContent.add(currentParts);
+				ObjectPart objectPart = new ObjectPart(tokenOffset, tokenEnd);
+				currentParts.addPart(objectPart);
+				break;
+			case PropertyPart:
+				PropertyPart propertyPart = new PropertyPart(tokenOffset, tokenEnd);
+				currentParts.addPart(propertyPart);
 				break;
 			case Dot:
-				parts.addDot(tokenOffset);
+				currentParts.addDot(tokenOffset);
+				break;
+			case ColonSpace:
+				currentParts.addColonSpace(tokenOffset);
 				break;
 			default:
-				parts = null;
+				currentParts = null;
 				break;
 			}
 			token = scanner.scan();
 		}
 		return expressionContent;
 	}
-	
-	private static int getAdjustedOffset(int offset, int start) {
-		return offset;
-	}
+
 }

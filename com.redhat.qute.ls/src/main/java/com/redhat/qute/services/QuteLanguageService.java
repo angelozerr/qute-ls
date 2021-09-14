@@ -24,9 +24,9 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.commons.QuteJavaDefinitionParams;
-import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
+import com.redhat.qute.ls.api.QuteJavaClassMembersProvider;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
+import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCompletionSettings;
@@ -48,10 +48,10 @@ public class QuteLanguageService {
 	private final QuteSymbolsProvider symbolsProvider;
 	private final QuteDiagnostics diagnostics;
 
-	public QuteLanguageService(QuteJavaClassesProvider classProvider, QuteJavaDefinitionProvider javaDefinitionProvider) {
-		this.completions = new QuteCompletions(classProvider);
+	public QuteLanguageService(JavaDataModelCache javaCache) {
+		this.completions = new QuteCompletions(javaCache);
 		this.highlighting = new QuteHighlighting();
-		this.definition = new QuteDefinition(javaDefinitionProvider);
+		this.definition = new QuteDefinition(javaCache);
 		this.documentLink = new QuteDocumentLink();
 		this.symbolsProvider = new QuteSymbolsProvider();
 		this.diagnostics = new QuteDiagnostics();
@@ -67,8 +67,9 @@ public class QuteLanguageService {
 	 * @param cancelChecker      the cancel checker
 	 * @return completion list for the given position
 	 */
-	public CompletableFuture<CompletionList> doComplete(Template template, Position position, QuteCompletionSettings completionSettings,
-			QuteFormattingSettings formattingSettings, CancelChecker cancelChecker) {
+	public CompletableFuture<CompletionList> doComplete(Template template, Position position,
+			QuteCompletionSettings completionSettings, QuteFormattingSettings formattingSettings,
+			CancelChecker cancelChecker) {
 		return completions.doComplete(template, position, completionSettings, formattingSettings, cancelChecker);
 	}
 

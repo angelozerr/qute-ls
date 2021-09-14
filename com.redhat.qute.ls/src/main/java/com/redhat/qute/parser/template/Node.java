@@ -68,7 +68,7 @@ public abstract class Node {
 		children.add(child);
 	}
 
-	void setParent(Node parent) {
+	protected void setParent(Node parent) {
 		this.parent = parent;
 	}
 

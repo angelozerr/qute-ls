@@ -30,12 +30,13 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.QuteJavaClassMembersParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
-import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.snippets.SnippetRegistry;
 import com.redhat.qute.parser.expression.Part;
-import com.redhat.qute.parser.expression.Parts.PartKind;
+import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.scanner.Scanner;
 import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
@@ -64,19 +65,10 @@ class QuteCompletions {
 			.completedFuture(new CompletionList());
 	private SnippetRegistry snippetRegistry;
 
-	private final QuteJavaClassesProvider classProvider;
+	private final JavaDataModelCache javaCache;
 
-	public QuteCompletions(QuteJavaClassesProvider classProvider) {
-		this.classProvider = classProvider;
-
-		/*
-		 * new QuteJavaClassProvider() {
-		 * 
-		 * @Override public CompletableFuture<List<JavaClassInfo>>
-		 * getJavaClasses(QuteJavaClassParams params) { JavaClassInfo a = new
-		 * JavaClassInfo(); a.setClassName("org.acme.Foo"); return
-		 * CompletableFuture.completedFuture(Arrays.asList(a)); } };
-		 */
+	public QuteCompletions(JavaDataModelCache javaCache) {
+		this.javaCache = javaCache;
 	}
 
 	/**
@@ -131,46 +123,10 @@ class QuteCompletions {
 					return collectJavaClassesSuggestions(start, end, template, completionSettings);
 				}
 				break;
-			case StartExpression:
-				if (scanner.getTokenEnd() == offset) {
-					/*
-					 * int partStart = 0; int partEnd = 0;
-					 * Scanner<com.redhat.qute.parser.expression.scanner.TokenType,
-					 * com.redhat.qute.parser.expression.scanner.ScannerState> exprScanner =
-					 * ExpressionScanner.createScanner(text, scanner.getTokenOffset());
-					 * com.redhat.qute.parser.expression.scanner.TokenType exprToken =
-					 * exprScanner.scan(); while (exprToken !=
-					 * com.redhat.qute.parser.expression.scanner.TokenType.EOS &&
-					 * exprScanner.getTokenOffset() <= offset) {
-					 * 
-					 * exprToken = exprScanner.scan(); }
-					 */
-					JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
-					return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
-				}
-				break;
-			case EndExpression:
-				if (scanner.getTokenOffset() <= offset && offset <= scanner.getTokenEnd()) {
-					JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
-					return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
-				}
-
-				/*
-				 * case Expression: if (scanner.getTokenOffset() <= offset && offset <=
-				 * scanner.getTokenEnd()) { JavaIdentifierParts parts =
-				 * getJavaIdentifierParts(text, offset); return
-				 * collectDataModelSuggestions(parts, offset, (Expression) node, template,
-				 * completionSettings); } break;
-				 */
 			default:
 			}
 
 			token = scanner.scan();
-		}
-
-		if (token == TokenType.EndExpression) {
-			JavaIdentifierParts parts = getJavaIdentifierParts(text, offset);
-			return collectDataModelSuggestions(parts, offset, (Expression) node, template, completionSettings);
 		}
 
 		collectSnippetSuggestions(completionRequest, list);
@@ -184,7 +140,7 @@ class QuteCompletions {
 		String text = template.getText();
 		String pattern = text.substring(start, end);
 		params.setPattern(pattern);
-		return classProvider.getJavaClasses(params) //
+		return javaCache.getJavaClasses(params) //
 				.thenApply(result -> {
 					if (result == null) {
 						return null;
@@ -233,139 +189,129 @@ class QuteCompletions {
 				});
 	}
 
-	private CompletableFuture<CompletionList> collectDataModelSuggestions(JavaIdentifierParts parts, int offset,
-			Expression node, Template template, QuteCompletionSettings completionSettings) {
-		if (parts.size() <= 1) {
-			// Collect alias declared from parameter declaration
-			List<String> aliases = template.getChildren().stream() //
-					.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
-					.map(n -> ((ParameterDeclaration) n).getAlias()) //
-					.filter(alias -> alias != null) //
-					.collect(Collectors.toList());
-			int start = parts.getEndPartStart();
-			int end = parts.getEndPartEnd();
-			CompletionList list = new CompletionList();
-			for (String alias : aliases) {
-				CompletionItem item = new CompletionItem();
-				item.setLabel(alias);
-				item.setKind(CompletionItemKind.Property);
-				Range range = QutePositionUtility.createRange(start, end, template);
-				TextEdit textEdit = new TextEdit(range, alias);
-				item.setTextEdit(Either.forLeft(textEdit));
-				list.getItems().add(item);
-			}
-			return CompletableFuture.completedFuture(list);
-		}
-		CompletionList list = new CompletionList();
-		return CompletableFuture.completedFuture(list);
-
-	}
-
-	private static class JavaIdentifierParts extends ArrayList<String> {
-
-		private int endPartStart;
-
-		private int endPartEnd;
-
-		public int getEndPartStart() {
-			return endPartStart;
-		}
-
-		public void setEndPartStart(int endPartStart) {
-			this.endPartStart = endPartStart;
-		}
-
-		public int getEndPartEnd() {
-			return endPartEnd;
-		}
-
-		public void setEndPartEnd(int endPartEnd) {
-			this.endPartEnd = endPartEnd;
-		}
-
-	}
-
-	private static JavaIdentifierParts getJavaIdentifierParts(String text, int offset) {
-		JavaIdentifierParts parts = new JavaIdentifierParts();
-		// re-adjust offset from the right to get the right part from the cursor
-		int start = offset;
-		for (int i = start; i < text.length(); i++) {
-			char c = text.charAt(i);
-			if (Character.isJavaIdentifierPart(c)) {
-				offset++;
-			} else {
-				break;
-			}
-		}
-		if (start != offset) {
-			offset--;
-		}
-		parts.setEndPartEnd(offset);
-		StringBuilder currentPart = new StringBuilder();
-		int i = offset;
-		for (; i >= 0; i--) {
-			char c = text.charAt(i);
-			if (Character.isJavaIdentifierPart(c)) {
-				currentPart.insert(0, c);
-			} else if (c == '.') {
-				if (parts.isEmpty()) {
-					parts.setEndPartStart(i + 1);
-				}
-				parts.add(0, currentPart.toString());
-				currentPart.setLength(0);
-			} else {
-				break;
-			}
-		}
-		if (currentPart.length() > 0) {
-			if (parts.isEmpty()) {
-				parts.setEndPartStart(i);
-			}
-			parts.add(0, currentPart.toString());
-		} else {
-			parts.setEndPartStart(i);
-		}
-		return parts;
-	}
-
 	private CompletableFuture<CompletionList> doCompleteExpression(CompletionRequest completionRequest,
 			CancelChecker cancelChecker) {
 		int offset = completionRequest.getOffset();
 		Expression expression = (Expression) completionRequest.getNode();
 		Node nodeExpression = expression.findNodeExpressionAt(offset);
+		if (nodeExpression == null) {
+			// ex : { | }
+			return doCompleteExpressionForObjectPart(null, completionRequest);
+		}
 
-		if (nodeExpression == null || nodeExpression.getKind() == NodeKind.ExpressionPart) {
+		if (nodeExpression.getKind() == NodeKind.ExpressionPart) {
 			Part part = (Part) nodeExpression;
-			if (part != null && part.getPartKind() != PartKind.Object) {
-				// Completion for root namespace, method
-			} else {
-				// Completion for root object
-				int partStart = part != null ? part.getStart() : offset;
-				int partEnd = part != null ? part.getEnd() : offset;
-				// Collect alias declared from parameter declaration
-				Template template = completionRequest.getTemplate();
-				List<String> aliases = template.getChildren().stream() //
-						.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
-						.map(n -> ((ParameterDeclaration) n).getAlias()) //
-						.filter(alias -> alias != null) //
-						.collect(Collectors.toList());
-				CompletionList list = new CompletionList();
-				for (String alias : aliases) {
-					CompletionItem item = new CompletionItem();
-					item.setLabel(alias);
-					item.setKind(CompletionItemKind.Reference);
-					Range range = QutePositionUtility.createRange(partStart, partEnd, template);
-					TextEdit textEdit = new TextEdit(range, alias);
-					item.setTextEdit(Either.forLeft(textEdit));
-					list.getItems().add(item);
-				}
-				return CompletableFuture.completedFuture(list);
+			switch (part.getPartKind()) {
+			case Object:
+				// ex : { ite|m }
+				return doCompleteExpressionForObjectPart(part, completionRequest);
+			case Property:
+			case Method:
+				// ex : { item.n| }
+				Parts parts = (Parts) part.getParent();
+				return doCompleteExpressionForMemberPart(part, parts, completionRequest);
+			default:
+				break;
+			}
+			return EMPTY_COMPLETION;
+		}
+
+		if (nodeExpression.getKind() == NodeKind.ExpressionParts) {
+			char previous = completionRequest.getTemplate().getText().charAt(offset - 1);
+			switch (previous) {
+			case ':':
+				// ex : { data:| }
+				return doCompleteExpressionForObjectPart(null, completionRequest);
+			case '.':
+				// ex : { item.| }
+				Parts parts = (Parts) nodeExpression;
+				return doCompleteExpressionForMemberPart(null, parts, completionRequest);
 			}
 		}
-//		for (int i = partIndex; i < parts.getChildCount(); i--) {
-//			// Part part=
-//		}
 		return EMPTY_COMPLETION;
+	}
+
+	private CompletableFuture<CompletionList> doCompleteExpressionForMemberPart(Part part, Parts parts,
+			CompletionRequest completionRequest) {
+		Part firstPart = (Part) parts.getChild(0);
+		String className = firstPart.getClassName();
+		if (className == null) {
+			return EMPTY_COMPLETION;
+		}
+		int start = part != null ? part.getStart() : parts.getEnd();
+		int end = part != null ? part.getEnd() : parts.getEnd();
+		Template template = completionRequest.getTemplate();
+		QuteJavaClassMembersParams params = new QuteJavaClassMembersParams();
+		params.setUri(completionRequest.getTemplate().getUri());
+		params.setClassName(className);
+		return javaCache.getJavaClassMembers(params)//
+				.thenApply(result -> {
+					if (result == null) {
+						return null;
+					}
+					CompletionList list = new CompletionList();
+					list.setItems(new ArrayList<>());
+					for (JavaClassMemberInfo javaClassInfo : result) {
+						String fullClassName = javaClassInfo.getField();
+						CompletionItem item = new CompletionItem();
+						item.setLabel(fullClassName);
+						TextEdit textEdit = new TextEdit();
+						Range range = QutePositionUtility.createRange(start, end, template);
+						textEdit.setRange(range);
+						textEdit.setNewText(fullClassName);
+						/*
+						 * String parameterDeclaration = fullClassName; if (javaClassInfo.isPackage()) {
+						 * item.setKind(CompletionItemKind.Module); } else {
+						 * item.setKind(CompletionItemKind.Class); int index =
+						 * fullClassName.lastIndexOf('.'); String className = index != -1 ?
+						 * fullClassName.substring(index + 1, fullClassName.length()) : fullClassName;
+						 * String alias = String.valueOf(className.charAt(0)).toLowerCase() +
+						 * className.substring(1, className.length());
+						 * 
+						 * StringBuilder insertText = new StringBuilder(fullClassName);
+						 * insertText.append(' '); if
+						 * (completionSettings.isCompletionSnippetsSupported()) {
+						 * item.setInsertTextFormat(InsertTextFormat.Snippet);
+						 * insertText.append("${1:"); insertText.append(alias); insertText.append("}");
+						 * } else { item.setInsertTextFormat(InsertTextFormat.PlainText);
+						 * insertText.append(alias); } parameterDeclaration = insertText.toString();
+						 * 
+						 * } textEdit.setNewText(parameterDeclaration);
+						 */
+
+						item.setTextEdit(Either.forLeft(textEdit));
+						list.getItems().add(item);
+					}
+					return list;
+
+				});
+
+	}
+
+	private CompletableFuture<CompletionList> doCompleteExpressionForObjectPart(Node part,
+			CompletionRequest completionRequest) {
+		int offset = completionRequest.getOffset();
+		// Completion for root object
+		int partStart = part != null ? part.getStart() : offset;
+		int partEnd = part != null ? part.getEnd() : offset;
+		// Collect alias declared from parameter declaration
+		Template template = completionRequest.getTemplate();
+		List<String> aliases = template.getChildren().stream() //
+				.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
+				.map(n -> ((ParameterDeclaration) n).getAlias()) //
+				.filter(alias -> alias != null) //
+				.collect(Collectors.toList());
+		CompletionList list = new CompletionList();
+		for (String alias : aliases) {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(alias);
+			item.setKind(CompletionItemKind.Reference);
+			Range range = QutePositionUtility.createRange(partStart, partEnd, template);
+			TextEdit textEdit = new TextEdit(range, alias);
+			item.setTextEdit(Either.forLeft(textEdit));
+			list.getItems().add(item);
+		}
+		return CompletableFuture.completedFuture(list);
 	}
 
 	/**

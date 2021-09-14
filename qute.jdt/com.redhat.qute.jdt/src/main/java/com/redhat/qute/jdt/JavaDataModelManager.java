@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -25,9 +26,12 @@ import org.eclipse.jdt.internal.core.search.BasicSearchEngine;
 import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.QuteJavaClassMembersParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.jdt.utils.IJDTUtils;
+import com.redhat.qute.jdt.utils.JDTTypeUtils;
 
 public class JavaDataModelManager {
 
@@ -44,7 +48,7 @@ public class JavaDataModelManager {
 		if (javaProject == null) {
 			return null;
 		}
-		
+
 		String className = params.getPattern() != null ? params.getPattern() + "*" : "*";
 		if (StringUtils.isEmpty(className)) {
 			// return null;
@@ -81,8 +85,8 @@ public class JavaDataModelManager {
 		return classes;
 	}
 
-	public Location getJavaDefinition(QuteJavaDefinitionParams params, IJDTUtils utils,
-			IProgressMonitor monitor) throws JavaModelException {
+	public Location getJavaDefinition(QuteJavaDefinitionParams params, IJDTUtils utils, IProgressMonitor monitor)
+			throws JavaModelException {
 		String fileUri = params.getUri();
 		IJavaProject javaProject = getJavaProject(fileUri, utils);
 		if (javaProject == null) {
@@ -95,7 +99,30 @@ public class JavaDataModelManager {
 		}
 		return utils.toLocation(type);
 	}
-	
+
+	public List<JavaClassMemberInfo> getJavaClassMembers(QuteJavaClassMembersParams params, IJDTUtils utils,
+			IProgressMonitor monitor) throws JavaModelException {
+		String fileUri = params.getUri();
+		IJavaProject javaProject = getJavaProject(fileUri, utils);
+		if (javaProject == null) {
+			return null;
+		}
+		String className = params.getClassName();
+		IType type = javaProject.findType(className, monitor);
+		if (type == null) {
+			return null;
+		}
+		List<JavaClassMemberInfo> members = new ArrayList<>();
+		IField[] fields = type.getFields();
+		for (IField field : fields) {
+			JavaClassMemberInfo info = new JavaClassMemberInfo();
+			info.setField(field.getElementName());
+			info.setType(JDTTypeUtils.getResolvedTypeName(field));
+			members.add(info);
+		}
+		return members;
+	}
+
 	private IJavaProject getJavaProject(String fileUri, IJDTUtils utils) {
 		IFile file = utils.findFile(fileUri);
 		if (file == null || file.getProject() == null) {
@@ -109,7 +136,7 @@ public class JavaDataModelManager {
 		}
 
 		String projectName = file.getProject().getName();
-		IJavaProject javaProject = JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(projectName);
-		return javaProject;
+		return JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(projectName);
 	}
+
 }
