@@ -8,12 +8,13 @@ import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
-import com.redhat.qute.commons.QuteJavaClassMembersParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
-import com.redhat.qute.ls.api.QuteJavaClassMembersProvider;
+import com.redhat.qute.commons.QuteResolvedJavaClassParams;
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
+import com.redhat.qute.ls.api.QuteResolvedJavaClassProvider;
 
 public class MockJavaDataModelCache extends JavaDataModelCache {
 
@@ -33,15 +34,19 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		};
 	}
 
-	private static QuteJavaClassMembersProvider createMembersProvider() {
-		return new QuteJavaClassMembersProvider() {
+	private static QuteResolvedJavaClassProvider createMembersProvider() {
+		return new QuteResolvedJavaClassProvider() {
 
 			@Override
-			public CompletableFuture<List<JavaClassMemberInfo>> getJavaClassMembers(QuteJavaClassMembersParams params) {
-				JavaClassMemberInfo info = new JavaClassMemberInfo();
-				info.setField("name");
-				info.setType("java.lang.String");
-				return CompletableFuture.completedFuture(Arrays.asList(info));
+			public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(QuteResolvedJavaClassParams params) {
+				JavaClassMemberInfo member = new JavaClassMemberInfo();
+				member.setField("name");
+				member.setType("java.lang.String");
+				List<JavaClassMemberInfo> members = Arrays.asList(member);
+				ResolvedJavaClassInfo resolvedClass = new ResolvedJavaClassInfo();
+				resolvedClass.setClassName("org.acme.Foo");
+				resolvedClass.setMembers(members);
+				return CompletableFuture.completedFuture(resolvedClass);
 			}
 		};
 	}

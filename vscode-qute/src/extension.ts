@@ -43,7 +43,7 @@ export function activate(context: ExtensionContext) {
 
   connectToQuteLS(context).then(() => {
     bindQuteRequest('qute/template/javaClasses');
-    bindQuteRequest('qute/template/javaClassMembers');
+    bindQuteRequest('qute/template/resolvedJavaClass');
     bindQuteRequest('qute/template/javaDefinition');
   }).catch((error) => {
     window.showErrorMessage(error.message, error.label).then((selection) => {

@@ -87,4 +87,9 @@ public class Template extends Node {
 		}
 		return null;
 	}
+
+	public String getText(int start, int end) {
+		String text = getText();
+		return text.substring(start, end);
+	}
 }

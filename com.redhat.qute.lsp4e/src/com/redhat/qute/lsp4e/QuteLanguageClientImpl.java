@@ -23,10 +23,10 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.JavaClassMemberInfo;
-import com.redhat.qute.commons.QuteJavaClassMembersParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.commons.QuteResolvedJavaClassParams;
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.jdt.JavaDataModelManager;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.lsp4e.internal.JDTUtilsImpl;
@@ -56,15 +56,15 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<List<JavaClassMemberInfo>> getJavaClassMembers(QuteJavaClassMembersParams params) {
+	public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(QuteResolvedJavaClassParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return JavaDataModelManager.getInstance().getJavaClassMembers(params, JDTUtilsImpl.getInstance(),
+				return JavaDataModelManager.getInstance().getResolvedJavaClass(params, JDTUtilsImpl.getInstance(),
 						monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
-				return Collections.emptyList();
+				return null;
 			}
 		});
 	}

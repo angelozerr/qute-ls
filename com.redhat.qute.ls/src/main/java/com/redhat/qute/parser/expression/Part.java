@@ -28,7 +28,7 @@ public abstract class Part extends Node {
 		if (textContent != null) {
 			return textContent;
 		}
-		return textContent = getOwnerTemplate().getText().substring(getStart(), getEnd());
+		return textContent = getOwnerTemplate().getText(getStart(), getEnd());
 	}
 
 	public abstract String getClassName();

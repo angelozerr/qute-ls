@@ -31,7 +31,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
-import com.redhat.qute.commons.QuteJavaClassMembersParams;
+import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.snippets.SnippetRegistry;
@@ -135,11 +135,8 @@ class QuteCompletions {
 
 	private CompletableFuture<CompletionList> collectJavaClassesSuggestions(int start, int end, Template template,
 			QuteCompletionSettings completionSettings) {
-		QuteJavaClassesParams params = new QuteJavaClassesParams();
-		params.setUri(template.getUri());
-		String text = template.getText();
-		String pattern = text.substring(start, end);
-		params.setPattern(pattern);
+		String pattern = template.getText(start, end);
+		QuteJavaClassesParams params = new QuteJavaClassesParams(pattern, template.getUri());
 		return javaCache.getJavaClasses(params) //
 				.thenApply(result -> {
 					if (result == null) {
@@ -241,17 +238,17 @@ class QuteCompletions {
 		int start = part != null ? part.getStart() : parts.getEnd();
 		int end = part != null ? part.getEnd() : parts.getEnd();
 		Template template = completionRequest.getTemplate();
-		QuteJavaClassMembersParams params = new QuteJavaClassMembersParams();
+		QuteResolvedJavaClassParams params = new QuteResolvedJavaClassParams();
 		params.setUri(completionRequest.getTemplate().getUri());
 		params.setClassName(className);
-		return javaCache.getJavaClassMembers(params)//
-				.thenApply(result -> {
-					if (result == null) {
+		return javaCache.getResolvedJavaClass(params)//
+				.thenApply(resolvedClass -> {
+					if (resolvedClass == null) {
 						return null;
 					}
 					CompletionList list = new CompletionList();
 					list.setItems(new ArrayList<>());
-					for (JavaClassMemberInfo javaClassInfo : result) {
+					for (JavaClassMemberInfo javaClassInfo : resolvedClass.getMembers()) {
 						String fullClassName = javaClassInfo.getField();
 						CompletionItem item = new CompletionItem();
 						item.setLabel(fullClassName);
@@ -259,26 +256,6 @@ class QuteCompletions {
 						Range range = QutePositionUtility.createRange(start, end, template);
 						textEdit.setRange(range);
 						textEdit.setNewText(fullClassName);
-						/*
-						 * String parameterDeclaration = fullClassName; if (javaClassInfo.isPackage()) {
-						 * item.setKind(CompletionItemKind.Module); } else {
-						 * item.setKind(CompletionItemKind.Class); int index =
-						 * fullClassName.lastIndexOf('.'); String className = index != -1 ?
-						 * fullClassName.substring(index + 1, fullClassName.length()) : fullClassName;
-						 * String alias = String.valueOf(className.charAt(0)).toLowerCase() +
-						 * className.substring(1, className.length());
-						 * 
-						 * StringBuilder insertText = new StringBuilder(fullClassName);
-						 * insertText.append(' '); if
-						 * (completionSettings.isCompletionSnippetsSupported()) {
-						 * item.setInsertTextFormat(InsertTextFormat.Snippet);
-						 * insertText.append("${1:"); insertText.append(alias); insertText.append("}");
-						 * } else { item.setInsertTextFormat(InsertTextFormat.PlainText);
-						 * insertText.append(alias); } parameterDeclaration = insertText.toString();
-						 * 
-						 * } textEdit.setNewText(parameterDeclaration);
-						 */
-
 						item.setTextEdit(Either.forLeft(textEdit));
 						list.getItems().add(item);
 					}

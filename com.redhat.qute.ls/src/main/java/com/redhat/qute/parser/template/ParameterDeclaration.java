@@ -37,10 +37,9 @@ public class ParameterDeclaration extends Node {
 
 	public String getClassName() {
 		Template template = getOwnerTemplate();
-		String text = template.getText();
 		int classNameStart = getClassNameStart();
 		int classNameEnd = getClassNameEnd();
-		return text.substring(classNameStart, classNameEnd);
+		return template.getText(classNameStart, classNameEnd);
 	}
 
 	public int getClassNameStart() {
@@ -66,14 +65,13 @@ public class ParameterDeclaration extends Node {
 	}
 
 	public String getAlias() {
-		Template template = getOwnerTemplate();
-		String text = template.getText();
 		int aliasStart = getAliasStart();
 		if (aliasStart == -1) {
 			return null;
 		}
 		int aliasEnd = getAliasEnd();
-		return text.substring(aliasStart, aliasEnd);
+		Template template = getOwnerTemplate();
+		return template.getText(aliasStart, aliasEnd);
 	}
 
 	public int getAliasStart() {
@@ -87,7 +85,7 @@ public class ParameterDeclaration extends Node {
 		}
 		return -1;
 	}
-	
+
 	public int getAliasEnd() {
 		return getEndContent();
 	}

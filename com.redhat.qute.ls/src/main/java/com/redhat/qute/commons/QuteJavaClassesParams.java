@@ -6,6 +6,14 @@ public class QuteJavaClassesParams {
 	
 	private String pattern;
 
+	public QuteJavaClassesParams() {
+	}
+	
+	public QuteJavaClassesParams(String pattern, String uri) {
+		setPattern(pattern);
+		setUri(uri);
+	}
+
 	public String getUri() {
 		return uri;
 	}

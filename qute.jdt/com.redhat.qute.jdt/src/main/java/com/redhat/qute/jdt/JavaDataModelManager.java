@@ -27,9 +27,10 @@ import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
-import com.redhat.qute.commons.QuteJavaClassMembersParams;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.commons.QuteResolvedJavaClassParams;
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.jdt.utils.IJDTUtils;
 import com.redhat.qute.jdt.utils.JDTTypeUtils;
 
@@ -100,7 +101,7 @@ public class JavaDataModelManager {
 		return utils.toLocation(type);
 	}
 
-	public List<JavaClassMemberInfo> getJavaClassMembers(QuteJavaClassMembersParams params, IJDTUtils utils,
+	public ResolvedJavaClassInfo getResolvedJavaClass(QuteResolvedJavaClassParams params, IJDTUtils utils,
 			IProgressMonitor monitor) throws JavaModelException {
 		String fileUri = params.getUri();
 		IJavaProject javaProject = getJavaProject(fileUri, utils);
@@ -116,11 +117,17 @@ public class JavaDataModelManager {
 		IField[] fields = type.getFields();
 		for (IField field : fields) {
 			JavaClassMemberInfo info = new JavaClassMemberInfo();
+			info.setClassName(field.isBinary() ? field.getClassFile().getElementName()
+					: field.getCompilationUnit().getElementName());
 			info.setField(field.getElementName());
 			info.setType(JDTTypeUtils.getResolvedTypeName(field));
 			members.add(info);
 		}
-		return members;
+
+		ResolvedJavaClassInfo resolvedClass = new ResolvedJavaClassInfo();
+		resolvedClass.setClassName(className);
+		resolvedClass.setMembers(members);
+		return resolvedClass;
 	}
 
 	private IJavaProject getJavaProject(String fileUri, IJDTUtils utils) {

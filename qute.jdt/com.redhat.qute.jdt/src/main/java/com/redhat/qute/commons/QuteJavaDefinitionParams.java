@@ -6,7 +6,18 @@ public class QuteJavaDefinitionParams {
 
 	private String className;
 
+	private String field;
+
 	private String method;
+
+	public QuteJavaDefinitionParams() {
+
+	}
+
+	public QuteJavaDefinitionParams(String className, String uri) {
+		setClassName(className);
+		setUri(uri);
+	}
 
 	public String getUri() {
 		return uri;
@@ -22,6 +33,14 @@ public class QuteJavaDefinitionParams {
 
 	public void setClassName(String className) {
 		this.className = className;
+	}
+
+	public String getField() {
+		return field;
+	}
+
+	public void setField(String field) {
+		this.field = field;
 	}
 
 	public String getMethod() {
