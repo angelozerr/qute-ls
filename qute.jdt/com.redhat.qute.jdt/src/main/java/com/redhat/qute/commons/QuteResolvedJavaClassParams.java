@@ -4,15 +4,23 @@ public class QuteResolvedJavaClassParams {
 
 	private String className;
 
-	private String uri;
+	private String projectUri;
 
 	public QuteResolvedJavaClassParams() {
 
 	}
 
-	public QuteResolvedJavaClassParams(String className, String uri) {
-		this.className = className;
-		this.uri = uri;
+	public QuteResolvedJavaClassParams(String className, String projectUri) {
+		setClassName(className);
+		setProjectUri(projectUri);
+	}
+
+	public String getProjectUri() {
+		return projectUri;
+	}
+
+	public void setProjectUri(String projectUri) {
+		this.projectUri = projectUri;
 	}
 
 	public String getClassName() {
@@ -21,14 +29,6 @@ public class QuteResolvedJavaClassParams {
 
 	public void setClassName(String className) {
 		this.className = className;
-	}
-
-	public String getUri() {
-		return uri;
-	}
-
-	public void setUri(String uri) {
-		this.uri = uri;
 	}
 
 }

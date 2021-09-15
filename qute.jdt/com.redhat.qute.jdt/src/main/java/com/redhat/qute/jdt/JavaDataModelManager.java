@@ -27,8 +27,10 @@ import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.jdt.utils.IJDTUtils;
@@ -42,10 +44,22 @@ public class JavaDataModelManager {
 		return INSTANCE;
 	}
 
+	public ProjectInfo getProjectInfo(QuteProjectParams params, IJDTUtils utils, IProgressMonitor monitor) {
+		IJavaProject javaProject = getJavaProjectFromTemplateFile(params.getTemplateFileUri(), utils);
+		if (javaProject == null) {
+			return null;
+		}
+		return new ProjectInfo(getProjectUri(javaProject));
+	}
+
+	private static String getProjectUri(IJavaProject javaProject) {
+		return javaProject.getProject().getName();
+	}
+
 	public List<JavaClassInfo> getJavaClasses(QuteJavaClassesParams params, IJDTUtils utils, IProgressMonitor monitor)
 			throws CoreException {
-		String fileUri = params.getUri();
-		IJavaProject javaProject = getJavaProject(fileUri, utils);
+		String projectUri = params.getProjectUri();
+		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
 			return null;
 		}
@@ -88,8 +102,8 @@ public class JavaDataModelManager {
 
 	public Location getJavaDefinition(QuteJavaDefinitionParams params, IJDTUtils utils, IProgressMonitor monitor)
 			throws JavaModelException {
-		String fileUri = params.getUri();
-		IJavaProject javaProject = getJavaProject(fileUri, utils);
+		String projectUri = params.getProjectUri();
+		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
 			return null;
 		}
@@ -109,8 +123,8 @@ public class JavaDataModelManager {
 
 	public ResolvedJavaClassInfo getResolvedJavaClass(QuteResolvedJavaClassParams params, IJDTUtils utils,
 			IProgressMonitor monitor) throws JavaModelException {
-		String fileUri = params.getUri();
-		IJavaProject javaProject = getJavaProject(fileUri, utils);
+		String projectUri = params.getProjectUri();
+		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
 			return null;
 		}
@@ -136,9 +150,13 @@ public class JavaDataModelManager {
 		return resolvedClass;
 	}
 
-	private IJavaProject getJavaProject(String fileUri, IJDTUtils utils) {
-		fileUri = fileUri.replace("vscode-notebook-cell", "file");
-		IFile file = utils.findFile(fileUri);
+	private static IJavaProject getJavaProjectFromProjectUri(String projectName) {
+		return JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(projectName);
+	}
+
+	private static IJavaProject getJavaProjectFromTemplateFile(String templateFileUri, IJDTUtils utils) {
+		templateFileUri = templateFileUri.replace("vscode-notebook-cell", "file");
+		IFile file = utils.findFile(templateFileUri);
 		if (file == null || file.getProject() == null) {
 			// The uri doesn't belong to an Eclipse project
 			return null;

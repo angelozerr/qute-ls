@@ -26,20 +26,22 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.ls.api.QuteLanguageServerAPI;
+import com.redhat.qute.ls.api.QuteProjectInfoProvider;
 import com.redhat.qute.ls.api.QuteResolvedJavaClassProvider;
 import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
 import com.redhat.qute.ls.commons.client.ExtendedClientCapabilities;
 import com.redhat.qute.ls.commons.client.InitializationOptionsExtendedClientCapabilities;
 import com.redhat.qute.services.JavaDataModelCache;
-import com.redhat.qute.services.MockJavaDataModelCache;
 import com.redhat.qute.services.QuteLanguageService;
 import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.settings.capabilities.QuteCapabilityManager;
@@ -50,7 +52,7 @@ import com.redhat.qute.settings.capabilities.ServerCapabilitiesInitializer;
  *
  */
 public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI,
-		QuteJavaClassesProvider, QuteResolvedJavaClassProvider, QuteJavaDefinitionProvider {
+		QuteProjectInfoProvider, QuteJavaClassesProvider, QuteResolvedJavaClassProvider, QuteJavaDefinitionProvider {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteLanguageServer.class.getName());
 
@@ -169,5 +171,10 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	@Override
 	public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(QuteResolvedJavaClassParams params) {
 		return getLanguageClient().getResolvedJavaClass(params);
+	}
+
+	@Override
+	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
+		return getLanguageClient().getProjectInfo(params);
 	}
 }

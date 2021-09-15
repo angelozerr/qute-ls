@@ -42,8 +42,6 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
-import com.redhat.qute.ls.commons.ModelTextDocument;
-import com.redhat.qute.ls.commons.ModelTextDocuments;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
 import com.redhat.qute.services.QuteLanguageService;
@@ -57,7 +55,7 @@ import com.redhat.qute.utils.QutePositionUtility;
  */
 public class QuteTextDocumentService implements TextDocumentService {
 
-	private final ModelTextDocuments<Template> documents;
+	private final QuteTextDocuments documents;
 
 	private final QuteLanguageServer quteLanguageServer;
 
@@ -69,9 +67,9 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	public QuteTextDocumentService(QuteLanguageServer quteLanguageServer, SharedSettings sharedSettings) {
 		this.quteLanguageServer = quteLanguageServer;
-		this.documents = new ModelTextDocuments<Template>((document, cancelChecker) -> {
+		this.documents = new QuteTextDocuments((document, cancelChecker) -> {
 			return TemplateParser.parse(document.getText(), document.getUri(), () -> cancelChecker.checkCanceled());
-		});
+		}, quteLanguageServer);
 		this.sharedSettings = sharedSettings;
 	}
 
@@ -95,13 +93,13 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
-		ModelTextDocument<Template> document = documents.onDidOpenTextDocument(params);
+		QuteTextDocument document = (QuteTextDocument) documents.onDidOpenTextDocument(params);
 		triggerValidationFor(document);
 	}
 
 	@Override
 	public void didChange(DidChangeTextDocumentParams params) {
-		ModelTextDocument<Template> document = documents.onDidChangeTextDocument(params);
+		QuteTextDocument document = (QuteTextDocument) documents.onDidChangeTextDocument(params);
 		triggerValidationFor(document);
 	}
 
@@ -194,7 +192,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 		return quteLanguageServer.getQuarkusLanguageService();
 	}
 
-	private void triggerValidationFor(ModelTextDocument<Template> document) {
+	private void triggerValidationFor(QuteTextDocument document) {
 		getTemplate(document, (cancelChecker, template) -> {
 			List<Diagnostic> diagnostics = getQuteLanguageService().doDiagnostics(template, document,
 					getSharedSettings().getValidationSettings(), cancelChecker);
@@ -210,8 +208,8 @@ public class QuteTextDocumentService implements TextDocumentService {
 	 * @param uri the uri
 	 * @return the text document from the given uri.
 	 */
-	public ModelTextDocument<Template> getDocument(String uri) {
-		return documents.get(uri);
+	public QuteTextDocument getDocument(String uri) {
+		return (QuteTextDocument) documents.get(uri);
 	}
 
 	/**
@@ -243,7 +241,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 	 * @return the properties model for a given uri in a future and then apply the
 	 *         given function.
 	 */
-	public <R> CompletableFuture<R> getTemplate(ModelTextDocument<Template> document,
+	public <R> CompletableFuture<R> getTemplate(QuteTextDocument document,
 			BiFunction<CancelChecker, Template, R> code) {
 		return computeModelAsync(document.getModel(), code);
 	}
@@ -281,7 +279,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 		validation.update(newValidation);
 		// trigger validation for all opened application.properties
 		documents.all().stream().forEach(document -> {
-			triggerValidationFor(document);
+			triggerValidationFor((QuteTextDocument) document);
 		});
 	}
 

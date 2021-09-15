@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020 Red Hat Inc. and others.
+* Copyright (c) 2021 Red Hat Inc. and others.
 * All rights reserved. This program and the accompanying materials
 * which accompanies this distribution, and is available at
 * http://www.eclipse.org/legal/epl-v20.html
@@ -137,8 +137,12 @@ class QuteCompletions {
 
 	private CompletableFuture<CompletionList> collectJavaClassesSuggestions(int start, int end, Template template,
 			QuteCompletionSettings completionSettings) {
+		String projectUri = template.getProjectUri();
+		if (projectUri == null) {
+			return EMPTY_FUTURE_COMPLETION;
+		}
 		String pattern = template.getText(start, end);
-		QuteJavaClassesParams params = new QuteJavaClassesParams(pattern, template.getUri());
+		QuteJavaClassesParams params = new QuteJavaClassesParams(pattern, projectUri);
 		return javaCache.getJavaClasses(params) //
 				.thenApply(result -> {
 					if (result == null) {
@@ -172,7 +176,7 @@ class QuteCompletions {
 								item.setInsertTextFormat(InsertTextFormat.Snippet);
 								insertText.append("${1:");
 								insertText.append(alias);
-								insertText.append("}");
+								insertText.append("}$0");
 							} else {
 								item.setInsertTextFormat(InsertTextFormat.PlainText);
 								insertText.append(alias);

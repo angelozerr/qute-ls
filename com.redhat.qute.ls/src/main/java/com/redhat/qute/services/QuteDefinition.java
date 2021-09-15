@@ -112,7 +112,7 @@ class QuteDefinition {
 			ParameterDeclaration parameterDeclaration, Template template) {
 		if (parameterDeclaration.isInClassName(offset)) {
 			String className = parameterDeclaration.getClassName();
-			QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, template.getUri());
+			QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, template.getProjectUri());
 			return findJavaDefinition(params,
 					() -> QutePositionUtility.createRange(parameterDeclaration.getClassNameStart(),
 							parameterDeclaration.getClassNameEnd(), template));

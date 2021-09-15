@@ -2,7 +2,7 @@ package com.redhat.qute.commons;
 
 public class QuteJavaDefinitionParams {
 
-	private String uri;
+	private String projectUri;
 
 	private String className;
 
@@ -14,17 +14,17 @@ public class QuteJavaDefinitionParams {
 
 	}
 
-	public QuteJavaDefinitionParams(String className, String uri) {
+	public QuteJavaDefinitionParams(String className, String projectUri) {
 		setClassName(className);
-		setUri(uri);
+		setProjectUri(projectUri);
 	}
 
-	public String getUri() {
-		return uri;
+	public String getProjectUri() {
+		return projectUri;
 	}
 
-	public void setUri(String uri) {
-		this.uri = uri;
+	public void setProjectUri(String projectUri) {
+		this.projectUri = projectUri;
 	}
 
 	public String getClassName() {

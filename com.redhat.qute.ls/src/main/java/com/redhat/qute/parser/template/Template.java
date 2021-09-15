@@ -10,6 +10,8 @@ import com.redhat.qute.parser.CancelChecker;
 
 public class Template extends Node {
 
+	private String projectUri;
+	
 	private final TextDocument textDocument;
 
 	private CancelChecker cancelChecker;
@@ -91,5 +93,13 @@ public class Template extends Node {
 	public String getText(int start, int end) {
 		String text = getText();
 		return text.substring(start, end);
+	}
+	
+	public void setProjectUri(String projectUri) {
+		this.projectUri = projectUri;
+	}
+	
+	public String getProjectUri() {
+		return projectUri;
 	}
 }

@@ -23,11 +23,11 @@ public class ExpressionParser {
 		String text = template.getText();
 		int start = expression.getStart() + 1;
 		int end = expression.getEnd() - 1;
-		ExpressionScanner scanner = ExpressionScanner.createScanner(text, start);
+		ExpressionScanner scanner = ExpressionScanner.createScanner(text, start, end);
 		TokenType token = scanner.scan();
 		List<Node> expressionContent = new ArrayList<>();
 		Parts currentParts = null;
-		while (token != TokenType.EOS && scanner.getTokenOffset() <= end) {
+		while (token != TokenType.EOS ) {
 			cancelChecker.checkCanceled();
 			int tokenOffset = scanner.getTokenOffset();
 			int tokenEnd = scanner.getTokenEnd();

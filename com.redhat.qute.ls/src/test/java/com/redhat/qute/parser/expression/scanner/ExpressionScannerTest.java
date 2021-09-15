@@ -24,6 +24,15 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(5, TokenType.PropertyPart, "name");
 	}
 
+	@Test
+	public void testTwoParts() {
+		scanner = ExpressionScanner.createScanner("a b");
+		assertOffsetAndToken(0, TokenType.ObjectPart, "a");
+		assertOffsetAndToken(1, TokenType.Whitespace, " ");
+		assertOffsetAndToken(2, TokenType.ObjectPart, "b");
+	}
+
+	
 	public void assertOffsetAndToken(int tokenOffset, TokenType tokenType) {
 		TokenType token = scanner.scan();
 		assertEquals(tokenOffset, scanner.getTokenOffset());

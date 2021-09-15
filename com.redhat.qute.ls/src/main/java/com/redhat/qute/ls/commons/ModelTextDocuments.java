@@ -25,7 +25,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
  */
 public class ModelTextDocuments<T> extends TextDocuments<ModelTextDocument<T>> {
 
-	private final BiFunction<TextDocument, CancelChecker, T> parse;
+	protected final BiFunction<TextDocument, CancelChecker, T> parse;
 
 	public ModelTextDocuments(BiFunction<TextDocument, CancelChecker, T> parse) {
 		this.parse = parse;

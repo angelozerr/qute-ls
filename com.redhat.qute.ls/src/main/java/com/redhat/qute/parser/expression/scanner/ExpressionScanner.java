@@ -11,25 +11,29 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 	};
 
 	public static ExpressionScanner createScanner(String input) {
-		return createScanner(input, 0);
+		return createScanner(input, 0, -1);
 	}
 
-	public static ExpressionScanner createScanner(String input, int initialOffset) {
-		return createScanner(input, initialOffset, ScannerState.WithinExpression);
+	public static ExpressionScanner createScanner(String input, int initialOffset, int endOffset) {
+		return createScanner(input, initialOffset, endOffset, ScannerState.WithinExpression);
 	}
 
-	public static ExpressionScanner createScanner(String input, int initialOffset, ScannerState initialState) {
-		return new ExpressionScanner(input, initialOffset, initialState);
+	public static ExpressionScanner createScanner(String input, int initialOffset, int endOffset,
+			ScannerState initialState) {
+		return new ExpressionScanner(input, initialOffset, endOffset, initialState);
 	}
 
-	ExpressionScanner(String input, int initialOffset, ScannerState initialState) {
+	private int endOffset;
+
+	ExpressionScanner(String input, int initialOffset, int endOffset, ScannerState initialState) {
 		super(input, initialOffset, initialState, TokenType.Unknown, TokenType.EOS);
+		this.endOffset = endOffset;
 	}
 
 	@Override
 	protected TokenType internalScan() {
 		int offset = stream.pos();
-		if (stream.eos()) {
+		if (stream.eos() || (endOffset != -1 && offset >= endOffset)) {
 			return finishToken(offset, TokenType.EOS);
 		}
 
@@ -55,6 +59,10 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 			}
 			if (hasNextJavaIdentifierPart()) {
 				return finishTokenPart(offset);
+			}
+			if (stream.skipWhitespace()) {
+				state = ScannerState.WithinExpression;
+				return finishToken(offset, TokenType.Whitespace);
 			}
 			// return internalScan();
 		}

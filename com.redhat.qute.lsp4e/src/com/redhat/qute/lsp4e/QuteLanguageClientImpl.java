@@ -23,8 +23,10 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 
 import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.jdt.JavaDataModelManager;
@@ -40,6 +42,14 @@ import com.redhat.qute.lsp4e.internal.JDTUtilsImpl;
 public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLanguageClientAPI {
 
 	public QuteLanguageClientImpl() {
+	}
+
+	@Override
+	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
+		return CompletableFutures.computeAsync((cancelChecker) -> {
+			IProgressMonitor monitor = getProgressMonitor(cancelChecker);
+			return JavaDataModelManager.getInstance().getProjectInfo(params, JDTUtilsImpl.getInstance(), monitor);
+		});
 	}
 
 	@Override

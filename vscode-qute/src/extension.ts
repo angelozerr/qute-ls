@@ -42,6 +42,7 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(createTerminateDebugListener());
 
   connectToQuteLS(context).then(() => {
+    bindQuteRequest('qute/template/project');
     bindQuteRequest('qute/template/javaClasses');
     bindQuteRequest('qute/template/resolvedJavaClass');
     bindQuteRequest('qute/template/javaDefinition');
