@@ -26,6 +26,7 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.JavaDataModelChangeEvent;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
@@ -42,6 +43,7 @@ import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
 import com.redhat.qute.ls.commons.client.ExtendedClientCapabilities;
 import com.redhat.qute.ls.commons.client.InitializationOptionsExtendedClientCapabilities;
 import com.redhat.qute.services.JavaDataModelCache;
+import com.redhat.qute.services.MockJavaDataModelCache;
 import com.redhat.qute.services.QuteLanguageService;
 import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.settings.capabilities.QuteCapabilityManager;
@@ -56,6 +58,8 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 
 	private static final Logger LOGGER = Logger.getLogger(QuteLanguageServer.class.getName());
 
+	private final JavaDataModelCache dataModelCache;
+
 	private final QuteLanguageService quteLanguageService;
 	private final QuteTextDocumentService textDocumentService;
 	private final QuteWorkspaceService workspaceService;
@@ -65,15 +69,15 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	private QuteCapabilityManager capabilityManager;
 
 	public QuteLanguageServer() {
-		JavaDataModelCache cache = createJavaCache();
-		quteLanguageService = new QuteLanguageService(cache);
+		dataModelCache = createDataModelCache();
+		quteLanguageService = new QuteLanguageService(dataModelCache);
 		textDocumentService = new QuteTextDocumentService(this, new SharedSettings());
 		workspaceService = new QuteWorkspaceService(this);
 	}
 
-	private JavaDataModelCache createJavaCache() {
+	private JavaDataModelCache createDataModelCache() {
 		//return new MockJavaDataModelCache();
-		return new JavaDataModelCache(this, this, this);
+		return new JavaDataModelCache(this, this, this, this);
 	}
 
 	@Override
@@ -176,5 +180,14 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	@Override
 	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
 		return getLanguageClient().getProjectInfo(params);
+	}
+
+	@Override
+	public void dataModelChanged(JavaDataModelChangeEvent event) {
+		dataModelCache.dataModelChanged(event);
+	}
+	
+	public JavaDataModelCache getDataModelCache() {
+		return dataModelCache;
 	}
 }

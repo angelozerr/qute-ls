@@ -34,6 +34,7 @@ import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.jdt.utils.IJDTUtils;
+import com.redhat.qute.jdt.utils.JDTQuteUtils;
 import com.redhat.qute.jdt.utils.JDTTypeUtils;
 
 public class JavaDataModelManager {
@@ -49,11 +50,7 @@ public class JavaDataModelManager {
 		if (javaProject == null) {
 			return null;
 		}
-		return new ProjectInfo(getProjectUri(javaProject));
-	}
-
-	private static String getProjectUri(IJavaProject javaProject) {
-		return javaProject.getProject().getName();
+		return new ProjectInfo(JDTQuteUtils.getProjectUri(javaProject));
 	}
 
 	public List<JavaClassInfo> getJavaClasses(QuteJavaClassesParams params, IJDTUtils utils, IProgressMonitor monitor)

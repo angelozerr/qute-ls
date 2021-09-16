@@ -9,7 +9,6 @@ import java.util.Map;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.ls.core.internal.IDelegateCommandHandler;
 import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
@@ -27,7 +26,19 @@ import com.redhat.qute.jdt.JavaDataModelManager;
  * @author Angelo ZERR
  *
  */
-public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandler {
+public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateCommandHandler {
+
+	private static final String PROJECT_URI_ATTR = "projectUri";
+
+	private static final String PATTERN_ATTR = "pattern";
+
+	private static final String METHOD_ATTR = "method";
+
+	private static final String FIELD_ATTR = "field";
+
+	private static final String TEMPLATE_FILE_URI_ATTR = "templateFileUri";
+
+	private static final String CLASS_NAME_ATTR = "className";
 
 	private static final String QUTE_TEMPLATE_PROJECT_COMMAND_ID = "qute/template/project";
 
@@ -64,10 +75,10 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 					String.format("Command '%s' must be called with one QuteProjectParams argument!", commandId));
 		}
 		// Get project name from the java file URI
-		String templateFileUri = getString(obj, "templateFileUri");
+		String templateFileUri = getString(obj, TEMPLATE_FILE_URI_ATTR);
 		if (templateFileUri == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteProjectParams.templateFileUri (template file URI)!",
+					"Command '%s' must be called with required QuteProjectParams.templateFileUri!",
 					commandId));
 		}
 		return new QuteProjectParams(templateFileUri);
@@ -99,16 +110,16 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 					.format("Command '%s' must be called with one QuteResolvedJavaClassParams argument!", commandId));
 		}
 		// Get project name from the java file URI
-		String projectUri = getString(obj, "projectUri");
+		String projectUri = getString(obj, PROJECT_URI_ATTR);
 		if (projectUri == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteResolvedJavaClassParams.uri (java file URI)!",
+					"Command '%s' must be called with required QuteResolvedJavaClassParams.projectUri!",
 					commandId));
 		}
-		String className = getString(obj, "className");
+		String className = getString(obj, CLASS_NAME_ATTR);
 		if (className == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteResolvedJavaClassParams.className !", commandId));
+					"Command '%s' must be called with required QuteResolvedJavaClassParams.className!", commandId));
 		}
 		return new QuteResolvedJavaClassParams(className, projectUri);
 	}
@@ -128,15 +139,15 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 					String.format("Command '%s' must be called with one QuteJavaClassParams argument!", commandId));
 		}
 		// Get project name from the java file URI
-		String projectUri = getString(obj, "projectUri");
+		String projectUri = getString(obj, PROJECT_URI_ATTR);
 		if (projectUri == null) {
-			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteJavaClassParams.projectUri!", commandId));
+			throw new UnsupportedOperationException(String
+					.format("Command '%s' must be called with required QuteJavaClassParams.projectUri!", commandId));
 		}
-		String pattern = getString(obj, "pattern");
+		String pattern = getString(obj, PATTERN_ATTR);
 		if (pattern == null) {
 			throw new UnsupportedOperationException(String
-					.format("Command '%s' must be called with required QuteJavaClassParams.pattern !", commandId));
+					.format("Command '%s' must be called with required QuteJavaClassParams.pattern!", commandId));
 		}
 		QuteJavaClassesParams params = new QuteJavaClassesParams(pattern, projectUri);
 		return params;
@@ -167,21 +178,21 @@ public class QuteTemplateDelegateCommandHandler implements IDelegateCommandHandl
 					.format("Command '%s' must be called with one QuteJavaDefinitionParams argument!", commandId));
 		}
 		// Get project name from the java file URI
-		String templateFileUri = getString(obj, "uri");
+		String templateFileUri = getString(obj, PROJECT_URI_ATTR);
 		if (templateFileUri == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteJavaDefinitionParams.uri (java file URI)!",
+					"Command '%s' must be called with required QuteJavaDefinitionParams.projectUri !",
 					commandId));
 		}
-		String className = getString(obj, "className");
+		String className = getString(obj, CLASS_NAME_ATTR);
 		if (className == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteJavaDefinitionParams.className !", commandId));
+					"Command '%s' must be called with required QuteJavaDefinitionParams.className!", commandId));
 		}
 		QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, templateFileUri);
-		String field = getString(obj, "field");
+		String field = getString(obj, FIELD_ATTR);
 		params.setField(field);
-		String method = getString(obj, "method");
+		String method = getString(obj, METHOD_ATTR);
 		params.setMethod(method);
 		return params;
 	}

@@ -17,4 +17,5 @@ Bundle-ActivationPolicy: lazy
 Export-Package: com.redhat.qute.commons,
  com.redhat.qute.jdt,
  com.redhat.qute.jdt.utils
+Bundle-Activator: com.redhat.qute.jdt.QutePlugin
 

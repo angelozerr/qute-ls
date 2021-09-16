@@ -110,9 +110,10 @@ class QuteDefinition {
 
 	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromParameterDeclaration(int offset,
 			ParameterDeclaration parameterDeclaration, Template template) {
-		if (parameterDeclaration.isInClassName(offset)) {
+		String projectUri = template.getProjectUri();
+		if (projectUri != null && parameterDeclaration.isInClassName(offset)) {
 			String className = parameterDeclaration.getClassName();
-			QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, template.getProjectUri());
+			QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, projectUri);
 			return findJavaDefinition(params,
 					() -> QutePositionUtility.createRange(parameterDeclaration.getClassNameStart(),
 							parameterDeclaration.getClassNameEnd(), template));
@@ -157,18 +158,21 @@ class QuteDefinition {
 			case Method:
 				Parts parts = part.getParent();
 				int partIndex = parts.getPreviousPartIndex(part);
-				return javaCache.getResolvedClass(parts, partIndex, template) //
-						.thenCompose(resolvedClass -> {
-							if (resolvedClass != null) {
-								String property = part.getTextContent();
-								QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(
-										resolvedClass.getClassName(), template.getUri());
-								// params.setMethod(member.getMethod());
-								params.setField(property);
-								return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
-							}
-							return CompletableFuture.completedFuture(Collections.emptyList());
-						});
+				String projectUri = template.getProjectUri();
+				if (projectUri != null) {
+					return javaCache.getResolvedClass(parts, partIndex, projectUri) //
+							.thenCompose(resolvedClass -> {
+								if (resolvedClass != null) {
+									String property = part.getTextContent();
+									QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(
+											resolvedClass.getClassName(), projectUri);
+									// params.setMethod(member.getMethod());
+									params.setField(property);
+									return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
+								}
+								return CompletableFuture.completedFuture(Collections.emptyList());
+							});
+				}
 			default:
 			}
 

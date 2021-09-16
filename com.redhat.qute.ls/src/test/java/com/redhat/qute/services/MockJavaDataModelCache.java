@@ -11,8 +11,10 @@ import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 
@@ -21,7 +23,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	private final Map<String, ResolvedJavaClassInfo> resolvedClassesCache;
 
 	public MockJavaDataModelCache() {
-		super(null, null, null);
+		super(null,null, null, null);
 		this.resolvedClassesCache = createResolvedClasses();
 	}
 
@@ -78,5 +80,10 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		resolvedClass.setMembers(new ArrayList<>());
 		cache.put(resolvedClass.getClassName(), resolvedClass);
 		return resolvedClass;
+	}
+	
+	@Override
+	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
+		return CompletableFuture.completedFuture(new ProjectInfo("test-qute"));
 	}
 }

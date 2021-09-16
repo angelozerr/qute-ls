@@ -29,8 +29,11 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.jdt.IJavaDataModelChangedListener;
 import com.redhat.qute.jdt.JavaDataModelManager;
+import com.redhat.qute.jdt.QutePlugin;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
+import com.redhat.qute.ls.api.QuteLanguageServerAPI;
 import com.redhat.qute.lsp4e.internal.JDTUtilsImpl;
 
 /**
@@ -41,7 +44,21 @@ import com.redhat.qute.lsp4e.internal.JDTUtilsImpl;
  */
 public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLanguageClientAPI {
 
+	private static IJavaDataModelChangedListener SINGLETON_LISTENER;
+
+	private IJavaDataModelChangedListener listener = event -> {
+		((QuteLanguageServerAPI) getLanguageServer()).dataModelChanged(event);
+	};
+
 	public QuteLanguageClientImpl() {
+		// FIXME : how to remove the listener????
+		// The listener should be removed when language server is shutdown, how to
+		// manage that????
+		if (SINGLETON_LISTENER != null) {
+			QutePlugin.getDefault().removeJavaDataModelChangedListener(SINGLETON_LISTENER);
+		}
+		SINGLETON_LISTENER = listener;
+		QutePlugin.getDefault().addJavaDataModelChangedListener(listener);
 	}
 
 	@Override

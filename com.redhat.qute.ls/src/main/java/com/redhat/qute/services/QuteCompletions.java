@@ -253,7 +253,7 @@ class QuteCompletions {
 		int end = part != null ? part.getEnd() : parts.getEnd();
 		Template template = completionRequest.getTemplate();
 		int partIndex = parts.getPreviousPartIndex(part);
-		return javaCache.getResolvedClass(parts, partIndex, template) //
+		return javaCache.getResolvedClass(parts, partIndex, template.getProjectUri()) //
 				.thenApply(resolvedClass -> {
 					if (resolvedClass == null) {
 						return EMPTY_COMPLETION;

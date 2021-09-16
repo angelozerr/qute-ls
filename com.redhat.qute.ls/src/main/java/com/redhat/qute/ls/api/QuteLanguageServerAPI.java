@@ -9,7 +9,10 @@
 *******************************************************************************/
 package com.redhat.qute.ls.api;
 
+import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
 import org.eclipse.lsp4j.services.LanguageServer;
+
+import com.redhat.qute.commons.JavaDataModelChangeEvent;
 
 /**
  * Qute language server API.
@@ -19,4 +22,17 @@ import org.eclipse.lsp4j.services.LanguageServer;
  */
 public interface QuteLanguageServerAPI extends LanguageServer {
 
+	/**
+	 * Notification for Qute data model changed which occurs when:
+	 *
+	 * <ul>
+	 * <li>classpath (java sources and dependencies) changed</li>
+	 * <li>only java sources changed</li>
+	 * </ul>
+	 *
+	 * @param event the Qute data model change event which gives the information if
+	 *              changed comes from classpath or java sources.
+	 */
+	@JsonNotification("qute/dataModelChanged")
+	void dataModelChanged(JavaDataModelChangeEvent event);
 }
