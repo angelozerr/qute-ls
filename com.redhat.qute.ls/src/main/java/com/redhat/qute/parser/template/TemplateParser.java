@@ -8,6 +8,8 @@ import com.redhat.qute.parser.scanner.Scanner;
 import com.redhat.qute.parser.template.scanner.ScannerState;
 import com.redhat.qute.parser.template.scanner.TemplateScanner;
 import com.redhat.qute.parser.template.scanner.TokenType;
+import com.redhat.qute.parser.template.sections.DefaultSectionFactory;
+import com.redhat.qute.parser.template.sections.SectionFactory;
 
 /**
  * The Qute template parser.
@@ -17,8 +19,10 @@ import com.redhat.qute.parser.template.scanner.TokenType;
  */
 public class TemplateParser {
 
-	private static CancelChecker DEFAULT_CANCEL_CHECKER = () -> {
+	private static final CancelChecker DEFAULT_CANCEL_CHECKER = () -> {
 	};
+
+	private static final SectionFactory DEFAULT_SECTION_FACTORY = new DefaultSectionFactory();
 
 	public static Template parse(String content, String uri) {
 		return parse(content, uri, DEFAULT_CANCEL_CHECKER);
@@ -29,6 +33,11 @@ public class TemplateParser {
 	}
 
 	public static Template parse(TextDocument textDocument, CancelChecker cancelChecker) {
+		return parse(textDocument, DEFAULT_SECTION_FACTORY, cancelChecker);
+	}
+
+	public static Template parse(TextDocument textDocument, SectionFactory sectionFactory,
+			CancelChecker cancelChecker) {
 		if (cancelChecker == null) {
 			cancelChecker = DEFAULT_CANCEL_CHECKER;
 		}
@@ -37,10 +46,25 @@ public class TemplateParser {
 
 		String content = textDocument.getText();
 		int endTagOpenOffset = -1;
+		int startSectionOffset = -1;
+		int endSectionOffset = -1;
 		Scanner<TokenType, ScannerState> scanner = TemplateScanner.createScanner(content);
 		TokenType token = scanner.scan();
 		while (token != TokenType.EOS) {
 			cancelChecker.checkCanceled();
+
+			if (startSectionOffset != -1) {
+				String tag = null;
+				if (token == TokenType.StartTag) {
+					tag = scanner.getTokenText();
+				}
+				Section child = sectionFactory.createSection(tag, startSectionOffset, endSectionOffset);
+				child.setStartTagOpenOffset(scanner.getTokenOffset());
+				curr.addChild(child);
+				curr = child;
+				startSectionOffset = -1;
+				endSectionOffset = -1;
+			}
 
 			switch (token) {
 
@@ -56,16 +80,19 @@ public class TemplateParser {
 					// and if 'curr' is already closed then 'curr' was not updated properly.
 					curr = curr.getParent();
 				}
-				Section child = new Section(scanner.getTokenOffset(), scanner.getTokenEnd());
-				child.setStartTagOpenOffset(scanner.getTokenOffset());
-				curr.addChild(child);
-				curr = child;
+				startSectionOffset = scanner.getTokenOffset();
+				endSectionOffset = scanner.getTokenEnd();
+				/*
+				 * Section child = new Section(scanner.getTokenOffset(), scanner.getTokenEnd());
+				 * child.setStartTagOpenOffset(scanner.getTokenOffset()); curr.addChild(child);
+				 * curr = child;
+				 */
 				break;
 			}
 
 			case StartTag: {
 				Section element = (Section) curr;
-				element.setTag(scanner.getTokenText());
+				// element.setTag(scanner.getTokenText());
 				curr.setEnd(scanner.getTokenEnd());
 				break;
 			}
@@ -91,7 +118,7 @@ public class TemplateParser {
 				break;
 
 			case EndTag:
-				// end tag (ex: {/if}>)
+				// end tag (ex: {/if})
 				String closeTag = scanner.getTokenText();
 				Node current = curr;
 
@@ -112,9 +139,9 @@ public class TemplateParser {
 				} else {
 					// element open tag not found (ex: <root>) add a fake element which only has an
 					// end tag (no start tag).
-					Section element = new Section(scanner.getTokenOffset() - 2, scanner.getTokenEnd());
+					Section element = sectionFactory.createSection(closeTag, scanner.getTokenOffset() - 2,
+							scanner.getTokenEnd());
 					element.setEndTagOpenOffset(endTagOpenOffset);
-					element.setTag(closeTag);
 					current.addChild(element);
 					curr = element;
 				}

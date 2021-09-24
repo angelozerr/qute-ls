@@ -1,8 +1,12 @@
 package com.redhat.qute.parser.expression;
 
 import com.redhat.qute.parser.expression.Parts.PartKind;
-import com.redhat.qute.parser.template.ParameterDeclaration;
+import com.redhat.qute.parser.template.JavaTypeInfoProvider;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.sections.LoopSection;
 
 public class ObjectPart extends Part {
 
@@ -15,11 +19,23 @@ public class ObjectPart extends Part {
 		return PartKind.Object;
 	}
 
-	public String getClassName() {
-		String alias = super.getTextContent();
+	public JavaTypeInfoProvider resolveJavaType() {
+		String partName = getPartName();
 		Template template = super.getOwnerTemplate();
-		ParameterDeclaration parameter = template.findParameterByAlias(alias);
-		return parameter != null ? parameter.getClassName() : null;
+		// Loop for parent section to discover the class name
+		Node parent = super.getParent().getParent().getParent();
+		if (parent != null && parent.getKind() == NodeKind.Section) {
+			Section section = (Section) parent;
+			if (section.isIterable()) {
+				LoopSection iterableSection = (LoopSection) section;
+				String alias = iterableSection.getIterableElementAlias();
+				if (partName.equals(alias)) {
+					return iterableSection;
+				}
+			}
+		}
+		// Try to find the class name from parameter declaration
+		return template.findParameterByAlias(partName);
 	}
 
 }

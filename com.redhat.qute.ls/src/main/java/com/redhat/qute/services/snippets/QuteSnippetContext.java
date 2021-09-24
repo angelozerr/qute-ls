@@ -5,7 +5,7 @@ import java.util.Map;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.Section;
-import com.redhat.qute.services.CompletionRequest;
+import com.redhat.qute.services.completions.CompletionRequest;
 
 public abstract class QuteSnippetContext implements IQuteSnippetContext {
 

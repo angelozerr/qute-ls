@@ -12,7 +12,7 @@
 package com.redhat.qute.services.snippets;
 
 import com.redhat.qute.ls.commons.snippets.ISnippetContext;
-import com.redhat.qute.services.CompletionRequest;
+import com.redhat.qute.services.completions.CompletionRequest;
 
 /**
  * Qute snippet context API.

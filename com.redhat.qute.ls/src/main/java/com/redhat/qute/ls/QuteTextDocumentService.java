@@ -50,7 +50,7 @@ import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.utils.QutePositionUtility;
 
 /**
- * LSP text document service for 'application.properties' file.
+ * LSP text document service for Qute template file.
  *
  */
 public class QuteTextDocumentService implements TextDocumentService {
@@ -198,6 +198,12 @@ public class QuteTextDocumentService implements TextDocumentService {
 					getSharedSettings().getValidationSettings(), cancelChecker);
 			quteLanguageServer.getLanguageClient()
 					.publishDiagnostics(new PublishDiagnosticsParams(template.getUri(), diagnostics));
+			/*getQuteLanguageService()
+					.doDiagnostics2(template, document, getSharedSettings().getValidationSettings(), cancelChecker)
+					.thenAccept(d -> {
+						quteLanguageServer.getLanguageClient()
+								.publishDiagnostics(new PublishDiagnosticsParams(template.getUri(), d));
+					});*/
 			return null;
 		});
 	}

@@ -1,6 +1,6 @@
 package com.redhat.qute.parser.template;
 
-public class ParameterDeclaration extends Node {
+public class ParameterDeclaration extends Node implements JavaTypeInfoProvider {
 
 	private int startContent;
 
@@ -88,5 +88,10 @@ public class ParameterDeclaration extends Node {
 
 	public int getAliasEnd() {
 		return getEndContent();
+	}
+	
+	@Override
+	public Node getNode() {
+		return this;
 	}
 }

@@ -1,11 +1,12 @@
 package com.redhat.qute.parser.template;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Section extends Node {
 
-	private String tag;
+	private final String tag;
 
 	private int startTagOpenOffset;
 
@@ -19,8 +20,9 @@ public class Section extends Node {
 
 	private List<Parameter> parameters;
 
-	Section(int start, int end) {
+	public Section(String tag, int start, int end) {
 		super(start, end);
+		this.tag = tag;
 	}
 
 	@Override
@@ -46,10 +48,6 @@ public class Section extends Node {
 
 	public String getTag() {
 		return tag;
-	}
-
-	void setTag(String tag) {
-		this.tag = tag;
 	}
 
 	public int getEndTagOpenOffset() {
@@ -146,7 +144,11 @@ public class Section extends Node {
 	}
 
 	public SectionKind getSectionKind() {
-		return SectionKind.get(getTag());
+		return SectionKind.CUSTOM;
+	}
+
+	public List<SectionMetadata> getMetadata() {
+		return Collections.emptyList();
 	}
 
 	public List<Parameter> getParameters() {
@@ -169,4 +171,7 @@ public class Section extends Node {
 		return parameters;
 	}
 
+	public boolean isIterable() {
+		return false;
+	}
 }

@@ -12,6 +12,10 @@ public abstract class Part extends Node {
 		super(start, end);
 	}
 
+	public String getPartName() {
+		return getTextContent();
+	}
+
 	@Override
 	public String getNodeName() {
 		return "#part";

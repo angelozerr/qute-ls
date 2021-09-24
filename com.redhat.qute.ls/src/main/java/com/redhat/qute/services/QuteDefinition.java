@@ -144,7 +144,7 @@ class QuteDefinition {
 			Part part = (Part) expressionNode;
 			switch (part.getPartKind()) {
 			case Object:
-				ParameterDeclaration parameter = template.findParameterByAlias(part.getTextContent());
+				ParameterDeclaration parameter = template.findParameterByAlias(part.getPartName());
 				if (parameter != null) {
 					String targetUri = template.getUri();
 					Range targetRange = QutePositionUtility.selectAlias(parameter);
@@ -163,7 +163,7 @@ class QuteDefinition {
 					return javaCache.getResolvedClass(parts, partIndex, projectUri) //
 							.thenCompose(resolvedClass -> {
 								if (resolvedClass != null) {
-									String property = part.getTextContent();
+									String property = part.getPartName();
 									QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(
 											resolvedClass.getClassName(), projectUri);
 									// params.setMethod(member.getMethod());

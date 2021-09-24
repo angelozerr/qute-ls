@@ -13,6 +13,7 @@ package com.redhat.qute.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -20,11 +21,15 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+import com.redhat.qute.ls.QuteTextDocument;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteValidationSettings;
 import com.redhat.qute.utils.QutePositionUtility;
+import com.redhat.qute.utils.StringUtils;
 
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.TemplateException;
@@ -34,6 +39,12 @@ import io.quarkus.qute.TemplateException;
  *
  */
 class QuteDiagnostics {
+
+	private final JavaDataModelCache javaCache;
+
+	public QuteDiagnostics(JavaDataModelCache javaCache) {
+		this.javaCache = javaCache;
+	}
 
 	/**
 	 * Validate the given Qute <code>template</code>.
@@ -83,6 +94,30 @@ class QuteDiagnostics {
 		for (Node child : parent.getChildren()) {
 			validate(child, diagnostics);
 		}
+	}
+
+	public CompletableFuture<List<Diagnostic>> doDiagnostics2(Template template, QuteTextDocument document,
+			QuteValidationSettings validationSettings, CancelChecker cancelChecker) {
+		List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
+		String projectUri = template.getProjectUri();
+		if (projectUri != null) {			
+			List<Node> children = template.getChildren();
+			for (Node node : children) {
+				if (node.getKind() == NodeKind.ParameterDeclaration) {
+					ParameterDeclaration parameter = (ParameterDeclaration) node;
+					String className = parameter.getClassName();
+					if (StringUtils.isEmpty(className)) {
+						Range range = QutePositionUtility.createRange(parameter);
+						String message = "Class must be defined";
+						Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, "qute", null);
+						diagnostics.add(diagnostic);
+					} else {
+						// javaCache.getResolvedClass(null, 0, projectUri);
+					}
+				}
+			}
+		}
+		return CompletableFuture.completedFuture(diagnostics);
 	}
 
 }

@@ -43,7 +43,6 @@ import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
 import com.redhat.qute.ls.commons.client.ExtendedClientCapabilities;
 import com.redhat.qute.ls.commons.client.InitializationOptionsExtendedClientCapabilities;
 import com.redhat.qute.services.JavaDataModelCache;
-import com.redhat.qute.services.MockJavaDataModelCache;
 import com.redhat.qute.services.QuteLanguageService;
 import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.settings.capabilities.QuteCapabilityManager;

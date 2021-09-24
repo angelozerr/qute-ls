@@ -1,31 +1,33 @@
 package com.redhat.qute.parser.parameter.scanner;
 
 import com.redhat.qute.parser.scanner.AbstractScanner;
-import com.redhat.qute.parser.scanner.Scanner;
 
 public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 
-	public static Scanner<TokenType, ScannerState> createScanner(String input) {
-		return createScanner(input, 0);
+	public static ParameterScanner createScanner(String input) {
+		return createScanner(input, 0, -1);
 	}
 
-	public static Scanner<TokenType, ScannerState> createScanner(String input, int initialOffset) {
-		return createScanner(input, initialOffset, ScannerState.WithinParameter);
+	public static ParameterScanner createScanner(String input, int initialOffset, int endOffset) {
+		return createScanner(input, initialOffset, endOffset, ScannerState.WithinParameter);
 	}
 
-	public static Scanner<TokenType, ScannerState> createScanner(String input, int initialOffset,
+	public static ParameterScanner createScanner(String input, int initialOffset, int endOffset,
 			ScannerState initialState) {
-		return new ParameterScanner(input, initialOffset, initialState);
+		return new ParameterScanner(input, initialOffset, endOffset, initialState);
 	}
 
-	ParameterScanner(String input, int initialOffset, ScannerState initialState) {
+	private int endOffset;
+
+	ParameterScanner(String input, int initialOffset, int endOffset, ScannerState initialState) {
 		super(input, initialOffset, initialState, TokenType.Unknown, TokenType.EOS);
+		this.endOffset = endOffset;
 	}
 
 	@Override
 	protected TokenType internalScan() {
 		int offset = stream.pos();
-		if (stream.eos()) {
+		if (stream.eos() || (endOffset != -1 && offset >= endOffset)) {
 			return finishToken(offset, TokenType.EOS);
 		}
 
@@ -36,7 +38,6 @@ public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 			if (stream.skipWhitespace()) {
 				return finishToken(offset, TokenType.Whitespace);
 			}
-			stream.advanceUntilChars(' ');
 			state = ScannerState.AfterParameterName;
 			return finishToken(offset, TokenType.ParameterName);
 		}
@@ -45,9 +46,19 @@ public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 			if (stream.skipWhitespace()) {
 				return finishToken(offset, TokenType.Whitespace);
 			}
+			if (stream.advanceIfChar('=')) {
+				state = ScannerState.AfterAssign;	
+				return finishToken(offset, TokenType.Assign);
+			}
 			stream.advanceUntilChars(' ');
 			state = ScannerState.AfterParameterValue;
 			return finishToken(offset, TokenType.ParameterValue);
+		}
+		
+		case AfterAssign: {
+			if (stream.skipWhitespace()) {
+				return finishToken(offset, TokenType.Whitespace);
+			}
 		}
 
 		case AfterParameterValue: {

@@ -29,6 +29,7 @@ import com.redhat.qute.ls.commons.ParentProcessWatcher;
  *
  */
 public class QuteServerLauncher {
+
 	public static void main(String[] args) {
 		QuteLanguageServer server = new QuteLanguageServer();
 		Function<MessageConsumer, MessageConsumer> wrapper;

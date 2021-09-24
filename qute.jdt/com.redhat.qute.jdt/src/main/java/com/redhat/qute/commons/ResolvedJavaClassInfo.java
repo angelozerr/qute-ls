@@ -5,7 +5,21 @@ import java.util.Optional;
 
 public class ResolvedJavaClassInfo extends JavaClassInfo {
 
+	private List<String> extendedTypes;
+
 	private List<JavaClassMemberInfo> members;
+
+	private String iterableType;
+
+	private String iterableOf;
+
+	public void setExtendedTypes(List<String> extendedTypes) {
+		this.extendedTypes = extendedTypes;
+	}
+
+	public List<String> getExtendedTypes() {
+		return extendedTypes;
+	}
 
 	public void setMembers(List<JavaClassMemberInfo> members) {
 		this.members = members;
@@ -13,6 +27,26 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 
 	public List<JavaClassMemberInfo> getMembers() {
 		return members;
+	}
+
+	public String getIterableType() {
+		return iterableType;
+	}
+
+	public void setIterableType(String iterableType) {
+		this.iterableType = iterableType;
+	}
+
+	public void setIterableOf(String iterableOf) {
+		this.iterableOf = iterableOf;
+	}
+
+	public String getIterableOf() {
+		return iterableOf;
+	}
+
+	public boolean isIterable() {
+		return iterableOf != null;
 	}
 
 	public JavaClassMemberInfo findMember(String property) {

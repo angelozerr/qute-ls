@@ -2,6 +2,7 @@ package com.redhat.qute.jdt;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
@@ -12,7 +13,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -98,7 +99,7 @@ public class JavaDataModelManager {
 	}
 
 	public Location getJavaDefinition(QuteJavaDefinitionParams params, IJDTUtils utils, IProgressMonitor monitor)
-			throws JavaModelException {
+			throws CoreException {
 		String projectUri = params.getProjectUri();
 		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
@@ -119,13 +120,38 @@ public class JavaDataModelManager {
 	}
 
 	public ResolvedJavaClassInfo getResolvedJavaClass(QuteResolvedJavaClassParams params, IJDTUtils utils,
-			IProgressMonitor monitor) throws JavaModelException {
+			IProgressMonitor monitor) throws CoreException {
 		String projectUri = params.getProjectUri();
 		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
 			return null;
 		}
 		String className = params.getClassName();
+		int index = className.indexOf('<');
+		if (index != -1) {
+			// ex : java.util.List<org.acme.Item>
+			String iterableClassName = className.substring(0, index);
+			IType iterableType = javaProject.findType(iterableClassName, monitor);
+			if (iterableType == null) {
+				return null;
+			}
+
+			IType[] interfaces = findImplementedInterfaces(iterableType, monitor);
+			boolean iterable = interfaces == null ? false : Stream.of(interfaces)
+					.anyMatch(interfaceType -> "java.lang.Iterable".equals(interfaceType.getFullyQualifiedName()));
+			if (!iterable) {
+				return null;
+			}
+			
+			String iterableOf= className.substring(index+ 1, className.length() -1);
+			
+			ResolvedJavaClassInfo resolvedClass = new ResolvedJavaClassInfo();			
+			resolvedClass.setClassName(className);
+			resolvedClass.setIterableType(iterableClassName);
+			resolvedClass.setIterableOf(iterableOf);
+			return resolvedClass;
+			
+		}
 		IType type = javaProject.findType(className, monitor);
 		if (type == null) {
 			return null;
@@ -168,4 +194,9 @@ public class JavaDataModelManager {
 		return JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(projectName);
 	}
 
+	private static IType[] findImplementedInterfaces(IType type, IProgressMonitor progressMonitor)
+			throws CoreException {
+		ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(progressMonitor);
+		return typeHierarchy.getRootInterfaces();
+	}
 }

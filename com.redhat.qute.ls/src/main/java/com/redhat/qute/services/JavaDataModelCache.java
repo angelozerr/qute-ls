@@ -24,9 +24,15 @@ import com.redhat.qute.ls.api.QuteResolvedJavaClassProvider;
 import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
+import com.redhat.qute.parser.template.JavaTypeInfoProvider;
+import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.utils.StringUtils;
 
 public class JavaDataModelCache implements QuteProjectInfoProvider {
+
+	private static CompletableFuture<ResolvedJavaClassInfo> NULL_FUTURE = CompletableFuture.completedFuture(null);
 
 	private static class ProjectContainer {
 
@@ -77,7 +83,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 		return definitionProvider.getJavaDefinition(params);
 	}
 
-	private CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(String className, String projectUri) {
+	public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(String className, String projectUri) {
 		if (StringUtils.isEmpty(className) || StringUtils.isEmpty(projectUri)) {
 			return CompletableFuture.completedFuture(null);
 		}
@@ -106,20 +112,45 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 			Part current = ((Part) parts.getChild(i));
 			switch (current.getPartKind()) {
 			case Object:
-				String className = ((ObjectPart) current).getClassName();
+				ObjectPart objectPart = (ObjectPart) current;
+				JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
+				if (javaTypeInfo == null) {
+					return NULL_FUTURE;
+				}
+				String className = javaTypeInfo.getClassName();
+				if (StringUtils.isEmpty(className)) {
+					return NULL_FUTURE;
+				}
+
 				future = getResolvedJavaClass(className, projectUri);
+
+				Node node = javaTypeInfo.getNode();
+				if (node.getKind() == NodeKind.Section) {
+					Section section = (Section) node;
+					if (section.isIterable()) {
+						future = future //
+								.thenCompose(resolvedClass -> {
+									if (resolvedClass == null || !resolvedClass.isIterable()) {
+										return NULL_FUTURE;
+									}
+									String iterClassName = resolvedClass.getIterableOf();
+									return getResolvedJavaClass(iterClassName, projectUri);
+								});
+					}
+				}
+
 				break;
 			case Property:
 				if (future != null) {
 					future = future //
 							.thenCompose(resolvedClass -> {
 								if (resolvedClass == null) {
-									return CompletableFuture.completedFuture(null);
+									return NULL_FUTURE;
 								}
-								String property = current.getTextContent();
+								String property = current.getPartName();
 								JavaClassMemberInfo member = resolvedClass.findMember(property);
 								if (member == null) {
-									return CompletableFuture.completedFuture(null);
+									return NULL_FUTURE;
 								}
 								String memberType = member.getType();
 								return getResolvedJavaClass(memberType, projectUri);
@@ -128,7 +159,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 				break;
 			}
 		}
-		return future != null ? future : CompletableFuture.completedFuture(null);
+		return future != null ? future : NULL_FUTURE;
 	}
 
 	public void dataModelChanged(JavaDataModelChangeEvent event) {

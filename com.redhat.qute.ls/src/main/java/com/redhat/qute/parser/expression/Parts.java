@@ -71,6 +71,11 @@ public class Parts extends Node {
 		super.setParent(expression);
 	}
 
+	@Override
+	public Expression getParent() {
+		return (Expression) super.getParent();
+	}
+
 	public int getPreviousPartIndex(Part part) {
 		return part != null ? super.getChildren().indexOf(part) - 1 : super.getChildCount() - 1;
 	}
