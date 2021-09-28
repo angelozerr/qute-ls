@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Section extends Node {
+import com.redhat.qute.parser.parameter.ParameterParser;
+
+public class Section extends Node implements ParametersContainer {
 
 	private final String tag;
 
@@ -33,7 +35,11 @@ public class Section extends Node {
 	public int getStartTagOpenOffset() {
 		return startTagOpenOffset;
 	}
-
+	
+	public int getAfterStartTagOpenOffset() {
+		return getStartTagOpenOffset() + getTag().length();
+	}
+	
 	void setStartTagOpenOffset(int startTagOpenOffset) {
 		this.startTagOpenOffset = startTagOpenOffset;
 	}
@@ -166,12 +172,24 @@ public class Section extends Node {
 		return null;
 	}
 
-	private List<Parameter> parseParameters(Section section) {
-		List<Parameter> parameters = new ArrayList<>();
-		return parameters;
+	private synchronized List<Parameter> parseParameters(Section section) {
+		if (parameters != null) {
+			return parameters;
+		}
+		return ParameterParser.parse(this, null);
 	}
 
 	public boolean isIterable() {
 		return false;
+	}
+
+	@Override
+	public int getStartParametersOffset() {
+		return getAfterStartTagOpenOffset();
+	}
+
+	@Override
+	public int getEndParametersOffset() {
+		return getStartTagCloseOffset()-1;
 	}
 }

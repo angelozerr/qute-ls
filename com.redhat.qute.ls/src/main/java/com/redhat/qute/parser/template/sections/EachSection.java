@@ -16,33 +16,4 @@ public class EachSection extends LoopSection {
 		return SectionKind.EACH;
 	}
 
-	@Override
-	public String getIterableElementAlias() {
-		return "it";
-	}
-
-	@Override
-	public String getIterableAlias() {
-		Template template = getOwnerTemplate();
-		int classNameStart = getIterableAliasStart();
-		int classNameEnd = getClassNameEnd();
-		return template.getText(classNameStart, classNameEnd).trim();
-	}
-
-	public int getIterableAliasStart() {
-		return getStartTagOpenOffset() + getTag().length();
-	}
-
-	public int getClassNameEnd() {
-		Template template = getOwnerTemplate();
-		String text = template.getText();
-		for (int i = getIterableAliasStart(); i < getStartTagCloseOffset(); i++) {
-			char c = text.charAt(i);
-			if (c == ' ') {
-				//return i;
-			}
-		}
-		return getStartTagCloseOffset();
-	}
-
 }

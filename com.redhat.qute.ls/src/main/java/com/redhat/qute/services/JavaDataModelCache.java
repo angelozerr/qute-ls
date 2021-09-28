@@ -130,8 +130,11 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 					if (section.isIterable()) {
 						future = future //
 								.thenCompose(resolvedClass -> {
-									if (resolvedClass == null || !resolvedClass.isIterable()) {
+									if (resolvedClass == null) {
 										return NULL_FUTURE;
+									}
+									if (!resolvedClass.isIterable()) {
+										return CompletableFuture.completedFuture(resolvedClass);
 									}
 									String iterClassName = resolvedClass.getIterableOf();
 									return getResolvedJavaClass(iterClassName, projectUri);

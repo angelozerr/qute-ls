@@ -2,9 +2,9 @@ package com.redhat.qute.parser.template;
 
 public interface ParametersContainer {
 
-	int getStartParameterOffset();
+	int getStartParametersOffset();
 	
-	int getEndParameterOffset();
+	int getEndParametersOffset();
 
 	Template getOwnerTemplate();
 }

@@ -1,11 +1,17 @@
 package com.redhat.qute.parser.parameter.scanner;
 
+import java.util.function.Predicate;
+
 import com.redhat.qute.parser.scanner.AbstractScanner;
 
 public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 
+	private static final Predicate<Integer> PARAMETER_NAME_OR_VALUE_PREDICATE = ch -> {
+		return ch != ' ' && ch != '=';
+	};
+	
 	public static ParameterScanner createScanner(String input) {
-		return createScanner(input, 0, -1);
+		return createScanner(input, 0, input.length());
 	}
 
 	public static ParameterScanner createScanner(String input, int initialOffset, int endOffset) {
@@ -17,59 +23,45 @@ public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 		return new ParameterScanner(input, initialOffset, endOffset, initialState);
 	}
 
-	private int endOffset;
-
 	ParameterScanner(String input, int initialOffset, int endOffset, ScannerState initialState) {
-		super(input, initialOffset, initialState, TokenType.Unknown, TokenType.EOS);
-		this.endOffset = endOffset;
+		super(input, initialOffset, endOffset, initialState, TokenType.Unknown, TokenType.EOS);
 	}
 
 	@Override
 	protected TokenType internalScan() {
 		int offset = stream.pos();
-		if (stream.eos() || (endOffset != -1 && offset >= endOffset)) {
+		if (stream.eos()) {
 			return finishToken(offset, TokenType.EOS);
 		}
 
 		String errorMessage = null;
 		switch (state) {
 
-		case WithinParameter: {
+		case WithinParameters: {
 			if (stream.skipWhitespace()) {
 				return finishToken(offset, TokenType.Whitespace);
 			}
-			state = ScannerState.AfterParameterName;
-			return finishToken(offset, TokenType.ParameterName);
+			if (hasNextParameterNameOrValue()) {
+				state = ScannerState.WithinParameter;
+				return finishToken(offset, TokenType.ParameterName);
+			}
+			return finishToken(offset, TokenType.Unknown);
 		}
 
-		case AfterParameterName: {
-			if (stream.skipWhitespace()) {
-				return finishToken(offset, TokenType.Whitespace);
-			}
+		case WithinParameter: {			
 			if (stream.advanceIfChar('=')) {
 				state = ScannerState.AfterAssign;	
 				return finishToken(offset, TokenType.Assign);
 			}
-			stream.advanceUntilChars(' ');
-			state = ScannerState.AfterParameterValue;
-			return finishToken(offset, TokenType.ParameterValue);
+			state = ScannerState.WithinParameters;
+			return internalScan();
 		}
 		
 		case AfterAssign: {
-			if (stream.skipWhitespace()) {
-				return finishToken(offset, TokenType.Whitespace);
+			if (hasNextParameterNameOrValue()) {
+				state = ScannerState.WithinParameters;
+				return finishToken(offset, TokenType.ParameterValue);
 			}
-		}
-
-		case AfterParameterValue: {
-			if (stream.skipWhitespace()) {
-				return finishToken(offset, TokenType.Whitespace);
-			}
-
-			while (!(stream.eos())) {
-				stream.advance(1);
-			}
-			return finishToken(offset, TokenType.Unknown);
 		}
 
 		default:
@@ -78,4 +70,7 @@ public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 		return finishToken(offset, TokenType.Unknown, errorMessage);
 	}
 
+	private boolean hasNextParameterNameOrValue() {
+		return stream.advanceWhileChar(PARAMETER_NAME_OR_VALUE_PREDICATE) > 0;
+	}
 }

@@ -10,7 +10,6 @@
  */
 package com.redhat.qute.parser.scanner;
 
-
 import static com.redhat.qute.parser.scanner.Constants._CAR;
 import static com.redhat.qute.parser.scanner.Constants._LFD;
 import static com.redhat.qute.parser.scanner.Constants._NWL;
@@ -38,9 +37,9 @@ public class MultiLineStream {
 	private int position;
 	private final Map<Pattern, Matcher> regexpCache;
 
-	public MultiLineStream(String source, int position) {
+	public MultiLineStream(String source, int position, int len) {
 		this.source = source;
-		this.len = source.length();
+		this.len = Math.min(len, source.length());
 		this.position = position;
 		this.regexpCache = new HashMap<>();
 	}
@@ -177,8 +176,8 @@ public class MultiLineStream {
 			for (int c : ch) {
 				if (peekChar() == c) {
 					return true;
-				}	
-			}			
+				}
+			}
 			this.advance(1);
 		}
 		return false;

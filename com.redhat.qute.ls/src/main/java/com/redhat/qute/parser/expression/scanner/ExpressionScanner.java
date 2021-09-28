@@ -11,7 +11,7 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 	};
 
 	public static ExpressionScanner createScanner(String input) {
-		return createScanner(input, 0, -1);
+		return createScanner(input, 0, input.length());
 	}
 
 	public static ExpressionScanner createScanner(String input, int initialOffset, int endOffset) {
@@ -23,17 +23,14 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 		return new ExpressionScanner(input, initialOffset, endOffset, initialState);
 	}
 
-	private int endOffset;
-
 	ExpressionScanner(String input, int initialOffset, int endOffset, ScannerState initialState) {
-		super(input, initialOffset, initialState, TokenType.Unknown, TokenType.EOS);
-		this.endOffset = endOffset;
+		super(input, initialOffset, endOffset, initialState, TokenType.Unknown, TokenType.EOS);
 	}
 
 	@Override
 	protected TokenType internalScan() {
 		int offset = stream.pos();
-		if (stream.eos() || (endOffset != -1 && offset >= endOffset)) {
+		if (stream.eos()) {
 			return finishToken(offset, TokenType.EOS);
 		}
 

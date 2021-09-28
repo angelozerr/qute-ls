@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.redhat.qute.parser.CancelChecker;
-import com.redhat.qute.parser.expression.Parts;
-import com.redhat.qute.parser.expression.scanner.ExpressionScanner;
-import com.redhat.qute.parser.parameter.scanner.TokenType;
 import com.redhat.qute.parser.parameter.scanner.ParameterScanner;
+import com.redhat.qute.parser.parameter.scanner.TokenType;
 import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParametersContainer;
 import com.redhat.qute.parser.template.Template;
@@ -16,21 +14,38 @@ public class ParameterParser {
 
 	private static CancelChecker DEFAULT_CANCEL_CHECKER = () -> {
 	};
-	
+
 	public static List<Parameter> parse(ParametersContainer expression, CancelChecker cancelChecker) {
 		if (cancelChecker == null) {
 			cancelChecker = DEFAULT_CANCEL_CHECKER;
 		}
 		Template template = expression.getOwnerTemplate();
 		String text = template.getText();
-		int start = expression.getStartParameterOffset();
-		int end = expression.getEndParameterOffset();
+		int start = expression.getStartParametersOffset();
+		int end = expression.getEndParametersOffset();
 		ParameterScanner scanner = ParameterScanner.createScanner(text, start, end);
 		TokenType token = scanner.scan();
 		List<Parameter> parameters = new ArrayList<>();
-		Parts currentParts = null;
-		while (token != TokenType.EOS ) {
-			
+		Parameter currentParameter = null;
+		while (token != TokenType.EOS) {
+			cancelChecker.checkCanceled();
+			int tokenOffset = scanner.getTokenOffset();
+			int tokenEnd = scanner.getTokenEnd();
+			switch (token) {
+			case Whitespace:
+				currentParameter = null;
+				break;
+			case ParameterName:
+				currentParameter = new Parameter(tokenOffset, tokenEnd);
+				currentParameter.setParameterParent(expression);
+				parameters.add(currentParameter);
+				break;
+			case ParameterValue:
+				currentParameter.setStartValue(tokenOffset);
+				currentParameter.setEndValue(tokenOffset);
+				break;
+			default:
+			}
 			token = scanner.scan();
 		}
 		return parameters;

@@ -28,7 +28,7 @@ public class ObjectPart extends Part {
 			Section section = (Section) parent;
 			if (section.isIterable()) {
 				LoopSection iterableSection = (LoopSection) section;
-				String alias = iterableSection.getIterableElementAlias();
+				String alias = iterableSection.getAlias();
 				if (partName.equals(alias)) {
 					return iterableSection;
 				}

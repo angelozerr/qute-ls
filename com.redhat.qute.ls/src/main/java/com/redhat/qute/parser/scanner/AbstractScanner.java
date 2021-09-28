@@ -1,13 +1,11 @@
 package com.redhat.qute.parser.scanner;
 
-import com.redhat.qute.parser.template.scanner.TokenType;
-
 public abstract class AbstractScanner<T, S> implements Scanner<T, S> {
 
 	protected final MultiLineStream stream;
 
 	private final T unknownTokenType;
-	
+
 	private final T eosTokenType;
 
 	protected S state;
@@ -18,7 +16,12 @@ public abstract class AbstractScanner<T, S> implements Scanner<T, S> {
 	private String tokenError;
 
 	protected AbstractScanner(String input, int initialOffset, S initialState, T unknownTokenType, T eosTokenType) {
-		stream = new MultiLineStream(input, initialOffset);
+		this(input, initialOffset, input.length(), initialState, unknownTokenType, eosTokenType);
+	}
+
+	protected AbstractScanner(String input, int initialOffset, int endOffset, S initialState, T unknownTokenType,
+			T eosTokenType) {
+		stream = new MultiLineStream(input, initialOffset, endOffset);
 		this.unknownTokenType = unknownTokenType;
 		this.eosTokenType = eosTokenType;
 		state = initialState;

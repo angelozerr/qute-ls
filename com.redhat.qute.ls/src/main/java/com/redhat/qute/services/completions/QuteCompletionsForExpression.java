@@ -188,7 +188,7 @@ public class QuteCompletionsForExpression {
 			}
 			if (section.isIterable()) {
 				// Completion for iterable section like #each, #for
-				String alias = ((LoopSection) section).getIterableElementAlias();
+				String alias = ((LoopSection) section).getAlias();
 				if (!StringUtils.isEmpty(alias)) {
 					CompletionItem item = new CompletionItem();
 					item.setLabel(alias);

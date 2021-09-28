@@ -15,15 +15,4 @@ public class ForSection extends LoopSection {
 		return SectionKind.FOR;
 	}
 
-	@Override
-	public String getIterableElementAlias() {
-		return null;
-	}
-	
-	@Override
-	public String getIterableAlias() {
-		super.getParameters();
-		return null;
-	}
-
 }

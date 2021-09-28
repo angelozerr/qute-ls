@@ -59,7 +59,7 @@ public class TemplateParser {
 					tag = scanner.getTokenText();
 				}
 				Section child = sectionFactory.createSection(tag, startSectionOffset, endSectionOffset);
-				child.setStartTagOpenOffset(scanner.getTokenOffset());
+				child.setStartTagOpenOffset(startSectionOffset + 2);
 				curr.addChild(child);
 				curr = child;
 				startSectionOffset = -1;
@@ -82,11 +82,6 @@ public class TemplateParser {
 				}
 				startSectionOffset = scanner.getTokenOffset();
 				endSectionOffset = scanner.getTokenEnd();
-				/*
-				 * Section child = new Section(scanner.getTokenOffset(), scanner.getTokenEnd());
-				 * child.setStartTagOpenOffset(scanner.getTokenOffset()); curr.addChild(child);
-				 * curr = child;
-				 */
 				break;
 			}
 

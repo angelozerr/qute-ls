@@ -12,5 +12,8 @@ public enum NodeKind {
 	
 	// Expression nodes
 	ExpressionParts, //
-	ExpressionPart;
+	ExpressionPart,
+	
+	// Parameter in section
+	Parameter;
 }

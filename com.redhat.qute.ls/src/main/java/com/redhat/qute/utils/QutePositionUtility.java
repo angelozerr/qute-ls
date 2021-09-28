@@ -23,8 +23,8 @@ public class QutePositionUtility {
 
 	public static Range selectStartTagName(Section section) {
 		Template template = section.getOwnerTemplate();
-		int startOffset = section.getStartTagOpenOffset() + 2; // {#
-		int endOffset = startOffset + section.getTag().length();
+		int startOffset = section.getStartTagOpenOffset(); // {#
+		int endOffset = section.getAfterStartTagOpenOffset(); // {#each
 		return createRange(startOffset, endOffset, template);
 	}
 
