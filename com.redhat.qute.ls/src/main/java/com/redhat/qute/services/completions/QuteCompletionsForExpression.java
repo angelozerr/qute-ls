@@ -18,11 +18,9 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.JavaClassMemberInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
-import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
-import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.ParameterDeclaration;
@@ -100,7 +98,7 @@ public class QuteCompletionsForExpression {
 		Template template = completionRequest.getTemplate();
 		String projectUri = template.getProjectUri();
 		int partIndex = parts.getPreviousPartIndex(part);
-		return javaCache.getResolvedClass(parts, partIndex, projectUri) //
+		return javaCache.resolveJavaType(parts, partIndex, projectUri) //
 				.thenCompose(resolvedClass -> {
 					if (resolvedClass == null) {
 						return EMPTY_FUTURE_COMPLETION;
@@ -110,7 +108,7 @@ public class QuteCompletionsForExpression {
 						// iterable
 						// ex : completion for 'org.acme.Item' iterable element of the
 						// 'java.util.List<org.acme.Item>' Java class iterable
-						return javaCache.getResolvedJavaClass(resolvedClass.getIterableType(), projectUri) //
+						return javaCache.resolveJavaType(resolvedClass.getIterableType(), projectUri) //
 								.thenApply(resolvedIterableClass -> {
 									if (resolvedIterableClass == null) {
 										return EMPTY_COMPLETION;

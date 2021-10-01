@@ -23,9 +23,12 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 	private final Map<String, ResolvedJavaClassInfo> resolvedClassesCache;
 
+	private final Map<String, ResolvedJavaClassInfo> resolvedClassesCache2;
+
 	public MockJavaDataModelCache() {
 		super(null, null, null, null);
 		this.resolvedClassesCache = createResolvedClasses();
+		resolvedClassesCache2 = new HashMap<>();
 	}
 
 	@Override
@@ -37,7 +40,24 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 	@Override
 	protected CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(QuteResolvedJavaClassParams params) {
-		return CompletableFuture.completedFuture(resolvedClassesCache.get(params.getClassName()));
+		ResolvedJavaClassInfo javaClassInfo = resolvedClassesCache2.get(params.getClassName());
+		if (javaClassInfo != null) {
+			return CompletableFuture.completedFuture(javaClassInfo);
+		}
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				Thread.sleep(2000);
+			} catch (Exception e) {
+
+			}
+			ResolvedJavaClassInfo javaClassInfo2 = resolvedClassesCache.get(params.getClassName());
+			if (javaClassInfo2 != null) {
+				resolvedClassesCache2.put(params.getClassName(), javaClassInfo2);
+			}
+			return resolvedClassesCache2.get(params.getClassName());
+		});
+		// return
+		// CompletableFuture.completedFuture(resolvedClassesCache.get(params.getClassName()));
 	}
 
 	@Override
@@ -63,7 +83,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		createResolvedJavaClassInfo("java.util.List<org.acme.Item>", "java.util.List", "org.acme.Item", cache);
 		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache);
 		registerMember("get", null, "java.lang.String", list);
-		
+
 		return cache;
 	}
 

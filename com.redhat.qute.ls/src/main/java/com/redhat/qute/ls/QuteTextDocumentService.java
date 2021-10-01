@@ -42,6 +42,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
 import com.redhat.qute.services.QuteLanguageService;
@@ -194,16 +195,21 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	private void triggerValidationFor(QuteTextDocument document) {
 		getTemplate(document, (cancelChecker, template) -> {
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures = new ArrayList<>();
 			List<Diagnostic> diagnostics = getQuteLanguageService().doDiagnostics(template, document,
-					getSharedSettings().getValidationSettings(), cancelChecker);
+					getSharedSettings().getValidationSettings(), resolvingJavaTypeFutures, cancelChecker);
 			quteLanguageServer.getLanguageClient()
 					.publishDiagnostics(new PublishDiagnosticsParams(template.getUri(), diagnostics));
-			/*getQuteLanguageService()
-					.doDiagnostics2(template, document, getSharedSettings().getValidationSettings(), cancelChecker)
-					.thenAccept(d -> {
-						quteLanguageServer.getLanguageClient()
-								.publishDiagnostics(new PublishDiagnosticsParams(template.getUri(), d));
-					});*/
+
+			if (!resolvingJavaTypeFutures.isEmpty()) {
+				// Some Java types was not loaded, wait for that all Java types are resolved to retrigger the validation.
+				CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+						resolvingJavaTypeFutures.toArray(new CompletableFuture[resolvingJavaTypeFutures.size()]));
+				allFutures.thenAccept(Void -> {
+					triggerValidationFor(document);
+				});
+			}
+
 			return null;
 		});
 	}

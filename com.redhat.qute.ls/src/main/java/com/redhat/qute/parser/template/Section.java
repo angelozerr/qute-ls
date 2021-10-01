@@ -1,6 +1,5 @@
 package com.redhat.qute.parser.template;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,11 +34,11 @@ public class Section extends Node implements ParametersContainer {
 	public int getStartTagOpenOffset() {
 		return startTagOpenOffset;
 	}
-	
+
 	public int getAfterStartTagOpenOffset() {
 		return getStartTagOpenOffset() + getTag().length();
 	}
-	
+
 	void setStartTagOpenOffset(int startTagOpenOffset) {
 		this.startTagOpenOffset = startTagOpenOffset;
 	}
@@ -190,6 +189,6 @@ public class Section extends Node implements ParametersContainer {
 
 	@Override
 	public int getEndParametersOffset() {
-		return getStartTagCloseOffset()-1;
+		return getStartTagCloseOffset();
 	}
 }

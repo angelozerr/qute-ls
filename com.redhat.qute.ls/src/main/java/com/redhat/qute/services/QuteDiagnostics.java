@@ -11,6 +11,7 @@
 *******************************************************************************/
 package com.redhat.qute.services;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -21,8 +22,15 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.ls.QuteTextDocument;
+import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.ls.commons.TextDocument;
+import com.redhat.qute.parser.expression.ObjectPart;
+import com.redhat.qute.parser.expression.Part;
+import com.redhat.qute.parser.expression.Parts;
+import com.redhat.qute.parser.expression.PropertyPart;
+import com.redhat.qute.parser.template.Expression;
+import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.ParameterDeclaration;
@@ -40,6 +48,18 @@ import io.quarkus.qute.TemplateException;
  */
 class QuteDiagnostics {
 
+	private static final String QUTE_SOURCE = "qute";
+
+	private static final String UNDEFINED_PROPERTY_MESSAGE = "`{0}` cannot be resolved to a variable.";
+
+	private static final String UNKWOWN_PROPERTY_MESSAGE = "`{0}` cannot be resolved or is not a field for `{1}` Java type.";
+
+	private static final String RESOLVING_JAVA_TYPE_MESSAGE = "Resolving Java type `{0}`.";
+
+	private static final String UNKWOWN_JAVA_TYPE_MESSAGE = "`{0}` cannot be resolved to a type.";
+
+	private static final ResolvedJavaClassInfo NOW = new ResolvedJavaClassInfo();
+
 	private final JavaDataModelCache javaCache;
 
 	public QuteDiagnostics(JavaDataModelCache javaCache) {
@@ -56,7 +76,8 @@ class QuteDiagnostics {
 	 * @return the result of the validation.
 	 */
 	public List<Diagnostic> doDiagnostics(Template template, TextDocument document,
-			QuteValidationSettings validationSettings, CancelChecker cancelChecker) {
+			QuteValidationSettings validationSettings,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, CancelChecker cancelChecker) {
 		if (validationSettings == null) {
 			validationSettings = QuteValidationSettings.DEFAULT;
 		}
@@ -64,6 +85,7 @@ class QuteDiagnostics {
 		if (validationSettings.isEnabled()) {
 			// validate(template, diagnostics);
 			validate2(template, diagnostics);
+			validateDataModel(template, template, resolvingJavaTypeFutures, diagnostics);
 		}
 		return diagnostics;
 	}
@@ -79,7 +101,7 @@ class QuteDiagnostics {
 			Position start = new Position(line, e.getOrigin().getLineCharacterStart() - 1);
 			Position end = new Position(line, e.getOrigin().getLineCharacterEnd() - 1);
 			Range range = new Range(start, end);
-			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, "qute", null);
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
 			diagnostics.add(diagnostic);
 		}
 	}
@@ -88,7 +110,7 @@ class QuteDiagnostics {
 		if (!parent.isClosed()) {
 			Range range = QutePositionUtility.createRange(parent);
 			String message = parent.getKind() + parent.getNodeName() + " is not closed";
-			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, "qute", null);
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
 			diagnostics.add(diagnostic);
 		}
 		for (Node child : parent.getChildren()) {
@@ -96,28 +118,167 @@ class QuteDiagnostics {
 		}
 	}
 
-	public CompletableFuture<List<Diagnostic>> doDiagnostics2(Template template, QuteTextDocument document,
-			QuteValidationSettings validationSettings, CancelChecker cancelChecker) {
-		List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
+	/*
+	 * public CompletableFuture<List<Diagnostic>> doDiagnostics2(Template template,
+	 * QuteTextDocument document, QuteValidationSettings validationSettings,
+	 * List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures,
+	 * CancelChecker cancelChecker) { List<Diagnostic> diagnostics = new
+	 * ArrayList<Diagnostic>(); String projectUri = template.getProjectUri(); if
+	 * (projectUri != null) { Node parent = template; validateDataModel(parent,
+	 * template, resolvingJavaTypeFutures, diagnostics); } return
+	 * CompletableFuture.completedFuture(diagnostics); }
+	 */
+
+	private List<CompletableFuture<ResolvedJavaClassInfo>> validateDataModel(Node parent, Template template,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
+		List<Node> children = parent.getChildren();
+		for (Node node : children) {
+			switch (node.getKind()) {
+			case ParameterDeclaration: {
+				ParameterDeclaration parameter = (ParameterDeclaration) node;
+				String className = parameter.getClassName();
+				if (StringUtils.isEmpty(className)) {
+					Range range = QutePositionUtility.createRange(parameter);
+					String message = "Class must be defined";
+					Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
+					diagnostics.add(diagnostic);
+				} else {
+					// javaCache.getResolvedJavaClass(className, projectUri)
+					// javaCache.getResolvedClass(null, 0, projectUri);
+				}
+				break;
+			}
+			case Expression: {
+				validateExpression((Expression) node, resolvingJavaTypeFutures, diagnostics, template);
+				break;
+			}
+			default:
+			}
+			validateDataModel(node, template, resolvingJavaTypeFutures, diagnostics);
+		}
+		return resolvingJavaTypeFutures;
+	}
+
+	private void validateExpression(Expression expression,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics,
+			Template template) {
 		String projectUri = template.getProjectUri();
-		if (projectUri != null) {			
-			List<Node> children = template.getChildren();
-			for (Node node : children) {
-				if (node.getKind() == NodeKind.ParameterDeclaration) {
-					ParameterDeclaration parameter = (ParameterDeclaration) node;
-					String className = parameter.getClassName();
-					if (StringUtils.isEmpty(className)) {
-						Range range = QutePositionUtility.createRange(parameter);
-						String message = "Class must be defined";
-						Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, "qute", null);
-						diagnostics.add(diagnostic);
-					} else {
-						// javaCache.getResolvedClass(null, 0, projectUri);
-					}
+		if (!StringUtils.isEmpty(projectUri)) {
+			List<Node> expressionChildren = expression.getExpressionContent();
+			for (Node expressionChild : expressionChildren) {
+				if (expressionChild.getKind() == NodeKind.ExpressionParts) {
+					Parts parts = (Parts) expressionChild;
+					validateExpressionParts(projectUri, parts, resolvingJavaTypeFutures, diagnostics);
 				}
 			}
+
 		}
-		return CompletableFuture.completedFuture(diagnostics);
+	}
+
+	private void validateExpressionParts(String projectUri, Parts parts,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
+		ResolvedJavaClassInfo resolvedJavaClass = null;
+		JavaClassMemberInfo previousMember = null;
+		for (int i = 0; i < parts.getChildCount(); i++) {
+			Part current = ((Part) parts.getChild(i));
+			switch (current.getPartKind()) {
+
+			case Object: {
+				ObjectPart objectPart = (ObjectPart) current;
+				resolvedJavaClass = validateObjectPart(objectPart, projectUri, diagnostics, resolvingJavaTypeFutures);
+				if (resolvedJavaClass == null) {
+					// The Java type of the object part cannot be resolved, stop the validation of
+					// property, method.
+					return;
+				}
+				break;
+			}
+
+			case Property: {
+				PropertyPart propertyPart = (PropertyPart) current;
+				if (previousMember != null) {
+					String type = previousMember.getType();
+					CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(type,
+							projectUri);
+					resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
+					if (NOW.equals(resolvedJavaClass)) {
+						// Java type must be loaded.
+						Range range = QutePositionUtility.createRange(propertyPart);
+						String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, type);
+						Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Information,
+								QUTE_SOURCE, null);
+						diagnostics.add(diagnostic);
+						resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
+						return;
+					}
+					if (resolvedJavaClass == null) {
+						// Java type doesn't exist
+						Range range = QutePositionUtility.createRange(propertyPart);
+						String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, type);
+						Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE,
+								null);
+						diagnostics.add(diagnostic);
+						return;
+					}
+				}
+
+				String property = current.getPartName();
+				previousMember = resolvedJavaClass.findMember(property);
+				if (previousMember == null) {
+					Range range = QutePositionUtility.createRange(current);
+					String message = MessageFormat.format(UNKWOWN_PROPERTY_MESSAGE, property,
+							resolvedJavaClass.getClassName());
+					Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
+					diagnostics.add(diagnostic);
+					return;
+				}
+				break;
+			}
+			}
+		}
+	}
+
+	private ResolvedJavaClassInfo validateObjectPart(ObjectPart objectPart, String projectUri,
+			List<Diagnostic> diagnostics, List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
+		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
+		if (javaTypeInfo == null) {
+			Range range = QutePositionUtility.createRange(objectPart);
+			String message = MessageFormat.format(UNDEFINED_PROPERTY_MESSAGE, objectPart.getPartName());
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Warning, QUTE_SOURCE, null);
+			diagnostics.add(diagnostic);
+			return null;
+		}
+
+		String resolvingJavaType = javaTypeInfo.getClassName();
+		if (StringUtils.isEmpty(resolvingJavaType)) {
+			Range range = QutePositionUtility.createRange(objectPart);
+			String message = "Cannot be resolved as type";
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Warning, QUTE_SOURCE, null);
+			diagnostics.add(diagnostic);
+			return null;
+		}
+
+		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(objectPart,
+				projectUri);
+		ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
+		if (NOW.equals(resolvedJavaClass)) {
+			// Java type must be loaded.
+			Range range = QutePositionUtility.createRange(objectPart);
+			String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, resolvingJavaType);
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Information, QUTE_SOURCE, null);
+			diagnostics.add(diagnostic);
+			resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
+			return null;
+		}
+		if (resolvedJavaClass == null) {
+			// Java type doesn't exist
+			Range range = QutePositionUtility.createRange(objectPart);
+			String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, resolvingJavaType);
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
+			diagnostics.add(diagnostic);
+			return null;
+		}
+		return resolvedJavaClass;
 	}
 
 }

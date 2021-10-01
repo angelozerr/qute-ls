@@ -23,8 +23,7 @@ public class Expression extends Node {
 	}
 
 	public Node findNodeExpressionAt(int offset) {
-		parseExpressionIfNeeded();
-		Node node = findNodeAt(expressionContent, offset);
+		Node node = findNodeAt(getExpressionContent(), offset);
 		if (node != null) {
 			return node;
 		}
@@ -36,5 +35,10 @@ public class Expression extends Node {
 			return;
 		}
 		expressionContent = ExpressionParser.parse(this, null);
+	}
+
+	public List<Node> getExpressionContent() {
+		parseExpressionIfNeeded();
+		return expressionContent;
 	}
 }

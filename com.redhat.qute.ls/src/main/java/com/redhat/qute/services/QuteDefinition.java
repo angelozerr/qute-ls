@@ -157,10 +157,10 @@ class QuteDefinition {
 			case Property:
 			case Method:
 				Parts parts = part.getParent();
-				int partIndex = parts.getPreviousPartIndex(part);
+				Part previousPart = parts.getPreviousPart(part);
 				String projectUri = template.getProjectUri();
 				if (projectUri != null) {
-					return javaCache.getResolvedClass(parts, partIndex, projectUri) //
+					return javaCache.resolveJavaType(previousPart, projectUri) //
 							.thenCompose(resolvedClass -> {
 								if (resolvedClass != null) {
 									String property = part.getPartName();

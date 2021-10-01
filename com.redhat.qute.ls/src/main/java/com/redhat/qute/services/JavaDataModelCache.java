@@ -83,7 +83,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 		return definitionProvider.getJavaDefinition(params);
 	}
 
-	public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(String className, String projectUri) {
+	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(String className, String projectUri) {
 		if (StringUtils.isEmpty(className) || StringUtils.isEmpty(projectUri)) {
 			return CompletableFuture.completedFuture(null);
 		}
@@ -106,42 +106,14 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 		return container;
 	}
 
-	public CompletableFuture<ResolvedJavaClassInfo> getResolvedClass(Parts parts, int partIndex, String projectUri) {
+	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Parts parts, int partIndex, String projectUri) {
 		CompletableFuture<ResolvedJavaClassInfo> future = null;
-		for (int i = 0; i <= partIndex; i++) {
+		for (int i = 0; i < partIndex + 1; i++) {
 			Part current = ((Part) parts.getChild(i));
 			switch (current.getPartKind()) {
 			case Object:
 				ObjectPart objectPart = (ObjectPart) current;
-				JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
-				if (javaTypeInfo == null) {
-					return NULL_FUTURE;
-				}
-				String className = javaTypeInfo.getClassName();
-				if (StringUtils.isEmpty(className)) {
-					return NULL_FUTURE;
-				}
-
-				future = getResolvedJavaClass(className, projectUri);
-
-				Node node = javaTypeInfo.getNode();
-				if (node.getKind() == NodeKind.Section) {
-					Section section = (Section) node;
-					if (section.isIterable()) {
-						future = future //
-								.thenCompose(resolvedClass -> {
-									if (resolvedClass == null) {
-										return NULL_FUTURE;
-									}
-									if (!resolvedClass.isIterable()) {
-										return CompletableFuture.completedFuture(resolvedClass);
-									}
-									String iterClassName = resolvedClass.getIterableOf();
-									return getResolvedJavaClass(iterClassName, projectUri);
-								});
-					}
-				}
-
+				future = getResolvedClass(objectPart, projectUri);
 				break;
 			case Property:
 				if (future != null) {
@@ -156,13 +128,53 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 									return NULL_FUTURE;
 								}
 								String memberType = member.getType();
-								return getResolvedJavaClass(memberType, projectUri);
+								return resolveJavaType(memberType, projectUri);
 							});
 				}
 				break;
+			default:
 			}
 		}
 		return future != null ? future : NULL_FUTURE;
+	}
+
+	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Part part, String projectUri) {
+		Parts parts = part.getParent();
+		int partIndex = parts.getPartIndex(part);
+		return resolveJavaType(parts, partIndex, projectUri);
+	}
+
+	private CompletableFuture<ResolvedJavaClassInfo> getResolvedClass(ObjectPart objectPart, String projectUri) {
+		CompletableFuture<ResolvedJavaClassInfo> future;
+		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
+		if (javaTypeInfo == null) {
+			return NULL_FUTURE;
+		}
+		String className = javaTypeInfo.getClassName();
+		if (StringUtils.isEmpty(className)) {
+			return NULL_FUTURE;
+		}
+
+		future = resolveJavaType(className, projectUri);
+
+		Node node = javaTypeInfo.getNode();
+		if (node.getKind() == NodeKind.Section) {
+			Section section = (Section) node;
+			if (section.isIterable()) {
+				future = future //
+						.thenCompose(resolvedClass -> {
+							if (resolvedClass == null) {
+								return NULL_FUTURE;
+							}
+							if (!resolvedClass.isIterable()) {
+								return CompletableFuture.completedFuture(resolvedClass);
+							}
+							String iterClassName = resolvedClass.getIterableOf();
+							return resolveJavaType(iterClassName, projectUri);
+						});
+			}
+		}
+		return future;
 	}
 
 	public void dataModelChanged(JavaDataModelChangeEvent event) {
@@ -176,4 +188,5 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
 		return projectInfoProvider.getProjectInfo(params);
 	}
+
 }

@@ -80,4 +80,13 @@ public class Parts extends Node {
 		return part != null ? super.getChildren().indexOf(part) - 1 : super.getChildCount() - 1;
 	}
 
+	public int getPartIndex(Part part) {
+		return super.getChildren().indexOf(part);
+	}
+
+	public Part getPreviousPart(Part part) {
+		int partIndex = getPartIndex(part);
+		return (Part) super.getChild(partIndex - 1);
+	}
+
 }

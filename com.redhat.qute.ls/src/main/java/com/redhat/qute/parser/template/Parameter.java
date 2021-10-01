@@ -65,7 +65,7 @@ public class Parameter extends Node {
 	}
 
 	public String getValue() {
-		if (value == null) {
+ 		if (value == null) {
 			if (startValue != -1) {
 				value = getOwnerTemplate().getText(getStartValue(), getEndValue());
 			} else {

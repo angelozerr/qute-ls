@@ -24,7 +24,7 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.ls.QuteTextDocument;
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCompletionSettings;
@@ -103,12 +103,10 @@ public class QuteLanguageService {
 	 * @return the result of the validation.
 	 */
 	public List<Diagnostic> doDiagnostics(Template template, TextDocument document,
-			QuteValidationSettings validationSettings, CancelChecker cancelChecker) {
-		return diagnostics.doDiagnostics(template, document, validationSettings, cancelChecker);
+			QuteValidationSettings validationSettings,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, CancelChecker cancelChecker) {
+		return diagnostics.doDiagnostics(template, document, validationSettings, resolvingJavaTypeFutures,
+				cancelChecker);
 	}
 
-	public CompletableFuture<List<Diagnostic>> doDiagnostics2(Template template, QuteTextDocument document, QuteValidationSettings validationSettings,
-			CancelChecker cancelChecker) {
-		return diagnostics.doDiagnostics2(template, document, validationSettings, cancelChecker);
-	}
 }
