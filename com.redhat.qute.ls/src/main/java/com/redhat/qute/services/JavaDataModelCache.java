@@ -85,7 +85,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 
 	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(String className, String projectUri) {
 		if (StringUtils.isEmpty(className) || StringUtils.isEmpty(projectUri)) {
-			return CompletableFuture.completedFuture(null);
+			return NULL_FUTURE;
 		}
 		ProjectContainer container = getProjectContainer(projectUri);
 		CompletableFuture<ResolvedJavaClassInfo> future = container.getResolvedJavaClass(className);

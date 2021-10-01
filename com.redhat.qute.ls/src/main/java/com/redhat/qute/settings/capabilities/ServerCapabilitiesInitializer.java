@@ -55,6 +55,9 @@ public class ServerCapabilitiesInitializer {
 		if (!clientCapabilities.isCompletionDynamicRegistrationSupported()) {
 			serverCapabilities.setCompletionProvider(DEFAULT_COMPLETION_OPTIONS);
 		}
+		if (!clientCapabilities.isHoverDynamicRegistered()) {
+			serverCapabilities.setHoverProvider(!clientCapabilities.isHoverDynamicRegistered());
+		}
 		/*
 		 * serverCapabilities.setDefinitionProvider(!clientCapabilities.
 		 * isDefinitionDynamicRegistered()); if

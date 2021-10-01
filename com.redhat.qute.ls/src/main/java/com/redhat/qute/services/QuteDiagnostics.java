@@ -118,17 +118,6 @@ class QuteDiagnostics {
 		}
 	}
 
-	/*
-	 * public CompletableFuture<List<Diagnostic>> doDiagnostics2(Template template,
-	 * QuteTextDocument document, QuteValidationSettings validationSettings,
-	 * List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures,
-	 * CancelChecker cancelChecker) { List<Diagnostic> diagnostics = new
-	 * ArrayList<Diagnostic>(); String projectUri = template.getProjectUri(); if
-	 * (projectUri != null) { Node parent = template; validateDataModel(parent,
-	 * template, resolvingJavaTypeFutures, diagnostics); } return
-	 * CompletableFuture.completedFuture(diagnostics); }
-	 */
-
 	private List<CompletableFuture<ResolvedJavaClassInfo>> validateDataModel(Node parent, Template template,
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
 		List<Node> children = parent.getChildren();
@@ -163,15 +152,12 @@ class QuteDiagnostics {
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics,
 			Template template) {
 		String projectUri = template.getProjectUri();
-		if (!StringUtils.isEmpty(projectUri)) {
-			List<Node> expressionChildren = expression.getExpressionContent();
-			for (Node expressionChild : expressionChildren) {
-				if (expressionChild.getKind() == NodeKind.ExpressionParts) {
-					Parts parts = (Parts) expressionChild;
-					validateExpressionParts(projectUri, parts, resolvingJavaTypeFutures, diagnostics);
-				}
+		List<Node> expressionChildren = expression.getExpressionContent();
+		for (Node expressionChild : expressionChildren) {
+			if (expressionChild.getKind() == NodeKind.ExpressionParts) {
+				Parts parts = (Parts) expressionChild;
+				validateExpressionParts(projectUri, parts, resolvingJavaTypeFutures, diagnostics);
 			}
-
 		}
 	}
 

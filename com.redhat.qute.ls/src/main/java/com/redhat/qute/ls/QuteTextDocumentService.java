@@ -32,6 +32,8 @@ import org.eclipse.lsp4j.DocumentLink;
 import org.eclipse.lsp4j.DocumentLinkParams;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
@@ -95,6 +97,14 @@ public class QuteTextDocumentService implements TextDocumentService {
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
 		QuteTextDocument document = (QuteTextDocument) documents.onDidOpenTextDocument(params);
+		document.getProjectInfoFuture().thenAccept(projectInfo -> {
+			if (projectInfo != null) {
+				// At this step we get informations about the Java project (used to collect Java
+				// classes available for the given Qute template)
+				// We retrigger the validation to validate data model.
+				triggerValidationFor(document);
+			}
+		});
 		triggerValidationFor(document);
 	}
 
@@ -118,6 +128,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	}
 
+	@Override
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
 		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
 				(cancelChecker, template) -> {
@@ -130,6 +141,15 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 				});
 
+	}
+
+	@Override
+	public CompletableFuture<Hover> hover(HoverParams params) {
+		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
+				(cancelChecker, template) -> {
+					return getQuteLanguageService().doHover(template, params.getPosition(), sharedSettings,
+							cancelChecker);
+				});
 	}
 
 	@Override
@@ -167,6 +187,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 		});
 	}
 
+	@Override
 	public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
 			DocumentSymbolParams params) {
 		return getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
@@ -202,7 +223,8 @@ public class QuteTextDocumentService implements TextDocumentService {
 					.publishDiagnostics(new PublishDiagnosticsParams(template.getUri(), diagnostics));
 
 			if (!resolvingJavaTypeFutures.isEmpty()) {
-				// Some Java types was not loaded, wait for that all Java types are resolved to retrigger the validation.
+				// Some Java types was not loaded, wait for that all Java types are resolved to
+				// retrigger the validation.
 				CompletableFuture<Void> allFutures = CompletableFuture.allOf(
 						resolvingJavaTypeFutures.toArray(new CompletableFuture[resolvingJavaTypeFutures.size()]));
 				allFutures.thenAccept(Void -> {

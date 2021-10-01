@@ -19,6 +19,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentHighlight;
 import org.eclipse.lsp4j.DocumentLink;
 import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.SymbolInformation;
@@ -30,6 +31,7 @@ import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 import com.redhat.qute.settings.QuteValidationSettings;
+import com.redhat.qute.settings.SharedSettings;
 
 /**
  * The Qute language service.
@@ -40,6 +42,7 @@ import com.redhat.qute.settings.QuteValidationSettings;
 public class QuteLanguageService {
 
 	private final QuteCompletions completions;
+	private final QuteHover hover;
 	private final QuteHighlighting highlighting;
 	private final QuteDefinition definition;
 	private final QuteDocumentLink documentLink;
@@ -48,6 +51,7 @@ public class QuteLanguageService {
 
 	public QuteLanguageService(JavaDataModelCache javaCache) {
 		this.completions = new QuteCompletions(javaCache);
+		this.hover = new QuteHover(javaCache);
 		this.highlighting = new QuteHighlighting();
 		this.definition = new QuteDefinition(javaCache);
 		this.documentLink = new QuteDocumentLink();
@@ -69,6 +73,11 @@ public class QuteLanguageService {
 			QuteCompletionSettings completionSettings, QuteFormattingSettings formattingSettings,
 			CancelChecker cancelChecker) {
 		return completions.doComplete(template, position, completionSettings, formattingSettings, cancelChecker);
+	}
+
+	public CompletableFuture<Hover> doHover(Template template, Position position, SharedSettings sharedSettings,
+			CancelChecker cancelChecker) {
+		return hover.doHover(template, position, sharedSettings, cancelChecker);
 	}
 
 	public List<DocumentHighlight> findDocumentHighlights(Template template, Position position,

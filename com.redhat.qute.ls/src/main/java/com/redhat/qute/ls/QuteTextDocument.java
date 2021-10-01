@@ -26,13 +26,17 @@ public class QuteTextDocument extends ModelTextDocument<Template> {
 	}
 
 	private String getProjectUri() {
+		ProjectInfo projectInfo = getProjectInfoFuture().getNow(null);
+		return projectInfo != null ? projectInfo.getUri() : null;
+	}
+
+	public CompletableFuture<ProjectInfo> getProjectInfoFuture() {
 		if (projectInfoFuture == null || projectInfoFuture.isCompletedExceptionally()
 				|| projectInfoFuture.isCancelled()) {
 			QuteProjectParams params = new QuteProjectParams(super.getUri());
 			projectInfoFuture = projectInfoProvider.getProjectInfo(params);
 		}
-		ProjectInfo projectInfo = projectInfoFuture.getNow(null);
-		return projectInfo != null ? projectInfo.getUri() : null;
+		return projectInfoFuture;
 	}
 
 	@Override

@@ -117,6 +117,32 @@ public abstract class Node {
 	}
 
 	/**
+	 * Returns the node before
+	 */
+	public Node findNodeBefore(int offset) {
+		List<Node> children = getChildren();
+		int idx = findFirst(children, c -> offset <= c.start) - 1;
+		if (idx >= 0) {
+			Node child = children.get(idx);
+			if (offset > child.start) {
+				if (offset < child.end) {
+					return child.findNodeBefore(offset);
+				}
+				Node lastChild = child.getLastChild();
+				if (lastChild != null && lastChild.end == child.end) {
+					return child.findNodeBefore(offset);
+				}
+				return child;
+			}
+		}
+		return this;
+	}
+
+	public Node getLastChild() {
+		return this.children != null && this.children.size() > 0 ? this.children.get(this.children.size() - 1) : null;
+	}
+
+	/**
 	 * Returns true if the node included the given offset and false otherwise.
 	 * 
 	 * @param node

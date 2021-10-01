@@ -14,10 +14,12 @@ import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_HIGHLIGHT_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_LINK_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_SYMBOL_ID;
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.HOVER_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_COMPLETION;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DEFINITION;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DOCUMENT_SYMBOL;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_HIGHLIGHT;
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_HOVER;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_LINK;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.WORKSPACE_EXECUTE_COMMAND;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.WORKSPACE_EXECUTE_COMMAND_ID;
@@ -68,6 +70,9 @@ public class QuteCapabilityManager {
 		}
 		if (this.getClientCapabilities().isCompletionDynamicRegistrationSupported()) {
 			registerCapability(COMPLETION_ID, TEXT_DOCUMENT_COMPLETION, DEFAULT_COMPLETION_OPTIONS);
+		}
+		if (this.getClientCapabilities().isHoverDynamicRegistered()) {
+			registerCapability(HOVER_ID, TEXT_DOCUMENT_HOVER);
 		}
 		if (this.getClientCapabilities().isDocumentLinkDynamicRegistered()) {
 			registerCapability(DOCUMENT_LINK_ID, TEXT_DOCUMENT_LINK, DEFAULT_DOCUMENT_LINK_OPTIONS);
