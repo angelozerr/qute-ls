@@ -70,6 +70,9 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 		createResolvedJavaClassInfo("org.acme", cache).setUri(null);
 
+		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
+		registerMember("UTF16", null, "byte", string);
+		
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);
 		registerMember("name", null, "java.lang.String", review);
 		registerMember("average", null, "java.lang.Integer", review);

@@ -182,44 +182,28 @@ class QuteDiagnostics {
 
 			case Property: {
 				PropertyPart propertyPart = (PropertyPart) current;
-				if (previousMember != null) {
-					String type = previousMember.getType();
-					CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(type,
-							projectUri);
-					resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
-					if (NOW.equals(resolvedJavaClass)) {
-						// Java type must be loaded.
-						Range range = QutePositionUtility.createRange(propertyPart);
-						String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, type);
-						Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Information,
-								QUTE_SOURCE, null);
-						diagnostics.add(diagnostic);
-						resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
-						return;
-					}
-					if (resolvedJavaClass == null) {
-						// Java type doesn't exist
-						Range range = QutePositionUtility.createRange(propertyPart);
-						String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, type);
-						Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE,
-								null);
-						diagnostics.add(diagnostic);
-						return;
-					}
-				}
 
-				String property = current.getPartName();
-				previousMember = resolvedJavaClass.findMember(property);
-				if (previousMember == null) {
-					Range range = QutePositionUtility.createRange(current);
-					String message = MessageFormat.format(UNKWOWN_PROPERTY_MESSAGE, property,
-							resolvedJavaClass.getClassName());
-					Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
-					diagnostics.add(diagnostic);
+				/*if (previousMember != null) {
+					String type = previousMember.getType();
+					resolvedJavaClass = validateJavaTypePart(propertyPart, projectUri, diagnostics,
+							resolvingJavaTypeFutures, type);
+				}
+				if (resolvedJavaClass == null) {
+					// The Java type of the previous part cannot be resolved, stop the validation of
+					// property, method.
+					return;
+				}*/				
+				resolvedJavaClass = validatePropertyPart(propertyPart, projectUri, resolvedJavaClass, diagnostics,
+						resolvingJavaTypeFutures);
+				if (resolvedJavaClass == null) {
+					// The Java type of the previous part cannot be resolved, stop the validation of
+					// property, method.
 					return;
 				}
 				break;
 			}
+
+			default:
 			}
 		}
 	}
@@ -235,22 +219,47 @@ class QuteDiagnostics {
 			return null;
 		}
 
-		String resolvingJavaType = javaTypeInfo.getClassName();
-		if (StringUtils.isEmpty(resolvingJavaType)) {
-			Range range = QutePositionUtility.createRange(objectPart);
+		String javaTypeToResolve = javaTypeInfo.getClassName();
+		return validateJavaTypePart(objectPart, projectUri, diagnostics, resolvingJavaTypeFutures, javaTypeToResolve);
+	}
+
+	private ResolvedJavaClassInfo validatePropertyPart(PropertyPart propertyPart, String projectUri,
+			ResolvedJavaClassInfo resolvedJavaClass, List<Diagnostic> diagnostics,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
+		String property = propertyPart.getPartName();
+		JavaClassMemberInfo javaMember = resolvedJavaClass.findMember(property);
+		if (javaMember == null) {
+			Range range = QutePositionUtility.createRange(propertyPart);
+			String message = MessageFormat.format(UNKWOWN_PROPERTY_MESSAGE, property, resolvedJavaClass.getClassName());
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
+			diagnostics.add(diagnostic);
+			return null;
+		}
+		Parts parts = propertyPart.getParent();
+		boolean last = parts.getPartIndex(propertyPart) == parts.getChildCount() - 1;
+		if (last) {
+			return null;
+		}
+		return validateJavaTypePart(propertyPart, projectUri, diagnostics, resolvingJavaTypeFutures,
+				javaMember.getType());
+	}
+
+	private ResolvedJavaClassInfo validateJavaTypePart(Part part, String projectUri, List<Diagnostic> diagnostics,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, String javaTypeToResolve) {
+		if (StringUtils.isEmpty(javaTypeToResolve)) {
+			Range range = QutePositionUtility.createRange(part);
 			String message = "Cannot be resolved as type";
 			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Warning, QUTE_SOURCE, null);
 			diagnostics.add(diagnostic);
 			return null;
 		}
 
-		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(objectPart,
-				projectUri);
+		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(part, projectUri);
 		ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
 		if (NOW.equals(resolvedJavaClass)) {
 			// Java type must be loaded.
-			Range range = QutePositionUtility.createRange(objectPart);
-			String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, resolvingJavaType);
+			Range range = QutePositionUtility.createRange(part);
+			String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, javaTypeToResolve);
 			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Information, QUTE_SOURCE, null);
 			diagnostics.add(diagnostic);
 			resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
@@ -258,8 +267,8 @@ class QuteDiagnostics {
 		}
 		if (resolvedJavaClass == null) {
 			// Java type doesn't exist
-			Range range = QutePositionUtility.createRange(objectPart);
-			String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, resolvingJavaType);
+			Range range = QutePositionUtility.createRange(part);
+			String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, javaTypeToResolve);
 			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
 			diagnostics.add(diagnostic);
 			return null;
