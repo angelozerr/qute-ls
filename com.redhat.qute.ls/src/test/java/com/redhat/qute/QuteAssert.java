@@ -51,6 +51,8 @@ import com.redhat.qute.utils.StringUtils;
  */
 public class QuteAssert {
 
+	private static final String QUTE_SOURCE = "qute";
+
 	private static final String PROJECT_URI = "project-qute";
 	private static final String FILE_URI = "test.qute";
 
@@ -199,12 +201,12 @@ public class QuteAssert {
 
 	// ------------------- Diagnostics assert
 
-	public static void testDiagnosticsFor(String xml, Diagnostic... expected) {
-		testDiagnosticsFor(xml, null, expected);
+	public static void testDiagnosticsFor(String value, Diagnostic... expected) {
+		testDiagnosticsFor(value, null, expected);
 	}
 
 	public static void testDiagnosticsFor(String value, String catalogPath, Diagnostic... expected) {
-		testDiagnosticsFor(value, FILE_URI, PROJECT_URI, true, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
+		testDiagnosticsFor(value, FILE_URI, PROJECT_URI, false, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
 	}
 
 	public static void testDiagnosticsFor(String value, String fileUri, String projectUri, boolean filter,
@@ -224,7 +226,7 @@ public class QuteAssert {
 	}
 
 	public static void assertDiagnostics(List<Diagnostic> actual, Diagnostic... expected) {
-		assertDiagnostics(actual, Arrays.asList(expected), true);
+		assertDiagnostics(actual, Arrays.asList(expected), false);
 	}
 
 	public static void assertDiagnostics(List<Diagnostic> actual, List<Diagnostic> expected, boolean filter) {
@@ -270,7 +272,12 @@ public class QuteAssert {
 
 	public static Diagnostic d(int startLine, int startCharacter, int endLine, int endCharacter, IQuteErrorCode code,
 			String message) {
-		return d(startLine, startCharacter, endLine, endCharacter, code, message, null, null);
+		return d(startLine, startCharacter, endLine, endCharacter, code, message, null);
+	}
+
+	public static Diagnostic d(int startLine, int startCharacter, int endLine, int endCharacter, IQuteErrorCode code,
+			String message, DiagnosticSeverity severity) {
+		return d(startLine, startCharacter, endLine, endCharacter, code, message, QUTE_SOURCE, severity);
 	}
 
 	public static Diagnostic d(int startLine, int startCharacter, int endLine, int endCharacter, IQuteErrorCode code,

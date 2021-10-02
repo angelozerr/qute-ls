@@ -34,6 +34,7 @@ import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.services.diagnostics.QuteErrorCode;
 import com.redhat.qute.settings.QuteValidationSettings;
 import com.redhat.qute.utils.QutePositionUtility;
 import com.redhat.qute.utils.StringUtils;
@@ -49,7 +50,7 @@ class QuteDiagnostics {
 
 	private static final String QUTE_SOURCE = "qute";
 
-	private static final String UNDEFINED_PROPERTY_MESSAGE = "`{0}` cannot be resolved to a variable.";
+	private static final String UNDEFINED_VARIABLE_MESSAGE = "`{0}` cannot be resolved to a variable.";
 
 	private static final String UNKWOWN_PROPERTY_MESSAGE = "`{0}` cannot be resolved or is not a field for `{1}` Java type.";
 
@@ -206,8 +207,9 @@ class QuteDiagnostics {
 		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
 		if (javaTypeInfo == null) {
 			Range range = QutePositionUtility.createRange(objectPart);
-			String message = MessageFormat.format(UNDEFINED_PROPERTY_MESSAGE, objectPart.getPartName());
-			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Warning, QUTE_SOURCE, null);
+			String message = MessageFormat.format(UNDEFINED_VARIABLE_MESSAGE, objectPart.getPartName());
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Warning, QUTE_SOURCE,
+					QuteErrorCode.UndefinedVariable.getCode());
 			diagnostics.add(diagnostic);
 			return null;
 		}
@@ -224,7 +226,8 @@ class QuteDiagnostics {
 		if (javaMember == null) {
 			Range range = QutePositionUtility.createRange(propertyPart);
 			String message = MessageFormat.format(UNKWOWN_PROPERTY_MESSAGE, property, resolvedJavaClass.getClassName());
-			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
+			Diagnostic diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE,
+					QuteErrorCode.UnkwownProperty.getCode());
 			diagnostics.add(diagnostic);
 			return null;
 		}

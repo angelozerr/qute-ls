@@ -47,6 +47,9 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	protected Map<String, ResolvedJavaClassInfo> createResolvedClasses() {
 		Map<String, ResolvedJavaClassInfo> cache = new HashMap<>();
 
+		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
+		registerMember("UTF16", null, "byte", string);
+
 		createResolvedJavaClassInfo("org.acme", cache).setUri(null);
 
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);
