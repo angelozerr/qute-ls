@@ -4,18 +4,7 @@ import static com.redhat.qute.QuteAssert.c;
 import static com.redhat.qute.QuteAssert.r;
 import static com.redhat.qute.QuteAssert.testCompletionFor;
 
-/*******************************************************************************
-* Copyright (c) 2020 Red Hat Inc. and others.
-* All rights reserved. This program and the accompanying materials
-* which accompanies this distribution, and is available at
-* http://www.eclipse.org/legal/epl-v20.html
-*
-* SPDX-License-Identifier: EPL-2.0
-*
-* Contributors:
-*     Red Hat Inc. - initial API and implementation
-*******************************************************************************/
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for Qute completion in expression.
@@ -115,4 +104,5 @@ public class QuteCompletionInExpressionTest {
 				c("name", "name", r(1, 19, 1, 21)), //
 				c("average", "average", r(1, 19, 1, 21)));
 	}
+
 }

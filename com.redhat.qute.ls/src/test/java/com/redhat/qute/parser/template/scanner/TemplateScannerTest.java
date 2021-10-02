@@ -1,8 +1,9 @@
 package com.redhat.qute.parser.template.scanner;
 
-import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 import com.redhat.qute.parser.scanner.Scanner;
 

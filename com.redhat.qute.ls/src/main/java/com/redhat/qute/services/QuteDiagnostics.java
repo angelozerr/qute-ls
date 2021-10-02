@@ -24,7 +24,6 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.commons.JavaClassMemberInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
-import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
@@ -70,27 +69,24 @@ class QuteDiagnostics {
 	 * Validate the given Qute <code>template</code>.
 	 * 
 	 * @param template           the Qute template.
-	 * @param document
 	 * @param validationSettings the validation settings.
 	 * @param cancelChecker      the cancel checker.
 	 * @return the result of the validation.
 	 */
-	public List<Diagnostic> doDiagnostics(Template template, TextDocument document,
-			QuteValidationSettings validationSettings,
+	public List<Diagnostic> doDiagnostics(Template template, QuteValidationSettings validationSettings,
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, CancelChecker cancelChecker) {
 		if (validationSettings == null) {
 			validationSettings = QuteValidationSettings.DEFAULT;
 		}
 		List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
 		if (validationSettings.isEnabled()) {
-			// validate(template, diagnostics);
-			validate2(template, diagnostics);
+			validateWithRealQuteParser(template, diagnostics);
 			validateDataModel(template, template, resolvingJavaTypeFutures, diagnostics);
 		}
 		return diagnostics;
 	}
 
-	private void validate2(Template template, List<Diagnostic> diagnostics) {
+	private void validateWithRealQuteParser(Template template, List<Diagnostic> diagnostics) {
 		Engine engine = Engine.builder().addDefaults().build();
 		String templateContent = template.getText();
 		try {
@@ -183,16 +179,13 @@ class QuteDiagnostics {
 			case Property: {
 				PropertyPart propertyPart = (PropertyPart) current;
 
-				/*if (previousMember != null) {
-					String type = previousMember.getType();
-					resolvedJavaClass = validateJavaTypePart(propertyPart, projectUri, diagnostics,
-							resolvingJavaTypeFutures, type);
-				}
-				if (resolvedJavaClass == null) {
-					// The Java type of the previous part cannot be resolved, stop the validation of
-					// property, method.
-					return;
-				}*/				
+				/*
+				 * if (previousMember != null) { String type = previousMember.getType();
+				 * resolvedJavaClass = validateJavaTypePart(propertyPart, projectUri,
+				 * diagnostics, resolvingJavaTypeFutures, type); } if (resolvedJavaClass ==
+				 * null) { // The Java type of the previous part cannot be resolved, stop the
+				 * validation of // property, method. return; }
+				 */
 				resolvedJavaClass = validatePropertyPart(propertyPart, projectUri, resolvedJavaClass, diagnostics,
 						resolvingJavaTypeFutures);
 				if (resolvedJavaClass == null) {
