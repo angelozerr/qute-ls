@@ -21,11 +21,13 @@ public class SharedSettings {
 	private final QuteCompletionSettings completionSettings;
 	private final QuteFormattingSettings formattingSettings;
 	private final QuteValidationSettings validationSettings;
+	private final QuteHoverSettings hoverSettings;
 
 	public SharedSettings() {
 		this.completionSettings = new QuteCompletionSettings();
 		this.formattingSettings = new QuteFormattingSettings();
 		this.validationSettings = new QuteValidationSettings();
+		this.hoverSettings = new QuteHoverSettings();
 	}
 
 	/**
@@ -55,4 +57,12 @@ public class SharedSettings {
 		return validationSettings;
 	}
 
+	/**
+	 * Returns the hover settings.
+	 * 
+	 * @return the hover settings.
+	 */
+	public QuteHoverSettings getHoverSettings() {
+		return hoverSettings;
+	}
 }

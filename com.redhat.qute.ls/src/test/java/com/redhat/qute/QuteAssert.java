@@ -14,6 +14,7 @@ package com.redhat.qute;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -27,7 +28,11 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticRelatedInformation;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.HoverCapabilities;
+import org.eclipse.lsp4j.MarkedString;
 import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
@@ -41,6 +46,7 @@ import com.redhat.qute.services.QuteLanguageService;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
+import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.utils.StringUtils;
 
 /**
@@ -285,6 +291,56 @@ public class QuteAssert {
 		// Diagnostic on 1 line
 		return new Diagnostic(r(startLine, startCharacter, endLine, endCharacter), message, severity, source,
 				code != null ? code.getCode() : null);
+	}
+
+	// ------------------- Hover assert
+
+	public static void assertHover(String value) throws Exception {
+		assertHover(value, null, null);
+	}
+
+	public static void assertHover(String value, String expectedHoverLabel, Range expectedHoverRange) throws Exception {
+		assertHover(value, null, expectedHoverLabel, expectedHoverRange);
+	}
+
+	public static void assertHover(String value, String fileURI, String expectedHoverLabel, Range expectedHoverRange)
+			throws Exception {
+		SharedSettings sharedSettings = new SharedSettings();
+		HoverCapabilities capabilities = new HoverCapabilities(Arrays.asList(MarkupKind.MARKDOWN), false);
+		sharedSettings.getHoverSettings().setCapabilities(capabilities);
+		assertHover(value, fileURI, PROJECT_URI, expectedHoverLabel, expectedHoverRange, sharedSettings,
+				DEFAULT_JAVA_DATA_MODEL_CACHE);
+	}
+
+	public static void assertHover(String value, String fileUri, String projectUri, String expectedHoverLabel,
+			Range expectedHoverRange, SharedSettings sharedSettings, JavaDataModelCache javaCache) throws Exception {
+		int offset = value.indexOf("|");
+		value = value.substring(0, offset) + value.substring(offset + 1);
+
+		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
+		template.setProjectUri(projectUri);
+		Position position = template.positionAt(offset);
+
+		QuteLanguageService languageService = new QuteLanguageService(javaCache);
+		Hover hover = languageService.doHover(template, position, sharedSettings, () -> {
+		}).get();
+		if (expectedHoverLabel == null) {
+			assertNull(hover);
+		} else {
+			String actualHoverLabel = getHoverLabel(hover);
+			assertEquals(expectedHoverLabel, actualHoverLabel);
+			if (expectedHoverRange != null) {
+				assertEquals(expectedHoverRange, hover.getRange());
+			}
+		}
+	}
+
+	private static String getHoverLabel(Hover hover) {
+		Either<List<Either<String, MarkedString>>, MarkupContent> contents = hover != null ? hover.getContents() : null;
+		if (contents == null) {
+			return null;
+		}
+		return contents.getRight().getValue();
 	}
 
 }
