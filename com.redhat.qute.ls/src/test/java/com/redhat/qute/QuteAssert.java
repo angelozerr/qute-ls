@@ -11,6 +11,7 @@
 *******************************************************************************/
 package com.redhat.qute;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -30,6 +31,7 @@ import org.eclipse.lsp4j.DiagnosticRelatedInformation;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverCapabilities;
+import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.MarkedString;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
@@ -341,6 +343,46 @@ public class QuteAssert {
 			return null;
 		}
 		return contents.getRight().getValue();
+	}
+
+	// ------------------- Definition assert
+
+	public static void testDefinitionFor(String value, LocationLink... expected) throws Exception {
+		testDefinitionFor(value, null, expected);
+	}
+
+	public static void testDefinitionFor(String value, String fileURI, LocationLink... expected) throws Exception {
+		testDefinitionFor(value, fileURI, PROJECT_URI, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
+	}
+
+	public static void testDefinitionFor(String value, String fileUri, String projectUri, JavaDataModelCache javaCache,
+			LocationLink... expected) throws Exception {
+		int offset = value.indexOf("|");
+		value = value.substring(0, offset) + value.substring(offset + 1);
+
+		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
+		template.setProjectUri(projectUri);
+		Position position = template.positionAt(offset);
+
+		QuteLanguageService languageService = new QuteLanguageService(javaCache);
+
+		List<? extends LocationLink> actual = languageService.findDefinition(template, position, () -> {
+		}).get();
+		assertLocationLink(actual, expected);
+
+	}
+
+	public static LocationLink ll(final String uri, final Range originRange, Range targetRange) {
+		return new LocationLink(uri, targetRange, targetRange, originRange);
+	}
+
+	public static void assertLocationLink(List<? extends LocationLink> actual, LocationLink... expected) {
+		assertEquals(expected.length, actual.size());
+		for (int i = 0; i < expected.length; i++) {
+			actual.get(i).setTargetUri(actual.get(i).getTargetUri().replace("file:///", "file:/"));
+			expected[i].setTargetUri(expected[i].getTargetUri().replace("file:///", "file:/"));
+		}
+		assertArrayEquals(expected, actual.toArray());
 	}
 
 }
