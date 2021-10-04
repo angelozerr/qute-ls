@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.JavaClassMemberInfo;
@@ -41,7 +43,13 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 	@Override
 	protected CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
-		return super.getJavaDefinition(params);
+		String className = params.getClassName();
+		if (resolvedClassesCache.containsKey(className)) {
+			String javeFileUri = className.replaceAll("[.]", "/") + ".java";
+			Location location = new Location(javeFileUri, new Range(new Position(0, 0), new Position(0, 0)));
+			return CompletableFuture.completedFuture(location);
+		}
+		return null;
 	}
 
 	protected Map<String, ResolvedJavaClassInfo> createResolvedClasses() {
@@ -65,7 +73,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		createResolvedJavaClassInfo("java.util.List<org.acme.Item>", "java.util.List", "org.acme.Item", cache);
 		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache);
 		registerMember("get", null, "java.lang.String", list);
-		
+
 		return cache;
 	}
 

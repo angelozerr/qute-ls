@@ -2,6 +2,7 @@ package com.redhat.qute.parser.template;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.redhat.qute.parser.parameter.ParameterParser;
 
@@ -158,7 +159,7 @@ public class Section extends Node implements ParametersContainer {
 
 	public List<Parameter> getParameters() {
 		if (parameters == null) {
-			this.parameters = parseParameters(this);
+			this.parameters = parseParameters();
 		}
 		return this.parameters;
 	}
@@ -171,11 +172,40 @@ public class Section extends Node implements ParametersContainer {
 		return null;
 	}
 
-	private synchronized List<Parameter> parseParameters(Section section) {
+	public Parameter getParameterAtOffset(int offset) {
+		List<Parameter> parameters = getParameters();
+		return (Parameter) Node.findNodeAt(parameters.stream().map(param -> (Node) param).collect(Collectors.toList()),
+				offset);
+	}
+
+	private synchronized List<Parameter> parseParameters() {
 		if (parameters != null) {
 			return parameters;
 		}
-		return ParameterParser.parse(this, null);
+		List<Parameter> parameters = ParameterParser.parse(this, getOwnerTemplate().getCancelChecker());
+		List<ParameterInfo> infos = getParametersInfo().get(ParametersInfo.MAIN_BLOCK_NAME);
+		if (parameters.size() == infos.size()) {
+			for (int j = 0; j < infos.size(); j++) {
+				ParameterInfo info = infos.get(j);
+				if (info.getDefaultValue() == null) {
+					parameters.get(j).setCanHaveExpression(true);
+				}
+			}
+		} else {
+			int i = 0;
+			for (int j = 0; j < infos.size(); j++) {
+				ParameterInfo info = infos.get(j);
+				if (info.getDefaultValue() == null) {
+					if (parameters.size() > i) {
+						parameters.get(i).setCanHaveExpression(true);
+						i++;
+					} else {
+						break;
+					}
+				}
+			}
+		}
+		return parameters;
 	}
 
 	public boolean isIterable() {
@@ -190,5 +220,26 @@ public class Section extends Node implements ParametersContainer {
 	@Override
 	public int getEndParametersOffset() {
 		return getStartTagCloseOffset();
+	}
+
+	public boolean isInParameters(int offset) {
+		return offset >= getStartParametersOffset() && offset <= getEndParametersOffset();
+	}
+
+	public ExpressionParameter getExpressionParameter(int offset) {
+		if (!isInParameters(offset)) {
+			return null;
+		}
+		Parameter parameter = getParameterAtOffset(offset);
+		if (parameter != null) {
+			return parameter.getExpression();
+		}
+		ExpressionParameter expression = new ExpressionParameter(getStartParametersOffset(), getEndParametersOffset());
+		expression.setParent(this);
+		return expression;
+	}
+
+	public ParametersInfo getParametersInfo() {
+		return ParametersInfo.EMPTY;
 	}
 }

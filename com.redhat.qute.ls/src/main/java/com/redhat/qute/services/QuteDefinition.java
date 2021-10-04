@@ -27,14 +27,19 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.ls.commons.BadLocationException;
+import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
+import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.Section;
+import com.redhat.qute.parser.template.SectionKind;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.sections.LoopSection;
 import com.redhat.qute.utils.QutePositionUtility;
 
 /**
@@ -61,7 +66,8 @@ class QuteDefinition {
 			}
 			switch (node.getKind()) {
 			case Section:
-				// Start end tag definition
+				// - Start end tag definition
+				// - Java data model definition
 				return findDefinitionFromSection(offset, (Section) node, template);
 			case ParameterDeclaration:
 				// Return Java class definition
@@ -90,22 +96,41 @@ class QuteDefinition {
 	 * @return
 	 * @throws BadLocationException
 	 */
-	private static CompletableFuture<List<? extends LocationLink>> findDefinitionFromSection(int offset,
-			Section sectionTag, Template template) throws BadLocationException {
+	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromSection(int offset, Section sectionTag,
+			Template template) throws BadLocationException {
 		List<LocationLink> locations = new ArrayList<>();
+		// Try start / end tag definition to jump from start|end tag to end|start tag
+		if (!findDefinitionFromStartEndTagSection(offset, sectionTag, template, locations)) {
+			// Try Java data model definition
+			if (sectionTag.isInParameters(offset)) {
+				Parameter parameter = sectionTag.getParameterAtOffset(offset);
+				if (parameter != null) {
+					Expression expression = parameter.getExpression();
+					if (expression != null) {
+						return findDefinitionFromExpression(offset, expression, template);
+					}
+				}
+			}
+		}
+		return CompletableFuture.completedFuture(locations);
+	}
+
+	private static boolean findDefinitionFromStartEndTagSection(int offset, Section sectionTag, Template template,
+			List<LocationLink> locations) {
 		Range originRange = null;
 		Range targetRange = null;
 		if (sectionTag.isInStartTagName(offset)) {
 			originRange = QutePositionUtility.selectStartTagName(sectionTag);
 			targetRange = QutePositionUtility.selectEndTagName(sectionTag);
+			locations.add(new LocationLink(template.getUri(), targetRange, targetRange, originRange));
+			return true;
 		} else if (sectionTag.isInEndTag(offset)) {
 			originRange = QutePositionUtility.selectEndTagName(sectionTag);
 			targetRange = QutePositionUtility.selectStartTagName(sectionTag);
-		}
-		if (originRange != null && targetRange != null) {
 			locations.add(new LocationLink(template.getUri(), targetRange, targetRange, originRange));
+			return true;
 		}
-		return CompletableFuture.completedFuture(locations);
+		return false;
 	}
 
 	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromParameterDeclaration(int offset,
@@ -144,14 +169,35 @@ class QuteDefinition {
 			Part part = (Part) expressionNode;
 			switch (part.getPartKind()) {
 			case Object:
-				ParameterDeclaration parameter = template.findParameterByAlias(part.getPartName());
-				if (parameter != null) {
-					String targetUri = template.getUri();
-					Range targetRange = QutePositionUtility.selectAlias(parameter);
-					Range originSelectionRange = QutePositionUtility.createRange(part);
-					LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
-							originSelectionRange);
-					return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+				JavaTypeInfoProvider resolvedJavaType = ((ObjectPart) part).resolveJavaType();
+				if (resolvedJavaType != null) {
+					Node node = resolvedJavaType.getNode();
+					switch (node.getKind()) {
+					case ParameterDeclaration: {
+						ParameterDeclaration parameter = (ParameterDeclaration) node;
+						String targetUri = template.getUri();
+						Range targetRange = QutePositionUtility.selectAlias(parameter);
+						Range originSelectionRange = QutePositionUtility.createRange(part);
+						LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
+								originSelectionRange);
+						return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+					}
+					case Section: {
+						Section section = (Section) node;
+						if (section.getSectionKind() == SectionKind.EACH
+								|| section.getSectionKind() == SectionKind.FOR) {
+							LoopSection loopSection = (LoopSection) section;
+							Parameter parameter = loopSection.getAliasParameter();
+							String targetUri = template.getUri();
+							Range targetRange = QutePositionUtility.createRange(parameter);
+							Range originSelectionRange = QutePositionUtility.createRange(part);
+							LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
+									originSelectionRange);
+							return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+						}
+						break;
+					}
+					}
 				}
 				break;
 			case Property:

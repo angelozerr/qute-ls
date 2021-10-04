@@ -34,7 +34,7 @@ public class Expression extends Node {
 		if (expressionContent != null) {
 			return;
 		}
-		expressionContent = ExpressionParser.parse(this, null);
+		expressionContent = ExpressionParser.parse(this, getOwnerTemplate().getCancelChecker());
 	}
 
 	public List<Node> getExpressionContent() {

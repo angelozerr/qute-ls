@@ -29,7 +29,10 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.ls.commons.BadLocationException;
+import com.redhat.qute.parser.expression.Part;
+import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.scanner.Scanner;
+import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.Template;
@@ -95,12 +98,25 @@ public class QuteCompletions {
 		if (node == null) {
 			return EMPTY_FUTURE_COMPLETION;
 		}
-		if (NodeKind.Expression == node.getKind()) {
-			return completionForExpression.doCompleteExpression(completionRequest, cancelChecker);
-		}
-
 		String text = template.getText();
 		int offset = completionRequest.getOffset();
+		
+		if (node.getKind() == NodeKind.Expression || node.getKind() == NodeKind.ExpressionParts || node.getKind() == NodeKind.ExpressionPart) {
+			Expression expression = null;
+			Node nodeExpression = null;
+			if (node.getKind() == NodeKind.Expression) {
+				expression = (Expression) node;
+			} else if (node.getKind() == NodeKind.ExpressionParts) {
+				nodeExpression = node;
+				expression = ((Parts) node).getParent();
+			} else if (node.getKind() == NodeKind.ExpressionPart) {
+				nodeExpression = node;
+				expression = ((Part) node).getParent().getParent();
+			}
+			return completionForExpression.doCompleteExpression(expression, nodeExpression, template, offset, cancelChecker);
+		}
+
+		
 
 		Scanner<TokenType, ScannerState> scanner = TemplateScanner.createScanner(text, node.getStart());
 

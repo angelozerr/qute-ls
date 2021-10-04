@@ -18,9 +18,9 @@ public class CompletionRequest extends AbstractPositionRequest {
 		super(template, position);
 		this.completionSettings = completionSettings;
 	}
-	
+
 	@Override
-	protected Node findNodeAt(Template template, int offset) {
+	protected Node doFindNodeAt(Template template, int offset) {
 		return template.findNodeBefore(offset);
 	}
 

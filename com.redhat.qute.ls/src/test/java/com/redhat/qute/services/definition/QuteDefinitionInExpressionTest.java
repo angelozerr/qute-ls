@@ -32,11 +32,11 @@ public class QuteDefinitionInExpressionTest {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.nam|e}";
 		testDefinitionFor(template, //
-				ll("test.xml", r(0, 0, 0, 0), r(1, 1, 1, 1)));
+				ll("org/acme/Item.java",  r(1, 6, 1, 10), r(0, 0, 0, 0)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"{item.name|}";
 		testDefinitionFor(template, //
-				ll("test.xml", r(0, 0, 0, 0), r(1, 1, 1, 1)));
+				ll("org/acme/Item.java",  r(1, 6, 1, 10), r(0, 0, 0, 0)));
 	}
 }

@@ -36,19 +36,16 @@ import com.redhat.qute.utils.StringUtils;
 public class QuteCompletionsForExpression {
 
 	private final JavaDataModelCache javaCache;
-	
+
 	public QuteCompletionsForExpression(JavaDataModelCache javaCache) {
 		this.javaCache = javaCache;
 	}
 
-	public CompletableFuture<CompletionList> doCompleteExpression(CompletionRequest completionRequest,
-			CancelChecker cancelChecker) {
-		int offset = completionRequest.getOffset();
-		Expression expression = (Expression) completionRequest.getNode();
-		Node nodeExpression = expression.findNodeExpressionAt(offset);
+	public CompletableFuture<CompletionList> doCompleteExpression(Expression expression, Node nodeExpression,
+			Template template, int offset, CancelChecker cancelChecker) {
 		if (nodeExpression == null) {
 			// ex : { | }
-			return doCompleteExpressionForObjectPart(null, completionRequest);
+			return doCompleteExpressionForObjectPart(expression, null, offset, template);
 		}
 
 		if (nodeExpression.getKind() == NodeKind.ExpressionPart) {
@@ -56,13 +53,13 @@ public class QuteCompletionsForExpression {
 			switch (part.getPartKind()) {
 			case Object:
 				// ex : { ite|m }
-				return doCompleteExpressionForObjectPart(part, completionRequest);
+				return doCompleteExpressionForObjectPart(expression, part, offset, template);
 			case Property:
 			case Method:
 				// ex : { item.n| }
 				// ex : { item.n|ame }
 				Parts parts = part.getParent();
-				return doCompleteExpressionForMemberPart(part, parts, completionRequest);
+				return doCompleteExpressionForMemberPart(part, parts, template);
 			default:
 				break;
 			}
@@ -70,21 +67,21 @@ public class QuteCompletionsForExpression {
 		}
 
 		if (nodeExpression.getKind() == NodeKind.ExpressionParts) {
-			char previous = completionRequest.getTemplate().getText().charAt(offset - 1);
+			char previous = template.getText().charAt(offset - 1);
 			switch (previous) {
 			case ':': {
 				// ex : { data:| }
 				// ex : { data:|name }
 				Parts parts = (Parts) nodeExpression;
 				Part part = parts.getPartAt(offset + 1);
-				return doCompleteExpressionForObjectPart(part, completionRequest);
+				return doCompleteExpressionForObjectPart(expression, part, offset, template);
 			}
 			case '.': {
 				// ex : { item.| }
 				// ex : { item.|name }
 				Parts parts = (Parts) nodeExpression;
 				Part part = parts.getPartAt(offset + 1);
-				return doCompleteExpressionForMemberPart(part, parts, completionRequest);
+				return doCompleteExpressionForMemberPart(part, parts, template);
 			}
 			}
 		}
@@ -92,10 +89,9 @@ public class QuteCompletionsForExpression {
 	}
 
 	private CompletableFuture<CompletionList> doCompleteExpressionForMemberPart(Part part, Parts parts,
-			CompletionRequest completionRequest) {
+			Template template) {
 		int start = part != null ? part.getStart() : parts.getEnd();
 		int end = part != null ? part.getEnd() : parts.getEnd();
-		Template template = completionRequest.getTemplate();
 		String projectUri = template.getProjectUri();
 		int partIndex = parts.getPreviousPartIndex(part);
 		return javaCache.resolveJavaType(parts, partIndex, projectUri) //
@@ -146,20 +142,18 @@ public class QuteCompletionsForExpression {
 		return list;
 	}
 
-	private CompletableFuture<CompletionList> doCompleteExpressionForObjectPart(Node part,
-			CompletionRequest completionRequest) {
-		int offset = completionRequest.getOffset();
+	private CompletableFuture<CompletionList> doCompleteExpressionForObjectPart(Expression expression, Node part,
+			int offset, Template template) {
 		// Completion for root object
 		int partStart = part != null ? part.getStart() : offset;
 		int partEnd = part != null ? part.getEnd() : offset;
-		Template template = completionRequest.getTemplate();
 		Range range = QutePositionUtility.createRange(partStart, partEnd, template);
 		CompletionList list = new CompletionList();
 
 		// Collect alias declared from parameter declaration
 		doCompleteExpressionForObjectPartWithParameterAlias(template, range, list);
 		// Collect declared model inside section, let, etc
-		doCompleteExpressionForObjectPartWithParentNodes(part, completionRequest.getNode(), range, list);
+		doCompleteExpressionForObjectPartWithParentNodes(part, expression, range, list);
 
 		return CompletableFuture.completedFuture(list);
 	}

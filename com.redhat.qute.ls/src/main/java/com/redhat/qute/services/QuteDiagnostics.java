@@ -32,7 +32,9 @@ import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
+import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
 import com.redhat.qute.services.diagnostics.QuteErrorCode;
@@ -132,6 +134,17 @@ class QuteDiagnostics {
 				} else {
 					// javaCache.getResolvedJavaClass(className, projectUri)
 					// javaCache.getResolvedClass(null, 0, projectUri);
+				}
+				break;
+			}
+			case Section: {
+				Section section = (Section) node;
+				List<Parameter> parameters = section.getParameters();
+				for (Parameter parameter : parameters) {
+					Expression expression = parameter.getExpression();
+					if (expression != null) {
+						validateExpression(expression, resolvingJavaTypeFutures, diagnostics, template);
+					}
 				}
 				break;
 			}
