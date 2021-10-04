@@ -29,6 +29,8 @@ public class QuteHover {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteHover.class.getName());
 
+	private static CompletableFuture<Hover> NO_HOVER = CompletableFuture.completedFuture(null);
+
 	private final JavaDataModelCache javaCache;
 
 	public QuteHover(JavaDataModelCache javaCache) {
@@ -42,19 +44,19 @@ public class QuteHover {
 			hoverRequest = new HoverRequest(template, position, settings);
 		} catch (BadLocationException e) {
 			LOGGER.log(Level.SEVERE, "Failed creating HoverRequest", e);
-			return null;
+			return NO_HOVER;
 		}
-		int offset = hoverRequest.getOffset();
 		Node node = hoverRequest.getNode();
 		if (node == null) {
-			return null;
+			return NO_HOVER;
 		}
 		switch (node.getKind()) {
 		case ExpressionPart:
 			Part part = (Part) node;
 			return doHoverForExpressionPart(part, template, hoverRequest, cancelChecker);
+		default:
+			return NO_HOVER;
 		}
-		return CompletableFuture.completedFuture(null);
 	}
 
 	private CompletableFuture<Hover> doHoverForExpressionPart(Part part, Template template, HoverRequest hoverRequest,

@@ -37,8 +37,7 @@ public class QuteDefinitionInForSectionTest {
 		template = "{#for| item in items}\r\n" + //
 				"		{item.name}\r\n" + //
 				"{/for}";
-		testDefinitionFor(template, "test.qute", //
-				ll("test.qute", r(0, 2, 0, 5), r(2, 2, 2, 5)));
+		testDefinitionFor(template, "test.qute");
 	}
 
 	@Test
