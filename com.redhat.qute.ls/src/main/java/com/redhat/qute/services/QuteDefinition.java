@@ -188,12 +188,14 @@ class QuteDefinition {
 								|| section.getSectionKind() == SectionKind.FOR) {
 							LoopSection loopSection = (LoopSection) section;
 							Parameter parameter = loopSection.getAliasParameter();
-							String targetUri = template.getUri();
-							Range targetRange = QutePositionUtility.createRange(parameter);
-							Range originSelectionRange = QutePositionUtility.createRange(part);
-							LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
-									originSelectionRange);
-							return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+							if (parameter != null) {
+								String targetUri = template.getUri();
+								Range targetRange = QutePositionUtility.createRange(parameter);
+								Range originSelectionRange = QutePositionUtility.createRange(part);
+								LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
+										originSelectionRange);
+								return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+							}
 						}
 						break;
 					}

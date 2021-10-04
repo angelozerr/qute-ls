@@ -55,4 +55,12 @@ public class QuteDefinitionInEachSectionTest {
 		testDefinitionFor(template, "test.qute", //
 				ll("test.qute", r(2, 2, 2, 6), r(0, 2, 0, 6)));
 	}
+	
+	@Test
+	public void definitionInDefaultAlias() throws Exception {
+		String template = "{#each items}\r\n" + //
+				"		{i|t.name}\r\n" + //
+				"{/ea|ch}";
+		testDefinitionFor(template);
+	}
 }
