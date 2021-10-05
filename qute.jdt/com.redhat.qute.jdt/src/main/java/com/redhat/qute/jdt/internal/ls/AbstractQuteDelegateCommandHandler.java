@@ -37,16 +37,16 @@ public abstract class AbstractQuteDelegateCommandHandler implements IDelegateCom
 	/**
 	 * Qute client commands
 	 */
-	private static final String JAVA_DATA_MODEL_CHANGED_COMMAND = "qute/javaDataModelChanged";
+	private static final String DATA_MODEL_CHANGED_COMMAND = "qute/dataModelChanged";
 
 	private static final IJavaDataModelChangedListener LISTENER = (event) -> {
 		try {
 			// Execute client command with a timeout of 5 seconds to avoid blocking jobs.
 			JavaLanguageServerPlugin.getInstance().getClientConnection()
-					.executeClientCommand(Duration.of(5, ChronoUnit.SECONDS), JAVA_DATA_MODEL_CHANGED_COMMAND, event);
+					.executeClientCommand(Duration.of(5, ChronoUnit.SECONDS), DATA_MODEL_CHANGED_COMMAND, event);
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE,
-					"Error while sending '" + JAVA_DATA_MODEL_CHANGED_COMMAND + "' event to the client", e);
+					"Error while sending '" + DATA_MODEL_CHANGED_COMMAND + "' event to the client", e);
 		}
 	};
 

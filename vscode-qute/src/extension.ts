@@ -46,6 +46,7 @@ export function activate(context: ExtensionContext) {
     bindQuteRequest('qute/template/javaClasses');
     bindQuteRequest('qute/template/resolvedJavaClass');
     bindQuteRequest('qute/template/javaDefinition');
+    bindQuteNotification('qute/dataModelChanged');
   }).catch((error) => {
     window.showErrorMessage(error.message, error.label).then((selection) => {
       if (error.label && error.label === selection && error.openUrl) {
@@ -53,6 +54,18 @@ export function activate(context: ExtensionContext) {
       }
     });
   });
+
+  function bindQuteRequest(request: string) {
+    quteLanguageClient.onRequest(request, async (params: any) =>
+      <any> await commands.executeCommand("java.execute.workspaceCommand", request, params)
+    );
+  }
+
+  function bindQuteNotification(notification: string) {
+    context.subscriptions.push(commands.registerCommand(notification, (event: any) => {
+      quteLanguageClient.sendNotification(notification, event);
+    }));
+  }
 
   function bindRequest(request: string) {
     languageClient.onRequest(request, async (params: any) =>
@@ -183,11 +196,5 @@ function registerQuteNotebook(context: ExtensionContext) {
       'qbook', new QBookSerializer(), { transientOutputs: true }
     ),
     new QBookController()
-  );
-}
-
-function bindQuteRequest(request: string) {
-  quteLanguageClient.onRequest(request, async (params: any) =>
-    <any> await commands.executeCommand("java.execute.workspaceCommand", request, params)
   );
 }

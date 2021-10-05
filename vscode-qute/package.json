@@ -33,7 +33,7 @@
     "onLanguage:qute-yaml",
     "onLanguage:qute-txt",
     "onNotebook:qnb",
-    "workspaceContains:**/*.qnb"
+    "workspaceContains:**/*.qbook"
   ],
   "main": "./dist/extension",
   "contributes": {

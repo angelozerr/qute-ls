@@ -184,6 +184,7 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	@Override
 	public void dataModelChanged(JavaDataModelChangeEvent event) {
 		dataModelCache.dataModelChanged(event);
+		textDocumentService.dataModelChanged(event);
 	}
 	
 	public JavaDataModelCache getDataModelCache() {

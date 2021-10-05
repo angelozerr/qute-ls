@@ -44,6 +44,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
+import com.redhat.qute.commons.JavaDataModelChangeEvent;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
@@ -311,7 +312,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 		// Update validation settings
 		QuteValidationSettings validation = sharedSettings.getValidationSettings();
 		validation.update(newValidation);
-		// trigger validation for all opened application.properties
+		// trigger validation for all opened Qute template files
 		documents.all().stream().forEach(document -> {
 			triggerValidationFor((QuteTextDocument) document);
 		});
@@ -319,6 +320,13 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	public SharedSettings getSharedSettings() {
 		return sharedSettings;
+	}
+
+	public void dataModelChanged(JavaDataModelChangeEvent event) {
+		// trigger validation for all opened Qute template files
+		documents.all().stream().forEach(document -> {
+			triggerValidationFor((QuteTextDocument) document);
+		});
 	}
 
 }
