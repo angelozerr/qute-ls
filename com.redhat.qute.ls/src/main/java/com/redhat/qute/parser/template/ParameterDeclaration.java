@@ -1,5 +1,8 @@
 package com.redhat.qute.parser.template;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ParameterDeclaration extends Node implements ParametersContainer, JavaTypeInfoProvider {
 
 	private int startContent;
@@ -103,5 +106,48 @@ public class ParameterDeclaration extends Node implements ParametersContainer, J
 	@Override
 	public int getEndParametersOffset() {
 		return getEndContent();
+	}
+
+	public List<RangeOffset> getClassNameRanges() {
+		List<RangeOffset> ranges = new ArrayList<>();
+		Template template = getOwnerTemplate();
+		String text = template.getText();
+		// get start range
+		int start = getStartContent();
+		int end = start;
+		boolean diamon = false;
+		for (; end < getEndContent(); end++) {
+			char c = text.charAt(end);
+			if (c == ' ') {
+				break;
+			} else if (c == '<') {
+				diamon = true;
+				break;
+			}
+		}
+		ranges.add(new RangeOffset(start, end));
+
+		if (diamon) {
+			end++;
+			start = end;
+			for (; end < getEndContent(); end++) {
+				char c = text.charAt(end);
+				if (c == ' ' || c == '>') {
+					break;
+				}
+			}
+			ranges.add(new RangeOffset(start, end));
+		}
+		return ranges;
+	}
+
+	public RangeOffset getClassNameRange(int offset) {
+		List<RangeOffset> ranges = getClassNameRanges();
+		for (RangeOffset range : ranges) {
+			if (Node.isIncluded(range.getStart(), range.getEnd(), offset)) {
+				return range;
+			}
+		}
+		return null;
 	}
 }

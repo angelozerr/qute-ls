@@ -37,6 +37,7 @@ import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
+import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionKind;
 import com.redhat.qute.parser.template.Template;
@@ -148,13 +149,15 @@ class QuteDefinition {
 			ParameterDeclaration parameterDeclaration, Template template) {
 		String projectUri = template.getProjectUri();
 		if (projectUri != null && parameterDeclaration.isInClassName(offset)) {
-			String className = parameterDeclaration.getClassName();
-			QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, projectUri);
-			return findJavaDefinition(params,
-					() -> QutePositionUtility.createRange(parameterDeclaration.getClassNameStart(),
-							parameterDeclaration.getClassNameEnd(), template));
+			RangeOffset range = parameterDeclaration.getClassNameRange(offset);
+			if (range != null) {
+				String className = template.getText(range);
+				QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, projectUri);
+				return findJavaDefinition(params,
+						() -> QutePositionUtility.createRange(range.getStart(), range.getEnd(), template));
+			}
 		}
-		return CompletableFuture.completedFuture(Collections.emptyList());
+		return NO_DEFINITION;
 	}
 
 	private CompletableFuture<List<? extends LocationLink>> findJavaDefinition(QuteJavaDefinitionParams params,
@@ -247,6 +250,7 @@ class QuteDefinition {
 				}
 				break;
 			}
+			default:
 			}
 		}
 		return NO_DEFINITION;

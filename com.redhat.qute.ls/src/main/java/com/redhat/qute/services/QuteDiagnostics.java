@@ -34,6 +34,7 @@ import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
+import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
@@ -125,15 +126,43 @@ class QuteDiagnostics {
 			switch (node.getKind()) {
 			case ParameterDeclaration: {
 				ParameterDeclaration parameter = (ParameterDeclaration) node;
-				String className = parameter.getClassName();
-				if (StringUtils.isEmpty(className)) {
+				String javaTypeToResolve = parameter.getClassName();
+				if (StringUtils.isEmpty(javaTypeToResolve)) {
 					Range range = QutePositionUtility.createRange(parameter);
 					String message = "Class must be defined";
 					Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, null);
 					diagnostics.add(diagnostic);
 				} else {
-					// javaCache.getResolvedJavaClass(className, projectUri)
-					// javaCache.getResolvedClass(null, 0, projectUri);
+					String projectUri = template.getProjectUri();
+					if (projectUri != null) {
+						List<RangeOffset> classNameRanges = parameter.getClassNameRanges();
+						for (RangeOffset classNameRange : classNameRanges) {
+							String className = template.getText(classNameRange);
+							CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache
+									.resolveJavaType(className, projectUri);
+							ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
+							if (NOW.equals(resolvedJavaClass)) {
+								// Java type must be loaded.
+								Range range = QutePositionUtility.createRange(classNameRange.getStart(),
+										classNameRange.getEnd(), template);
+								String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, className);
+								Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Information,
+										null);
+								diagnostics.add(diagnostic);
+								resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
+							}
+
+							if (resolvedJavaClass == null) {
+								// Java type doesn't exist
+								Range range = QutePositionUtility.createRange(classNameRange.getStart(),
+										classNameRange.getEnd(), template);
+								String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, className);
+								Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
+										null);
+								diagnostics.add(diagnostic);
+							}
+						}
+					}
 				}
 				break;
 			}
@@ -251,7 +280,6 @@ class QuteDiagnostics {
 	private ResolvedJavaClassInfo validateJavaTypePart(Part part, String projectUri, List<Diagnostic> diagnostics,
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, String javaTypeToResolve) {
 		if (StringUtils.isEmpty(javaTypeToResolve)) {
-			// Should never occurs.
 			Range range = QutePositionUtility.createRange(part);
 			String message = "Cannot be resolved as type";
 			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, null);
@@ -270,6 +298,7 @@ class QuteDiagnostics {
 			resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
 			return null;
 		}
+
 		if (resolvedJavaClass == null) {
 			// Java type doesn't exist
 			Range range = QutePositionUtility.createRange(part);
