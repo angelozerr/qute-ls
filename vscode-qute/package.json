@@ -32,10 +32,14 @@
     "onLanguage:qute-json",
     "onLanguage:qute-yaml",
     "onLanguage:qute-txt",
-    "onNotebook:qnb",
-    "workspaceContains:**/*.qbook"
+    "onNotebook:qbook",
+    "workspaceContains:**/*.qbook",
+    "onLanguage:java"
   ],
   "main": "./dist/extension",
+  "extensionDependencies": [
+    "redhat.java"
+  ],
   "contributes": {
     "javaExtensions": [
       "./jars/com.redhat.qute.jdt.jar"

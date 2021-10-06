@@ -287,6 +287,10 @@ class QuteDiagnostics {
 			return null;
 		}
 
+		if (projectUri == null) {
+			return null;
+		}
+		
 		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(part, projectUri);
 		ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
 		if (NOW.equals(resolvedJavaClass)) {

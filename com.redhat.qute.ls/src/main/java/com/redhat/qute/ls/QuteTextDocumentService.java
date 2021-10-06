@@ -79,7 +79,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	/**
 	 * Update shared settings from the client capabilities.
-	 * 
+	 *
 	 * @param capabilities the client capabilities
 	 */
 	public void updateClientCapabilities(ClientCapabilities capabilities) {
@@ -98,14 +98,15 @@ public class QuteTextDocumentService implements TextDocumentService {
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
 		QuteTextDocument document = (QuteTextDocument) documents.onDidOpenTextDocument(params);
-		document.getProjectInfoFuture().thenAccept(projectInfo -> {
-			if (projectInfo != null) {
-				// At this step we get informations about the Java project (used to collect Java
-				// classes available for the given Qute template)
-				// We retrigger the validation to validate data model.
-				triggerValidationFor(document);
-			}
-		});
+		document.getProjectInfoFuture() //
+				.thenAccept(projectInfo -> {
+					if (projectInfo != null) {
+						// At this step we get informations about the Java project (used to collect Java
+						// classes available for the given Qute template)
+						// We retrigger the validation to validate data model.
+						triggerValidationFor(document);
+					}
+				});
 		triggerValidationFor(document);
 	}
 
@@ -239,7 +240,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	/**
 	 * Returns the text document from the given uri.
-	 * 
+	 *
 	 * @param uri the uri
 	 * @return the text document from the given uri.
 	 */
@@ -250,7 +251,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 	/**
 	 * Returns the properties model for a given uri in a future and then apply the
 	 * given function.
-	 * 
+	 *
 	 * @param <R>
 	 * @param documentIdentifier the document identifier.
 	 * @param code               a bi function that accepts a {@link CancelChecker}
@@ -267,7 +268,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 	/**
 	 * Returns the properties model for a given uri in a future and then apply the
 	 * given function.
-	 * 
+	 *
 	 * @param <R>
 	 * @param documentIdentifier the document identifier.
 	 * @param code               a bi function that accepts a {@link CancelChecker}
