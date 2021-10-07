@@ -6,6 +6,8 @@ import static com.redhat.qute.QuteAssert.testDefinitionFor;
 
 import org.junit.jupiter.api.Test;
 
+import com.redhat.qute.services.MockJavaDataModelCache;
+
 public class QuteDefinitionInExpressionTest {
 
 	@Test
@@ -28,15 +30,35 @@ public class QuteDefinitionInExpressionTest {
 	}
 
 	@Test
+	public void definitionInUndefinedProperty() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{item.nam|eXXX}";
+		testDefinitionFor(template);
+	}
+
+	@Test
 	public void definitionInDefinedProperty() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.nam|e}";
 		testDefinitionFor(template, //
-				ll("org/acme/Item.java",  r(1, 6, 1, 10), r(0, 0, 0, 0)));
+				ll("org/acme/Item.java", r(1, 6, 1, 10), MockJavaDataModelCache.JAVA_FIELD_RANGE));
+
+		template = "{@org.acme.Item item}\r\n" + //
+				"{item.name|}";
+		testDefinitionFor(template,
+				ll("org/acme/Item.java", r(1, 6, 1, 10), MockJavaDataModelCache.JAVA_FIELD_RANGE));
+	}
+
+	@Test
+	public void definitionInDefinedPropertyGetter() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{item.revie|w2}";
+		testDefinitionFor(template, //
+				ll("org/acme/Item.java", r(1, 6, 1, 13), MockJavaDataModelCache.JAVA_METHOD_RANGE));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"{item.name|}";
 		testDefinitionFor(template, //
-				ll("org/acme/Item.java",  r(1, 6, 1, 10), r(0, 0, 0, 0)));
+				ll("org/acme/Item.java", r(1, 6, 1, 10), MockJavaDataModelCache.JAVA_METHOD_RANGE));
 	}
 }

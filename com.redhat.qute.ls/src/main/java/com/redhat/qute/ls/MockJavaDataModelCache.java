@@ -10,7 +10,9 @@ import java.util.stream.Collectors;
 import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.JavaFieldInfo;
+import com.redhat.qute.commons.JavaMemberInfo;
+import com.redhat.qute.commons.JavaMethodInfo;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
@@ -71,32 +73,38 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		createResolvedJavaClassInfo("org.acme", cache).setUri(null);
 
 		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
-		registerMember("UTF16", null, "byte", string);
-		
+		registerField("UTF16", "byte", string);
+
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);
-		registerMember("name", null, "java.lang.String", review);
-		registerMember("average", null, "java.lang.Integer", review);
+		registerField("name", "java.lang.String", review);
+		registerField("average", "java.lang.Integer", review);
 
 		ResolvedJavaClassInfo item = createResolvedJavaClassInfo("org.acme.Item", cache);
-		registerMember("name", null, "java.lang.String", item);
-		registerMember("price", null, "java.math.BigInteger", item);
-		registerMember("review", null, "org.acme.Review", item);
-		registerMember(null, "getReview()", "org.acme.Review", item);
+		registerField("name", "java.lang.String", item);
+		registerField("price", "java.math.BigInteger", item);
+		registerField("review", "org.acme.Review", item);
+		registerMethod("getReview() : org.acme.Review", item);
 
 		createResolvedJavaClassInfo("java.util.List<org.acme.Item>", "java.util.List", "org.acme.Item", cache);
 		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache);
-		registerMember("get", null, "java.lang.String", list);
+		registerField("get", "java.lang.String", list);
 
 		return cache;
 	}
 
-	protected static JavaClassMemberInfo registerMember(String field, String method, String type,
+	protected static JavaMemberInfo registerField(String fieldName, String fieldType,
 			ResolvedJavaClassInfo resolvedClass) {
-		JavaClassMemberInfo member = new JavaClassMemberInfo();
-		member.setField(field);
-		member.setMethod(method);
-		member.setType(type);
-		resolvedClass.getMembers().add(member);
+		JavaFieldInfo member = new JavaFieldInfo();
+		member.setName(fieldName);
+		member.setType(fieldType);
+		resolvedClass.getFields().add(member);
+		return member;
+	}
+
+	protected static JavaMemberInfo registerMethod(String methodSignature, ResolvedJavaClassInfo resolvedClass) {
+		JavaMethodInfo member = new JavaMethodInfo();
+		member.setSignature(methodSignature);
+		resolvedClass.getMethods().add(member);
 		return member;
 	}
 
@@ -112,7 +120,8 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		resolvedClass.setClassName(className);
 		resolvedClass.setIterableType(iterableType);
 		resolvedClass.setIterableOf(iterableOf);
-		resolvedClass.setMembers(new ArrayList<>());
+		resolvedClass.setFields(new ArrayList<>());
+		resolvedClass.setMethods(new ArrayList<>());
 		cache.put(resolvedClass.getClassName(), resolvedClass);
 		return resolvedClass;
 	}

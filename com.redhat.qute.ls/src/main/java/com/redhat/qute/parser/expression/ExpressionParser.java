@@ -27,7 +27,7 @@ public class ExpressionParser {
 		TokenType token = scanner.scan();
 		List<Node> expressionContent = new ArrayList<>();
 		Parts currentParts = null;
-		while (token != TokenType.EOS ) {
+		while (token != TokenType.EOS) {
 			cancelChecker.checkCanceled();
 			int tokenOffset = scanner.getTokenOffset();
 			int tokenEnd = scanner.getTokenEnd();
@@ -53,11 +53,19 @@ public class ExpressionParser {
 				PropertyPart propertyPart = new PropertyPart(tokenOffset, tokenEnd);
 				currentParts.addPart(propertyPart);
 				break;
+			case MethodPart:
+				MethodPart methodPart = new MethodPart(tokenOffset, tokenEnd);
+				currentParts.addPart(methodPart);
+				break;
 			case Dot:
-				currentParts.addDot(tokenOffset);
+				if (currentParts != null) {
+					currentParts.addDot(tokenOffset);
+				}
 				break;
 			case ColonSpace:
-				currentParts.addColonSpace(tokenOffset);
+				if (currentParts != null) {
+					currentParts.addColonSpace(tokenOffset);
+				}
 				break;
 			default:
 				currentParts = null;

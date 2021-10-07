@@ -65,4 +65,5 @@ public class QutePlugin implements BundleActivator {
 	public void removeJavaDataModelChangedListener(IJavaDataModelChangedListener listener) {
 		JavaDataModelListenerManager.getInstance().removeJavaDataModelChangedListener(listener);
 	}
+
 }

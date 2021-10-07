@@ -12,7 +12,9 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.JavaFieldInfo;
+import com.redhat.qute.commons.JavaMemberInfo;
+import com.redhat.qute.commons.JavaMethodInfo;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
@@ -21,6 +23,12 @@ import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 
 public class MockJavaDataModelCache extends JavaDataModelCache {
+
+	public static final Range JAVA_CLASS_RANGE = new Range(new Position(0, 0), new Position(0, 0));
+
+	public static final Range JAVA_FIELD_RANGE = new Range(new Position(1, 1), new Position(1, 1));
+
+	public static final Range JAVA_METHOD_RANGE = new Range(new Position(2, 2), new Position(2, 2));
 
 	private final Map<String, ResolvedJavaClassInfo> resolvedClassesCache;
 
@@ -44,46 +52,77 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	@Override
 	protected CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
 		String className = params.getClassName();
-		if (resolvedClassesCache.containsKey(className)) {
-			String javeFileUri = className.replaceAll("[.]", "/") + ".java";
-			Location location = new Location(javeFileUri, new Range(new Position(0, 0), new Position(0, 0)));
-			return CompletableFuture.completedFuture(location);
+		ResolvedJavaClassInfo classInfo = resolvedClassesCache.get(className);
+		if (classInfo != null) {
+			Range definitionRange = null;
+			String fieldName = params.getField();
+			if (fieldName != null) {
+				// Definition for field
+				JavaFieldInfo fieldInfo = classInfo.findField(fieldName);
+				if (fieldInfo != null) {
+					definitionRange = JAVA_FIELD_RANGE;
+				}
+			} else {
+				// Definition for method
+				String methodName = params.getMethod();
+				if (methodName != null) {
+					JavaMethodInfo methodInfo = classInfo.findMethod(methodName);
+					if (methodInfo != null) {
+						definitionRange = JAVA_METHOD_RANGE;
+					}
+				} else {
+					// Definition for class
+					definitionRange = JAVA_CLASS_RANGE;
+				}
+			}
+
+			if (definitionRange != null) {
+				String javeFileUri = className.replaceAll("[.]", "/") + ".java";
+				Location location = new Location(javeFileUri, definitionRange);
+				return CompletableFuture.completedFuture(location);
+			}
 		}
-		return null;
+		return CompletableFuture.completedFuture(null);
 	}
 
 	protected Map<String, ResolvedJavaClassInfo> createResolvedClasses() {
 		Map<String, ResolvedJavaClassInfo> cache = new HashMap<>();
 
-		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
-		registerMember("UTF16", null, "byte", string);
-
 		createResolvedJavaClassInfo("org.acme", cache).setUri(null);
 
+		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
+		registerField("UTF16", "byte", string);
+
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);
-		registerMember("name", null, "java.lang.String", review);
-		registerMember("average", null, "java.lang.Integer", review);
+		registerField("name", "java.lang.String", review);
+		registerField("average", "java.lang.Integer", review);
 
 		ResolvedJavaClassInfo item = createResolvedJavaClassInfo("org.acme.Item", cache);
-		registerMember("name", null, "java.lang.String", item);
-		registerMember("price", null, "java.math.BigInteger", item);
-		registerMember("review", null, "org.acme.Review", item);
-		registerMember(null, "getReview()", "org.acme.Review", item);
+		registerField("name", "java.lang.String", item);
+		registerField("price", "java.math.BigInteger", item);
+		registerField("review", "org.acme.Review", item);
+		registerMethod("getReview2() : org.acme.Review", item);
 
 		createResolvedJavaClassInfo("java.util.List<org.acme.Item>", "java.util.List", "org.acme.Item", cache);
 		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache);
-		registerMember("get", null, "java.lang.String", list);
+		registerField("get", "java.lang.String", list);
 
 		return cache;
 	}
 
-	protected static JavaClassMemberInfo registerMember(String field, String method, String type,
+	protected static JavaMemberInfo registerField(String fieldName, String fieldType,
 			ResolvedJavaClassInfo resolvedClass) {
-		JavaClassMemberInfo member = new JavaClassMemberInfo();
-		member.setField(field);
-		member.setMethod(method);
-		member.setType(type);
-		resolvedClass.getMembers().add(member);
+		JavaFieldInfo member = new JavaFieldInfo();
+		member.setName(fieldName);
+		member.setType(fieldType);
+		resolvedClass.getFields().add(member);
+		return member;
+	}
+
+	protected static JavaMemberInfo registerMethod(String methodSignature, ResolvedJavaClassInfo resolvedClass) {
+		JavaMethodInfo member = new JavaMethodInfo();
+		member.setSignature(methodSignature);
+		resolvedClass.getMethods().add(member);
 		return member;
 	}
 
@@ -99,7 +138,8 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		resolvedClass.setClassName(className);
 		resolvedClass.setIterableType(iterableType);
 		resolvedClass.setIterableOf(iterableOf);
-		resolvedClass.setMembers(new ArrayList<>());
+		resolvedClass.setFields(new ArrayList<>());
+		resolvedClass.setMethods(new ArrayList<>());
 		cache.put(resolvedClass.getClassName(), resolvedClass);
 		return resolvedClass;
 	}

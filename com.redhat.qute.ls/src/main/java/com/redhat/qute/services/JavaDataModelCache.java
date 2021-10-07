@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.JavaDataModelChangeEvent;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
@@ -123,11 +123,11 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 									return NULL_FUTURE;
 								}
 								String property = current.getPartName();
-								JavaClassMemberInfo member = resolvedClass.findMember(property);
+								JavaMemberInfo member = resolvedClass.findMember(property);
 								if (member == null) {
 									return NULL_FUTURE;
 								}
-								String memberType = member.getType();
+								String memberType = member.getMemberType();
 								return resolveJavaType(memberType, projectUri);
 							});
 				}

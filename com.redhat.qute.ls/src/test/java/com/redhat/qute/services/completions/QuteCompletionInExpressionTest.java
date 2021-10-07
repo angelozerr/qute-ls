@@ -104,5 +104,58 @@ public class QuteCompletionInExpressionTest {
 				c("name", "name", r(1, 19, 1, 21)), //
 				c("average", "average", r(1, 19, 1, 21)));
 	}
+	
+	@Test
+	public void completionInExpressionWithMethod() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.getReview2().|}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 20)), //
+				c("average", "average", r(1, 20, 1, 20)));
 
+		template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.getReview2().n|}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 21)), //
+				c("average", "average", r(1, 20, 1, 21)));
+
+		template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.getReview2().|n}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 21)), //
+				c("average", "average", r(1, 20, 1, 21)));
+
+		template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.getReview2().n|a}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 22)), //
+				c("average", "average", r(1, 20, 1, 22)));
+	}
+
+	@Test
+	public void completionInExpressionWithGetterMethod() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.review2.|}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 20)), //
+				c("average", "average", r(1, 20, 1, 20)));
+
+		template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.review2.n|}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 21)), //
+				c("average", "average", r(1, 20, 1, 21)));
+
+		template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.review2.|n}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 21)), //
+				c("average", "average", r(1, 20, 1, 21)));
+
+		template = "{@org.acme.Item item}\r\n" + //
+				"Item: {item.review2.n|a}";
+		testCompletionFor(template, //
+				c("name", "name", r(1, 20, 1, 22)), //
+				c("average", "average", r(1, 20, 1, 22)));
+	}
 }

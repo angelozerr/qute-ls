@@ -22,7 +22,7 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.commons.JavaClassMemberInfo;
+import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
@@ -257,7 +257,7 @@ class QuteDiagnostics {
 			ResolvedJavaClassInfo resolvedJavaClass, List<Diagnostic> diagnostics,
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
 		String property = propertyPart.getPartName();
-		JavaClassMemberInfo javaMember = resolvedJavaClass.findMember(property);
+		JavaMemberInfo javaMember = resolvedJavaClass.findMember(property);
 		if (javaMember == null) {
 			// ex : {@org.acme.Item item}
 			// "{item.XXXX}
@@ -274,7 +274,7 @@ class QuteDiagnostics {
 			return null;
 		}
 		return validateJavaTypePart(propertyPart, projectUri, diagnostics, resolvingJavaTypeFutures,
-				javaMember.getType());
+				javaMember.getMemberType());
 	}
 
 	private ResolvedJavaClassInfo validateJavaTypePart(Part part, String projectUri, List<Diagnostic> diagnostics,
@@ -290,7 +290,7 @@ class QuteDiagnostics {
 		if (projectUri == null) {
 			return null;
 		}
-		
+
 		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(part, projectUri);
 		ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
 		if (NOW.equals(resolvedJavaClass)) {

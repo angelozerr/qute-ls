@@ -47,7 +47,8 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 			return finishToken(offset, TokenType.Unknown);
 		}
 
-		case WithinParts: {
+		case WithinParts:
+		case AfterNamespace: {
 			if (stream.advanceIfChar('.')) {
 				return finishToken(offset, TokenType.Dot);
 			}
@@ -71,12 +72,15 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 	}
 
 	private TokenType finishTokenPart(int offset) {
-		int next = stream.peekChar(1);
+		int next = stream.peekChar();
 		if (next == ':') {
-			state = ScannerState.WithinParts;
+			state = ScannerState.AfterNamespace;
 			return finishToken(offset, TokenType.NamespacePart);
 		}
 		if (state == ScannerState.WithinParts) {
+			if (next == '(') {
+				return finishToken(offset, TokenType.MethodPart);
+			}
 			return finishToken(offset, TokenType.PropertyPart);
 		}
 		state = ScannerState.WithinParts;

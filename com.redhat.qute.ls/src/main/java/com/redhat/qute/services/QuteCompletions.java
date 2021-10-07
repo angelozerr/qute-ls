@@ -100,8 +100,9 @@ public class QuteCompletions {
 		}
 		String text = template.getText();
 		int offset = completionRequest.getOffset();
-		
-		if (node.getKind() == NodeKind.Expression || node.getKind() == NodeKind.ExpressionParts || node.getKind() == NodeKind.ExpressionPart) {
+
+		if (node.getKind() == NodeKind.Expression || node.getKind() == NodeKind.ExpressionParts
+				|| node.getKind() == NodeKind.ExpressionPart) {
 			Expression expression = null;
 			Node nodeExpression = null;
 			if (node.getKind() == NodeKind.Expression) {
@@ -113,10 +114,9 @@ public class QuteCompletions {
 				nodeExpression = node;
 				expression = ((Part) node).getParent().getParent();
 			}
-			return completionForExpression.doCompleteExpression(expression, nodeExpression, template, offset, cancelChecker);
+			return completionForExpression.doCompleteExpression(expression, nodeExpression, template, offset,
+					completionSettings, formattingSettings, cancelChecker);
 		}
-
-		
 
 		Scanner<TokenType, ScannerState> scanner = TemplateScanner.createScanner(text, node.getStart());
 

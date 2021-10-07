@@ -1,5 +1,6 @@
 package com.redhat.qute.commons;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -7,7 +8,9 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 
 	private List<String> extendedTypes;
 
-	private List<JavaClassMemberInfo> members;
+	private List<JavaFieldInfo> fields;
+
+	private List<JavaMethodInfo> methods;
 
 	private String iterableType;
 
@@ -21,12 +24,20 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 		return extendedTypes;
 	}
 
-	public void setMembers(List<JavaClassMemberInfo> members) {
-		this.members = members;
+	public List<JavaFieldInfo> getFields() {
+		return fields != null ? fields : Collections.emptyList();
 	}
 
-	public List<JavaClassMemberInfo> getMembers() {
-		return members;
+	public void setFields(List<JavaFieldInfo> fields) {
+		this.fields = fields;
+	}
+
+	public List<JavaMethodInfo> getMethods() {
+		return methods != null ? methods : Collections.emptyList();
+	}
+
+	public void setMethods(List<JavaMethodInfo> methods) {
+		this.methods = methods;
 	}
 
 	public String getIterableType() {
@@ -49,15 +60,35 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 		return iterableOf != null;
 	}
 
-	public JavaClassMemberInfo findMember(String property) {
-		if (members == null) {
+	public JavaMemberInfo findMember(String property) {
+		JavaFieldInfo fieldInfo = findField(property);
+		if (fieldInfo != null) {
+			return fieldInfo;
+		}
+		return findMethod(property);
+	}
+
+	public JavaFieldInfo findField(String fieldName) {
+		if (fields == null) {
 			return null;
 		}
-		String getter = "get" + (property.charAt(0) + "").toUpperCase() + property.substring(1, property.length())
-				+ "()";
-		Optional<JavaClassMemberInfo> memberInfo = members.stream()//
-				.filter(member -> property.equals(member.getField()) || getter.equals(member.getMethod())) //
+
+		Optional<JavaFieldInfo> fieldInfo = fields.stream()//
+				.filter(field -> fieldName.equals(field.getName())) //
 				.findFirst();
-		return memberInfo.isPresent() ? memberInfo.get() : null;
+		return fieldInfo.isPresent() ? fieldInfo.get() : null;
+	}
+
+	public JavaMethodInfo findMethod(String propertyOrMethodName) {
+		if (fields == null) {
+			return null;
+		}
+
+		String getterMethodName = "get" + (propertyOrMethodName.charAt(0) + "").toUpperCase() + propertyOrMethodName.substring(1, propertyOrMethodName.length());
+
+		Optional<JavaMethodInfo> methodInfo = methods.stream()//
+				.filter(method -> propertyOrMethodName.equals(method.getName()) || getterMethodName.equals(method.getName())) //
+				.findFirst();
+		return methodInfo.isPresent() ? methodInfo.get() : null;
 	}
 }
