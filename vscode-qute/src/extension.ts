@@ -46,6 +46,7 @@ export function activate(context: ExtensionContext) {
     bindQuteRequest('qute/template/javaClasses');
     bindQuteRequest('qute/template/resolvedJavaClass');
     bindQuteRequest('qute/template/javaDefinition');
+    bindQuteRequest('qute/template/project/dataModel');
     bindQuteNotification('qute/dataModelChanged');
   }).catch((error) => {
     window.showErrorMessage(error.message, error.label).then((selection) => {

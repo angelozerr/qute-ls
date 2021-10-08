@@ -11,7 +11,7 @@
 * Contributors:
 *     Red Hat Inc. - initial API and implementation
 *******************************************************************************/
-package com.redhat.qute.commons;
+package com.redhat.qute.commons.datamodel;
 
 import java.util.Set;
 

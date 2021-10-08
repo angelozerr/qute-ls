@@ -24,7 +24,7 @@ public class ObjectPart extends Part {
 		Template template = super.getOwnerTemplate();
 		// Loop for parent section to discover the class name
 		Node parent = super.getParent().getParent().getParent();
-		while(parent != null) {
+		while (parent != null) {
 			if (parent.getKind() == NodeKind.Section) {
 				Section section = (Section) parent;
 				if (section.isIterable()) {
@@ -34,10 +34,15 @@ public class ObjectPart extends Part {
 						return iterableSection;
 					}
 				}
+				// ex : count for #each
+				JavaTypeInfoProvider metadata = section.getMetadata(partName);
+				if (metadata != null) {
+					return metadata;
+				}
 			}
 			parent = parent.getParent();
 		}
-		
+
 		// Try to find the class name from parameter declaration
 		return template.findParameterByAlias(partName);
 	}

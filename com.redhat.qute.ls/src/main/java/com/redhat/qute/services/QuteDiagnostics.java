@@ -295,8 +295,9 @@ class QuteDiagnostics {
 			String javaTypeToResolve) {
 		if (StringUtils.isEmpty(javaTypeToResolve)) {
 			Range range = QutePositionUtility.createRange(part);
-			String message = "Cannot be resolved as type";
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, null);
+			String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, part.getPartName());
+			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
+					QuteErrorCode.UnkwownType);
 			diagnostics.add(diagnostic);
 			return null;
 		}

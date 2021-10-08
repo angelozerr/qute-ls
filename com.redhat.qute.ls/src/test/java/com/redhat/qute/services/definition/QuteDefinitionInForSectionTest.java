@@ -69,4 +69,12 @@ public class QuteDefinitionInForSectionTest {
 		testDefinitionFor(template, "test.qute", //
 				ll("test.qute", r(1, 3, 1, 7), r(0, 6, 0, 10)));
 	}
+
+	@Test
+	public void metadata() throws Exception {
+		String template = "{#for item in items}\r\n" + //
+				"		{cou|nt}\r\n" + //
+				"{/for}";
+		testDefinitionFor(template);
+	}
 }

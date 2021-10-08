@@ -9,7 +9,6 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.JavaDataModelChangeEvent;
 import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
@@ -17,6 +16,7 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.api.QuteProjectInfoProvider;
@@ -39,6 +39,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 	static {
 		javaPrimitiveTypes = new HashMap<>();
 		registerPrimitiveType("boolean");
+		registerPrimitiveType("byte");
 		registerPrimitiveType("double");
 		registerPrimitiveType("float");
 		registerPrimitiveType("int");
@@ -189,7 +190,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 		future = resolveJavaType(className, projectUri);
 
 		Node node = javaTypeInfo.getNode();
-		if (node.getKind() == NodeKind.Section) {
+		if (node != null && node.getKind() == NodeKind.Section) {
 			Section section = (Section) node;
 			if (section.isIterable()) {
 				future = future //

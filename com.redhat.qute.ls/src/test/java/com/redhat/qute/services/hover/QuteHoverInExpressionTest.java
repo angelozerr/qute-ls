@@ -8,13 +8,13 @@ import org.junit.jupiter.api.Test;
 public class QuteHoverInExpressionTest {
 
 	@Test
-	public void hoverInUndefinedVariable() throws Exception {
+	public void undefinedVariable() throws Exception {
 		String template = "{i|tem}";
 		assertHover(template);
 	}
 
 	@Test
-	public void hoverInDefinedVariable() throws Exception {
+	public void definedVariable() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{i|tem}";
 		assertHover(template, //
@@ -27,14 +27,14 @@ public class QuteHoverInExpressionTest {
 	}
 
 	@Test
-	public void hoverInUndefinedProperty() throws Exception {
+	public void undefinedProperty() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.nam|eXXX}";
 		assertHover(template);
 	}
 
 	@Test
-	public void hoverInDefinedProperty() throws Exception {
+	public void definedProperty() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.nam|e}";
 		assertHover(template, //
@@ -45,16 +45,16 @@ public class QuteHoverInExpressionTest {
 		assertHover(template, //
 				"java.lang.String", r(1, 6, 1, 10));
 	}
-	
+
 	@Test
-	public void hoverInUndefinedMethod() throws Exception {
+	public void undefinedMethod() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.nam|eXXX()}";
 		assertHover(template);
 	}
 
 	@Test
-	public void hoverInDefinedMethod() throws Exception {
+	public void definedMethod() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.review|2}";
 		assertHover(template, //

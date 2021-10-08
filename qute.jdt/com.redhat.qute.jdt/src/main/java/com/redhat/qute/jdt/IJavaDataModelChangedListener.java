@@ -13,7 +13,7 @@
 *******************************************************************************/
 package com.redhat.qute.jdt;
 
-import com.redhat.qute.commons.JavaDataModelChangeEvent;
+import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
 
 /**
  * A Java data model change listener.

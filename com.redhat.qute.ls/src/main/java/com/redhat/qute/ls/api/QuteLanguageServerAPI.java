@@ -12,7 +12,7 @@ package com.redhat.qute.ls.api;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
 import org.eclipse.lsp4j.services.LanguageServer;
 
-import com.redhat.qute.commons.JavaDataModelChangeEvent;
+import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
 
 /**
  * Qute language server API.

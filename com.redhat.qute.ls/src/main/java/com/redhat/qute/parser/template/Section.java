@@ -2,6 +2,7 @@ package com.redhat.qute.parser.template;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.redhat.qute.parser.parameter.ParameterParser;
@@ -155,6 +156,13 @@ public class Section extends Node implements ParametersContainer {
 
 	public List<SectionMetadata> getMetadata() {
 		return Collections.emptyList();
+	}
+
+	public JavaTypeInfoProvider getMetadata(String name) {
+		Optional<SectionMetadata> metadata = getMetadata().stream() //
+				.filter(m -> name.equals(m.getName())) //
+				.findFirst();
+		return metadata.isPresent() ? metadata.get() : null;
 	}
 
 	public List<Parameter> getParameters() {

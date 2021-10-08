@@ -92,7 +92,9 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
 		registerField("UTF16", "byte", string);
-
+		createResolvedJavaClassInfo("java.lang.Integer", cache);
+		createResolvedJavaClassInfo("java.math.BigInteger", cache);
+		
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);
 		registerField("name", "java.lang.String", review);
 		registerField("average", "java.lang.Integer", review);

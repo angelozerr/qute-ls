@@ -44,8 +44,8 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
-import com.redhat.qute.commons.JavaDataModelChangeEvent;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
 import com.redhat.qute.services.QuteLanguageService;

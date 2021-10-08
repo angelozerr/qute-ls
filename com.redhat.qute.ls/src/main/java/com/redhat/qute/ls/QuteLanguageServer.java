@@ -26,17 +26,20 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.JavaDataModelChangeEvent;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
+import com.redhat.qute.commons.datamodel.ProjectDataModelInfo;
+import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.ls.api.QuteLanguageServerAPI;
+import com.redhat.qute.ls.api.QuteProjectDataModelProvider;
 import com.redhat.qute.ls.api.QuteProjectInfoProvider;
 import com.redhat.qute.ls.api.QuteResolvedJavaClassProvider;
 import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
@@ -53,7 +56,7 @@ import com.redhat.qute.settings.capabilities.ServerCapabilitiesInitializer;
  *
  */
 public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI,
-		QuteProjectInfoProvider, QuteJavaClassesProvider, QuteResolvedJavaClassProvider, QuteJavaDefinitionProvider {
+		QuteProjectInfoProvider, QuteJavaClassesProvider, QuteResolvedJavaClassProvider, QuteJavaDefinitionProvider, QuteProjectDataModelProvider {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteLanguageServer.class.getName());
 
@@ -189,5 +192,10 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	
 	public JavaDataModelCache getDataModelCache() {
 		return dataModelCache;
+	}
+	
+	@Override
+	public CompletableFuture<ProjectDataModelInfo> getProjectDataModel(QuteProjectDataModelParams params) {
+		return getLanguageClient().getProjectDataModel(params);
 	}
 }

@@ -1,6 +1,7 @@
 package com.redhat.qute.parser.template;
 
-public class SectionMetadata {
+public class SectionMetadata implements JavaTypeInfoProvider{
+	
 
 	private final String name;
 	private final String type;
@@ -26,6 +27,16 @@ public class SectionMetadata {
 
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public String getClassName() {
+		return getType();
+	}
+
+	@Override
+	public Node getNode() {
+		return null;
 	}
 
 }

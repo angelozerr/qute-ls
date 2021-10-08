@@ -34,7 +34,7 @@ import org.eclipse.jdt.core.IJavaElementDelta;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 
-import com.redhat.qute.commons.JavaDataModelChangeEvent;
+import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
 import com.redhat.qute.jdt.IJavaDataModelChangedListener;
 import com.redhat.qute.jdt.utils.JDTQuteUtils;
 

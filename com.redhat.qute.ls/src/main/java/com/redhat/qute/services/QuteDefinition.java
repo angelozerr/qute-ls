@@ -156,8 +156,7 @@ class QuteDefinition {
 			if (range != null) {
 				String className = template.getText(range);
 				QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, projectUri);
-				return findJavaDefinition(params,
-						() -> QutePositionUtility.createRange(range, template));
+				return findJavaDefinition(params, () -> QutePositionUtility.createRange(range, template));
 			}
 		}
 		return NO_DEFINITION;
@@ -221,10 +220,10 @@ class QuteDefinition {
 									previousResolvedType.getClassName(), projectUri);
 							if (member != null && member.getKind() == JavaMemberKind.METHOD) {
 								// Try to find a method definition
-								params.setMethod(member.getName());								
+								params.setMethod(member.getName());
 							} else {
 								// Try to find a field definition
-								params.setField(property);								
+								params.setField(property);
 							}
 							return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
 						}
@@ -238,32 +237,35 @@ class QuteDefinition {
 		JavaTypeInfoProvider resolvedJavaType = ((ObjectPart) part).resolveJavaType();
 		if (resolvedJavaType != null) {
 			Node node = resolvedJavaType.getNode();
-			switch (node.getKind()) {
-			case ParameterDeclaration: {
-				ParameterDeclaration parameter = (ParameterDeclaration) node;
-				String targetUri = template.getUri();
-				Range targetRange = QutePositionUtility.selectAlias(parameter);
-				Range originSelectionRange = QutePositionUtility.createRange(part);
-				LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange, originSelectionRange);
-				return CompletableFuture.completedFuture(Arrays.asList(locationLink));
-			}
-			case Section: {
-				Section section = (Section) node;
-				if (section.getSectionKind() == SectionKind.EACH || section.getSectionKind() == SectionKind.FOR) {
-					LoopSection loopSection = (LoopSection) section;
-					Parameter parameter = loopSection.getAliasParameter();
-					if (parameter != null) {
-						String targetUri = template.getUri();
-						Range targetRange = QutePositionUtility.createRange(parameter);
-						Range originSelectionRange = QutePositionUtility.createRange(part);
-						LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
-								originSelectionRange);
-						return CompletableFuture.completedFuture(Arrays.asList(locationLink));
-					}
+			if (node != null) {
+				switch (node.getKind()) {
+				case ParameterDeclaration: {
+					ParameterDeclaration parameter = (ParameterDeclaration) node;
+					String targetUri = template.getUri();
+					Range targetRange = QutePositionUtility.selectAlias(parameter);
+					Range originSelectionRange = QutePositionUtility.createRange(part);
+					LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
+							originSelectionRange);
+					return CompletableFuture.completedFuture(Arrays.asList(locationLink));
 				}
-				break;
-			}
-			default:
+				case Section: {
+					Section section = (Section) node;
+					if (section.getSectionKind() == SectionKind.EACH || section.getSectionKind() == SectionKind.FOR) {
+						LoopSection loopSection = (LoopSection) section;
+						Parameter parameter = loopSection.getAliasParameter();
+						if (parameter != null) {
+							String targetUri = template.getUri();
+							Range targetRange = QutePositionUtility.createRange(parameter);
+							Range originSelectionRange = QutePositionUtility.createRange(part);
+							LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
+									originSelectionRange);
+							return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+						}
+					}
+					break;
+				}
+				default:
+				}
 			}
 		}
 		return NO_DEFINITION;
