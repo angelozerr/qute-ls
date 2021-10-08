@@ -1,8 +1,9 @@
 package com.redhat.qute.services.diagnostics;
 
 public enum QuteErrorCode implements IQuteErrorCode {
-	
+
 	UndefinedVariable, //
+	UnkwownMethod, //
 
 	UnkwownProperty;
 

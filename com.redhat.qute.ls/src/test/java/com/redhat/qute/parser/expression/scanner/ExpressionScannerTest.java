@@ -27,6 +27,17 @@ public class ExpressionScannerTest {
 	}
 
 	@Test
+	public void testObjectAndMethodPart() {
+		scanner = ExpressionScanner.createScanner("item.name()");
+		assertOffsetAndToken(0, TokenType.ObjectPart, "item");
+		assertOffsetAndToken(4, TokenType.Dot, ".");
+		assertOffsetAndToken(5, TokenType.MethodPart, "name");
+		assertOffsetAndToken(9, TokenType.OpenBracket, "(");
+		assertOffsetAndToken(10, TokenType.CloseBracket, ")");
+		assertOffsetAndToken(11, TokenType.EOS, "");
+	}
+
+	@Test
 	public void testTwoParts() {
 		scanner = ExpressionScanner.createScanner("a b");
 		assertOffsetAndToken(0, TokenType.ObjectPart, "a");
@@ -82,7 +93,7 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(15, TokenType.PropertyPart, "baz");
 		assertOffsetAndToken(18, TokenType.EOS, "");
 	}
-	
+
 	public void assertOffsetAndToken(int tokenOffset, TokenType tokenType) {
 		TokenType token = scanner.scan();
 		assertEquals(tokenOffset, scanner.getTokenOffset());

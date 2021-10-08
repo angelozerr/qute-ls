@@ -9,7 +9,7 @@ public class MethodPart extends MemberPart {
 	}
 
 	public PartKind getPartKind() {
-		return PartKind.Property;
+		return PartKind.Method;
 	}
 
 	public void setOpenBracket(int tokenOffset) {

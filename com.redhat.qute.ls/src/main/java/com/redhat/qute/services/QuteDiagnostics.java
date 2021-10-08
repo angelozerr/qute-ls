@@ -27,7 +27,7 @@ import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
-import com.redhat.qute.parser.expression.PropertyPart;
+import com.redhat.qute.parser.expression.Parts.PartKind;
 import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
@@ -57,6 +57,8 @@ class QuteDiagnostics {
 	private static final String UNDEFINED_VARIABLE_MESSAGE = "`{0}` cannot be resolved to a variable.";
 
 	private static final String UNKWOWN_PROPERTY_MESSAGE = "`{0}` cannot be resolved or is not a field for `{1}` Java type.";
+
+	private static final String UNKWOWN_METHOD_MESSAGE = "`{0}` cannot be resolved or is not a method for `{1}` Java type.";
 
 	private static final String RESOLVING_JAVA_TYPE_MESSAGE = "Resolving Java type `{0}`.";
 
@@ -219,9 +221,9 @@ class QuteDiagnostics {
 				break;
 			}
 
+			case Method:
 			case Property: {
-				PropertyPart propertyPart = (PropertyPart) current;
-				resolvedJavaClass = validatePropertyPart(propertyPart, projectUri, resolvedJavaClass, diagnostics,
+				resolvedJavaClass = validatePropertyPart(current, projectUri, resolvedJavaClass, diagnostics,
 						resolvingJavaTypeFutures);
 				if (resolvedJavaClass == null) {
 					// The Java type of the previous part cannot be resolved, stop the validation of
@@ -253,27 +255,37 @@ class QuteDiagnostics {
 		return validateJavaTypePart(objectPart, projectUri, diagnostics, resolvingJavaTypeFutures, javaTypeToResolve);
 	}
 
-	private ResolvedJavaClassInfo validatePropertyPart(PropertyPart propertyPart, String projectUri,
+	private ResolvedJavaClassInfo validatePropertyPart(Part part, String projectUri,
 			ResolvedJavaClassInfo resolvedJavaClass, List<Diagnostic> diagnostics,
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
-		String property = propertyPart.getPartName();
+		String property = part.getPartName();
 		JavaMemberInfo javaMember = resolvedJavaClass.findMember(property);
 		if (javaMember == null) {
-			// ex : {@org.acme.Item item}
-			// "{item.XXXX}
-			Range range = QutePositionUtility.createRange(propertyPart);
-			String message = MessageFormat.format(UNKWOWN_PROPERTY_MESSAGE, property, resolvedJavaClass.getClassName());
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-					QuteErrorCode.UnkwownProperty);
+			IQuteErrorCode errorCode = null;
+			String message = null;
+			boolean isMethod = part.getPartKind() == PartKind.Method;
+			if (isMethod) {
+				// ex : {@org.acme.Item item}
+				// "{item.getXXXX()}
+				message = MessageFormat.format(UNKWOWN_METHOD_MESSAGE, property, resolvedJavaClass.getClassName());
+				errorCode = QuteErrorCode.UnkwownMethod;
+			} else {
+				// ex : {@org.acme.Item item}
+				// "{item.XXXX}
+				message = MessageFormat.format(UNKWOWN_PROPERTY_MESSAGE, property, resolvedJavaClass.getClassName());
+				errorCode = QuteErrorCode.UnkwownProperty;
+			}
+			Range range = QutePositionUtility.createRange(part);
+			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, errorCode);
 			diagnostics.add(diagnostic);
 			return null;
 		}
-		Parts parts = propertyPart.getParent();
-		boolean last = parts.getPartIndex(propertyPart) == parts.getChildCount() - 1;
+		Parts parts = part.getParent();
+		boolean last = parts.getPartIndex(part) == parts.getChildCount() - 1;
 		if (last) {
 			return null;
 		}
-		return validateJavaTypePart(propertyPart, projectUri, diagnostics, resolvingJavaTypeFutures,
+		return validateJavaTypePart(part, projectUri, diagnostics, resolvingJavaTypeFutures,
 				javaMember.getMemberType());
 	}
 
