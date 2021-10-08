@@ -1,5 +1,6 @@
 package com.redhat.qute.parser.expression.scanner;
 
+
 import java.util.function.Predicate;
 
 import com.redhat.qute.parser.scanner.AbstractScanner;
@@ -65,6 +66,32 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 			// return internalScan();
 		}
 
+		case WithingMethod: {
+			if (stream.advanceIfChar('(')) {
+				return finishToken(offset, TokenType.OpenBracket);
+			}
+			stream.advanceUntilChar(')', '"', '\'');
+			if (stream.peekChar() == '"' || stream.peekChar() == '\'') {
+				stream.advance(1);
+				state = ScannerState.WithinString;
+				return finishToken(stream.pos() - 1, TokenType.StartString);
+			} else if (stream.peekChar() == ')' ) {
+				stream.advance(1);
+				state = ScannerState.WithinParts;
+				return finishToken(stream.pos() - 1, TokenType.CloseBracket);
+			}
+			return internalScan();
+		}
+		
+		case WithinString: {
+			if (stream.advanceIfAnyOfChars('"', '\'')) {
+				state = ScannerState.WithinExpression;
+				return finishToken(offset, TokenType.EndString);
+			}
+			stream.advanceUntilChar('"', '\'');
+			return finishToken(offset, TokenType.String);
+		}
+		
 		default:
 		}
 		stream.advance(1);
@@ -79,6 +106,7 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 		}
 		if (state == ScannerState.WithinParts) {
 			if (next == '(') {
+				state = ScannerState.WithingMethod;
 				return finishToken(offset, TokenType.MethodPart);
 			}
 			return finishToken(offset, TokenType.PropertyPart);

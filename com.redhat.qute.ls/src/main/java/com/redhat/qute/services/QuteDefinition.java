@@ -25,8 +25,11 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+import com.redhat.qute.commons.JavaMemberInfo;
+import com.redhat.qute.commons.JavaMemberInfo.JavaMemberKind;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.ls.commons.BadLocationException;
+import com.redhat.qute.parser.expression.MethodPart;
 import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
@@ -192,8 +195,9 @@ class QuteDefinition {
 		case Object:
 			return findDefinitionFromObjectPart((ObjectPart) part, template);
 		case Property:
-		case Method:
 			return findDefinitionFromPropertyPart((PropertyPart) part, template);
+		case Method:
+			return findDefinitionFromPropertyPart((MethodPart) part, template);
 		default:
 			return NO_DEFINITION;
 		}
@@ -206,13 +210,22 @@ class QuteDefinition {
 		String projectUri = template.getProjectUri();
 		if (projectUri != null) {
 			return javaCache.resolveJavaType(previousPart, projectUri) //
-					.thenCompose(resolvedClass -> {
-						if (resolvedClass != null) {
+					.thenCompose(previousResolvedType -> {
+						if (previousResolvedType != null) {
+							// The Java class type from the previous part had been resolved, resolve the
+							// property
 							String property = part.getPartName();
-							QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(resolvedClass.getClassName(),
-									projectUri);
-							// params.setMethod(member.getMethod());
-							params.setField(property);
+							JavaMemberInfo member = previousResolvedType.findMember(property);
+
+							QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(
+									previousResolvedType.getClassName(), projectUri);
+							if (member != null && member.getKind() == JavaMemberKind.METHOD) {
+								// Try to find a method definition
+								params.setMethod(member.getName());								
+							} else {
+								// Try to find a field definition
+								params.setField(property);								
+							}
 							return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
 						}
 						return NO_DEFINITION;

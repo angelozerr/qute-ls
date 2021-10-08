@@ -14,6 +14,7 @@ public class ExpressionScannerTest {
 	public void testObjectPart() {
 		scanner = ExpressionScanner.createScanner("item");
 		assertOffsetAndToken(0, TokenType.ObjectPart, "item");
+		assertOffsetAndToken(4, TokenType.EOS, "");
 	}
 
 	@Test
@@ -22,6 +23,7 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(0, TokenType.ObjectPart, "item");
 		assertOffsetAndToken(4, TokenType.Dot, ".");
 		assertOffsetAndToken(5, TokenType.PropertyPart, "name");
+		assertOffsetAndToken(9, TokenType.EOS, "");
 	}
 
 	@Test
@@ -30,6 +32,7 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(0, TokenType.ObjectPart, "a");
 		assertOffsetAndToken(1, TokenType.Whitespace, " ");
 		assertOffsetAndToken(2, TokenType.ObjectPart, "b");
+		assertOffsetAndToken(3, TokenType.EOS, "");
 	}
 
 	@Test
@@ -38,6 +41,7 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(0, TokenType.NamespacePart, "data");
 		assertOffsetAndToken(4, TokenType.ColonSpace, ":");
 		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
+		assertOffsetAndToken(8, TokenType.EOS, "");
 	}
 
 	@Test
@@ -48,6 +52,7 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
 		assertOffsetAndToken(8, TokenType.Dot, ".");
 		assertOffsetAndToken(9, TokenType.PropertyPart, "bar");
+		assertOffsetAndToken(12, TokenType.EOS, "");
 	}
 
 	@Test
@@ -58,8 +63,26 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
 		assertOffsetAndToken(8, TokenType.Dot, ".");
 		assertOffsetAndToken(9, TokenType.MethodPart, "bar");
+		assertOffsetAndToken(12, TokenType.OpenBracket, "(");
+		assertOffsetAndToken(13, TokenType.CloseBracket, ")");
+		assertOffsetAndToken(14, TokenType.EOS, "");
 	}
 
+	@Test
+	public void testNamespaceWithMethodAndProperty() {
+		scanner = ExpressionScanner.createScanner("data:foo.bar().baz");
+		assertOffsetAndToken(0, TokenType.NamespacePart, "data");
+		assertOffsetAndToken(4, TokenType.ColonSpace, ":");
+		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
+		assertOffsetAndToken(8, TokenType.Dot, ".");
+		assertOffsetAndToken(9, TokenType.MethodPart, "bar");
+		assertOffsetAndToken(12, TokenType.OpenBracket, "(");
+		assertOffsetAndToken(13, TokenType.CloseBracket, ")");
+		assertOffsetAndToken(14, TokenType.Dot, ".");
+		assertOffsetAndToken(15, TokenType.PropertyPart, "baz");
+		assertOffsetAndToken(18, TokenType.EOS, "");
+	}
+	
 	public void assertOffsetAndToken(int tokenOffset, TokenType tokenType) {
 		TokenType token = scanner.scan();
 		assertEquals(tokenOffset, scanner.getTokenOffset());

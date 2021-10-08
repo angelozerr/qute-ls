@@ -54,28 +54,36 @@ public class QuteCompletionInExpressionTest {
 		testCompletionFor(template, //
 				c("name", "name", r(1, 12, 1, 12)), //
 				c("price", "price", r(1, 12, 1, 12)), //
-				c("review", "review", r(1, 12, 1, 12)));
+				c("review", "review", r(1, 12, 1, 12)), //
+				c("review2", "review2", r(1, 12, 1, 12)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 12)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.n|}";
 		testCompletionFor(template, //
 				c("name", "name", r(1, 12, 1, 13)), //
 				c("price", "price", r(1, 12, 1, 13)), //
-				c("review", "review", r(1, 12, 1, 13)));
+				c("review", "review", r(1, 12, 1, 13)), //
+				c("review2", "review2", r(1, 12, 1, 13)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 13)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.|n}";
 		testCompletionFor(template, //
 				c("name", "name", r(1, 12, 1, 13)), //
 				c("price", "price", r(1, 12, 1, 13)), //
-				c("review", "review", r(1, 12, 1, 13)));
+				c("review", "review", r(1, 12, 1, 13)), //
+				c("review2", "review2", r(1, 12, 1, 13)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 13)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.n|a}";
 		testCompletionFor(template, //
 				c("name", "name", r(1, 12, 1, 14)), //
 				c("price", "price", r(1, 12, 1, 14)), //
-				c("review", "review", r(1, 12, 1, 14)));
+				c("review", "review", r(1, 12, 1, 14)), //
+				c("review2", "review2", r(1, 12, 1, 14)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 14)));
 	}
 
 	@Test
@@ -104,32 +112,32 @@ public class QuteCompletionInExpressionTest {
 				c("name", "name", r(1, 19, 1, 21)), //
 				c("average", "average", r(1, 19, 1, 21)));
 	}
-	
+
 	@Test
 	public void completionInExpressionWithMethod() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.getReview2().|}";
 		testCompletionFor(template, //
-				c("name", "name", r(1, 20, 1, 20)), //
-				c("average", "average", r(1, 20, 1, 20)));
+				c("name", "name", r(1, 25, 1, 25)), //
+				c("average", "average", r(1, 25, 1, 25)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.getReview2().n|}";
 		testCompletionFor(template, //
-				c("name", "name", r(1, 20, 1, 21)), //
-				c("average", "average", r(1, 20, 1, 21)));
+				c("name", "name", r(1, 25, 1, 26)), //
+				c("average", "average", r(1, 25, 1, 26)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.getReview2().|n}";
 		testCompletionFor(template, //
-				c("name", "name", r(1, 20, 1, 21)), //
-				c("average", "average", r(1, 20, 1, 21)));
+				c("name", "name", r(1, 25, 1, 26)), //
+				c("average", "average", r(1, 25, 1, 26)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.getReview2().n|a}";
 		testCompletionFor(template, //
-				c("name", "name", r(1, 20, 1, 22)), //
-				c("average", "average", r(1, 20, 1, 22)));
+				c("name", "name", r(1, 25, 1, 27)), //
+				c("average", "average", r(1, 25, 1, 27)));
 	}
 
 	@Test

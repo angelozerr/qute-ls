@@ -12,4 +12,14 @@ public class MethodPart extends MemberPart {
 		return PartKind.Property;
 	}
 
+	public void setOpenBracket(int tokenOffset) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setCloseBracket(int tokenOffset) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

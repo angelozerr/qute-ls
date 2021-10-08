@@ -66,7 +66,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"{/for}}";
 		testCompletionFor(template, //
 				c("name", "name", r(3, 7, 3, 7)), //
-				c("price", "price", r(3, 7, 3, 7)));
+				c("price", "price", r(3, 7, 3, 7)), //
+				c("review", "review", r(3, 7, 3, 7)), //
+				c("review2", "review2", r(3, 7, 3, 7)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 7)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
 				" \r\n" + //
@@ -75,7 +78,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"{/for}}";
 		testCompletionFor(template, //
 				c("name", "name", r(3, 7, 3, 8)), //
-				c("price", "price", r(3, 7, 3, 8)));
+				c("price", "price", r(3, 7, 3, 8)), //
+				c("review", "review", r(3, 7, 3, 8)), //
+				c("review2", "review2", r(3, 7, 3, 8)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 8)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
 				" \r\n" + //
@@ -84,7 +90,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"{/for}}";
 		testCompletionFor(template, //
 				c("name", "name", r(3, 7, 3, 8)), //
-				c("price", "price", r(3, 7, 3, 8)));
+				c("price", "price", r(3, 7, 3, 8)), //
+				c("review", "review", r(3, 7, 3, 8)), //
+				c("review2", "review2", r(3, 7, 3, 8)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 8)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
 				" \r\n" + //
@@ -93,7 +102,11 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"{/for}}";
 		testCompletionFor(template, //
 				c("name", "name", r(3, 7, 3, 9)), //
-				c("price", "price", r(3, 7, 3, 9)));
+				c("price", "price", r(3, 7, 3, 9)), //
+				c("review", "review", r(3, 7, 3, 9)), //
+				c("review2", "review2", r(3, 7, 3, 9)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 9)));
+
 	}
 
 	@Test
@@ -119,7 +132,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"{/for}";
 		testCompletionFor(template, //
 				c("name", "name", r(4, 8, 4, 8)), //
-				c("price", "price", r(4, 8, 4, 8)));
+				c("price", "price", r(4, 8, 4, 8)), //
+				c("review", "review", r(4, 8, 4, 8)), //
+				c("review2", "review2", r(4, 8, 4, 8)), //
+				c("getReview2() : org.acme.Review", "getReview2()", r(4, 8, 4, 8)));
 
 	}
 }

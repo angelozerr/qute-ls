@@ -67,6 +67,22 @@ public class ExpressionParser {
 					currentParts.addColonSpace(tokenOffset);
 				}
 				break;
+			case OpenBracket:
+				if (currentParts != null) {
+					Node last = currentParts.getLastChild();
+					if (last instanceof MethodPart) {
+						((MethodPart) last).setOpenBracket(tokenOffset);
+					}
+				}
+				break;
+			case CloseBracket:
+				if (currentParts != null) {
+					Node last = currentParts.getLastChild();
+					if (last instanceof MethodPart) {
+						((MethodPart) last).setCloseBracket(tokenOffset);
+					}
+				}
+				break;
 			default:
 				currentParts = null;
 				break;

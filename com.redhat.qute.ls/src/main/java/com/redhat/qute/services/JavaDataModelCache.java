@@ -116,6 +116,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 				future = getResolvedClass(objectPart, projectUri);
 				break;
 			case Property:
+			case Method:
 				if (future != null) {
 					future = future //
 							.thenCompose(resolvedClass -> {

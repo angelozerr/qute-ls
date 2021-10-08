@@ -2,8 +2,8 @@ package com.redhat.qute.parser.expression.scanner;
 
 public enum ScannerState {
 	WithinExpression, //
-
-	WithinParts, 
-	
+	WithinParts, //
+	WithingMethod, //
+	WithinString, //
 	AfterNamespace;
 }

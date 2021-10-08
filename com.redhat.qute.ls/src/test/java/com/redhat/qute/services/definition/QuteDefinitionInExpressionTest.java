@@ -57,8 +57,8 @@ public class QuteDefinitionInExpressionTest {
 				ll("org/acme/Item.java", r(1, 6, 1, 13), MockJavaDataModelCache.JAVA_METHOD_RANGE));
 
 		template = "{@org.acme.Item item}\r\n" + //
-				"{item.name|}";
+				"{item.review2|}";
 		testDefinitionFor(template, //
-				ll("org/acme/Item.java", r(1, 6, 1, 10), MockJavaDataModelCache.JAVA_METHOD_RANGE));
+				ll("org/acme/Item.java", r(1, 6, 1, 13), MockJavaDataModelCache.JAVA_METHOD_RANGE));
 	}
 }
