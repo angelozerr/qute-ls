@@ -18,7 +18,7 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
-import com.redhat.qute.commons.datamodel.ProjectDataModelInfo;
+import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.jdt.JavaDataModelManager;
 
@@ -44,15 +44,13 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 
 	private static final String QUTE_TEMPLATE_PROJECT_COMMAND_ID = "qute/template/project";
 
-	private static final String QUTE_TEMPLATE_PROJECT_DATA_MODEL_COMMAND_ID = "qute/template/project/dataModel";
+	private static final String QUTE_TEMPLATE_PROJECT_DATA_MODEL_COMMAND_ID = "qute/template/projectDataModel";
 
 	private static final String QUTE_TEMPLATE_JAVA_CLASSES_COMMAND_ID = "qute/template/javaClasses";
 
 	private static final String QUTE_TEMPLATE_JAVA_DEFINITION_COMMAND_ID = "qute/template/javaDefinition";
 
 	private static final String QUTE_TEMPLATE_RESOLVED_JAVA_CLASS_COMMAND_ID = "qute/template/resolvedJavaClass";
-	
-	
 
 	@Override
 	public Object executeCommand(String commandId, List<Object> arguments, IProgressMonitor monitor) throws Exception {
@@ -60,7 +58,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		case QUTE_TEMPLATE_PROJECT_COMMAND_ID:
 			return getProjectInfo(arguments, commandId, monitor);
 		case QUTE_TEMPLATE_PROJECT_DATA_MODEL_COMMAND_ID:
-			return getProjectDataModelInfo(arguments, commandId, monitor);			
+			return getProjectDataModel(arguments, commandId, monitor);
 		case QUTE_TEMPLATE_JAVA_CLASSES_COMMAND_ID:
 			return getJavaClasses(arguments, commandId, monitor);
 		case QUTE_TEMPLATE_RESOLVED_JAVA_CLASS_COMMAND_ID:
@@ -85,34 +83,34 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		// Get project name from the java file URI
 		String templateFileUri = getString(obj, TEMPLATE_FILE_URI_ATTR);
 		if (templateFileUri == null) {
-			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteProjectParams.templateFileUri!",
-					commandId));
+			throw new UnsupportedOperationException(String
+					.format("Command '%s' must be called with required QuteProjectParams.templateFileUri!", commandId));
 		}
 		return new QuteProjectParams(templateFileUri);
 	}
 
-	private ProjectDataModelInfo getProjectDataModelInfo(List<Object> arguments, String commandId, IProgressMonitor monitor) {
+	private static ProjectDataModel getProjectDataModel(List<Object> arguments, String commandId,
+			IProgressMonitor monitor) throws CoreException {
 		QuteProjectDataModelParams params = createQuteProjectDataModelParams(arguments, commandId);
-		return JavaDataModelManager.getInstance().getProjectDataModelInfo(params, JDTUtilsLSImpl.getInstance(), monitor);
+		return JavaDataModelManager.getInstance().getProjectDataModel(params, JDTUtilsLSImpl.getInstance(), monitor);
 	}
 
-	private static QuteProjectDataModelParams createQuteProjectDataModelParams(List<Object> arguments, String commandId) {
+	private static QuteProjectDataModelParams createQuteProjectDataModelParams(List<Object> arguments,
+			String commandId) {
 		Map<String, Object> obj = getFirst(arguments);
 		if (obj == null) {
-			throw new UnsupportedOperationException(
-					String.format("Command '%s' must be called with one QuteProjectDataModelParams argument!", commandId));
+			throw new UnsupportedOperationException(String
+					.format("Command '%s' must be called with one QuteProjectDataModelParams argument!", commandId));
 		}
 		// Get project name from the java file URI
 		String projectUri = getString(obj, PROJECT_URI_ATTR);
 		if (projectUri == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteProjectDataModelParams.projectUri!",
-					commandId));
+					"Command '%s' must be called with required QuteProjectDataModelParams.projectUri!", commandId));
 		}
 		return new QuteProjectDataModelParams(projectUri);
 	}
-	
+
 	/**
 	 * Returns the file information (package name, etc) for the given Java file.
 	 *
@@ -142,8 +140,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		String projectUri = getString(obj, PROJECT_URI_ATTR);
 		if (projectUri == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteResolvedJavaClassParams.projectUri!",
-					commandId));
+					"Command '%s' must be called with required QuteResolvedJavaClassParams.projectUri!", commandId));
 		}
 		String className = getString(obj, CLASS_NAME_ATTR);
 		if (className == null) {
@@ -175,8 +172,8 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		}
 		String pattern = getString(obj, PATTERN_ATTR);
 		if (pattern == null) {
-			throw new UnsupportedOperationException(String
-					.format("Command '%s' must be called with required QuteJavaClassParams.pattern!", commandId));
+			throw new UnsupportedOperationException(
+					String.format("Command '%s' must be called with required QuteJavaClassParams.pattern!", commandId));
 		}
 		QuteJavaClassesParams params = new QuteJavaClassesParams(pattern, projectUri);
 		return params;
@@ -210,8 +207,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		String templateFileUri = getString(obj, PROJECT_URI_ATTR);
 		if (templateFileUri == null) {
 			throw new UnsupportedOperationException(String.format(
-					"Command '%s' must be called with required QuteJavaDefinitionParams.projectUri !",
-					commandId));
+					"Command '%s' must be called with required QuteJavaDefinitionParams.projectUri !", commandId));
 		}
 		String className = getString(obj, CLASS_NAME_ATTR);
 		if (className == null) {

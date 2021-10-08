@@ -4,6 +4,14 @@ public class QuteProjectDataModelParams {
 
 	private String projectUri;
 
+	public QuteProjectDataModelParams() {
+
+	}
+
+	public QuteProjectDataModelParams(String projectUri) {
+		setProjectUri(projectUri);
+	}
+
 	public String getProjectUri() {
 		return projectUri;
 	}

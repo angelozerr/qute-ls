@@ -19,12 +19,14 @@ package com.redhat.qute.settings;
  */
 public class SharedSettings {
 	private final QuteCompletionSettings completionSettings;
+	private final QuteCodeLensSettings codeLensSettings;
 	private final QuteFormattingSettings formattingSettings;
 	private final QuteValidationSettings validationSettings;
 	private final QuteHoverSettings hoverSettings;
 
 	public SharedSettings() {
 		this.completionSettings = new QuteCompletionSettings();
+		this.codeLensSettings = new QuteCodeLensSettings();
 		this.formattingSettings = new QuteFormattingSettings();
 		this.validationSettings = new QuteValidationSettings();
 		this.hoverSettings = new QuteHoverSettings();
@@ -37,6 +39,15 @@ public class SharedSettings {
 	 */
 	public QuteCompletionSettings getCompletionSettings() {
 		return completionSettings;
+	}
+
+	/**
+	 * Returns the codeLens settings.
+	 * 
+	 * @return the codeLens settings.
+	 */
+	public QuteCodeLensSettings getCodeLensSettings() {
+		return codeLensSettings;
 	}
 
 	/**

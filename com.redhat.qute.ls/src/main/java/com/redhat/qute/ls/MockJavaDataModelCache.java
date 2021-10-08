@@ -19,6 +19,8 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.services.JavaDataModelCache;
 
 public class MockJavaDataModelCache extends JavaDataModelCache {
@@ -28,7 +30,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	private final Map<String, ResolvedJavaClassInfo> resolvedClassesCache2;
 
 	public MockJavaDataModelCache() {
-		super(null, null, null, null);
+		super(null, null, null, null,null);
 		this.resolvedClassesCache = createResolvedClasses();
 		resolvedClassesCache2 = new HashMap<>();
 	}
@@ -136,5 +138,12 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 			}
 			return new ProjectInfo("test-qute");
 		});
+	}
+	
+	@Override
+	public CompletableFuture<TemplateDataModel> getTemplateDataModel(Template template) {
+		TemplateDataModel dataModel = new TemplateDataModel();
+		dataModel.setSourceType("ItemResource.java");
+		return CompletableFuture.completedFuture(dataModel);
 	}
 }

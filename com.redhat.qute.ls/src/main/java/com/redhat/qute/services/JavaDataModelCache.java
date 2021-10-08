@@ -3,6 +3,7 @@ package com.redhat.qute.services;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -17,8 +18,12 @@ import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
+import com.redhat.qute.commons.datamodel.ProjectDataModel;
+import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
+import com.redhat.qute.ls.api.QuteProjectDataModelProvider;
 import com.redhat.qute.ls.api.QuteProjectInfoProvider;
 import com.redhat.qute.ls.api.QuteResolvedJavaClassProvider;
 import com.redhat.qute.parser.expression.ObjectPart;
@@ -28,6 +33,7 @@ import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.Section;
+import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.utils.StringUtils;
 
 public class JavaDataModelCache implements QuteProjectInfoProvider {
@@ -55,10 +61,17 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 
 	private static class ProjectContainer {
 
-		private final Map<String, CompletableFuture<ResolvedJavaClassInfo>> classes;
+		private String projectUri;
 
-		public ProjectContainer() {
+		private final Map<String /* Full qualified name of Java class */, CompletableFuture<ResolvedJavaClassInfo>> classes;
+		private final QuteProjectDataModelProvider dataModelProvider;
+
+		private CompletableFuture<ProjectDataModel> future;
+
+		public ProjectContainer(String projectUri, QuteProjectDataModelProvider dataModelProvider) {
 			classes = new HashMap<>();
+			this.projectUri = projectUri;
+			this.dataModelProvider = dataModelProvider;
 		}
 
 		public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(String className) {
@@ -67,6 +80,16 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 
 		public void registerResolvedJavaClass(String className, CompletableFuture<ResolvedJavaClassInfo> future) {
 			classes.put(className, future);
+		}
+
+		public CompletableFuture<ProjectDataModel> getDataModel() {
+			// if (future == null || future.isCancelled() ||
+			// future.isCompletedExceptionally()) {
+			QuteProjectDataModelParams params = new QuteProjectDataModelParams();
+			params.setProjectUri(projectUri);
+			future = dataModelProvider.getProjectDataModel(params);
+			// }
+			return future;
 		}
 
 	}
@@ -81,13 +104,17 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 
 	private final QuteJavaDefinitionProvider definitionProvider;
 
+	private final QuteProjectDataModelProvider dataModelProvider;
+
 	public JavaDataModelCache(QuteProjectInfoProvider projectInfoProvider, QuteJavaClassesProvider classProvider,
-			QuteResolvedJavaClassProvider resolvedClassProvider, QuteJavaDefinitionProvider definitionProvider) {
+			QuteResolvedJavaClassProvider resolvedClassProvider, QuteJavaDefinitionProvider definitionProvider,
+			QuteProjectDataModelProvider dataModelProvider) {
 		this.projects = new HashMap<>();
 		this.projectInfoProvider = projectInfoProvider;
 		this.classProvider = classProvider;
 		this.resolvedClassProvider = resolvedClassProvider;
 		this.definitionProvider = definitionProvider;
+		this.dataModelProvider = dataModelProvider;
 	}
 
 	protected CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassesParams params) {
@@ -124,7 +151,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 	private ProjectContainer getProjectContainer(String projectUri) {
 		ProjectContainer container = projects.get(projectUri);
 		if (container == null) {
-			container = new ProjectContainer();
+			container = new ProjectContainer(projectUri, dataModelProvider);
 			projects.put(projectUri, container);
 		}
 		return container;
@@ -236,6 +263,29 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 	@Override
 	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
 		return projectInfoProvider.getProjectInfo(params);
+	}
+
+	public CompletableFuture<TemplateDataModel> getTemplateDataModel(Template template) {
+		String projectUri = template.getProjectUri();
+		return getProjectContainer(projectUri).getDataModel() //
+				.thenApply(dataModel -> {
+					if (dataModel == null || dataModel.getTemplates() == null) {
+						return null;
+					}
+					String templateUri = template.getUri();
+					int dotIndex = templateUri.lastIndexOf('.');
+					if (dotIndex != -1) {
+						templateUri = templateUri.substring(0, dotIndex);
+					}
+					if (templateUri.endsWith(".qute")) {
+						templateUri = templateUri.substring(0, templateUri.length() - ".qute".length());
+					}
+					final String uri = templateUri;
+					Optional<TemplateDataModel> dataModelForTemplate = dataModel.getTemplates().stream() //
+							.filter(t -> uri.endsWith(t.getTemplateUri())) //
+							.findFirst();
+					return dataModelForTemplate.isPresent() ? dataModelForTemplate.get() : null;
+				});
 	}
 
 }

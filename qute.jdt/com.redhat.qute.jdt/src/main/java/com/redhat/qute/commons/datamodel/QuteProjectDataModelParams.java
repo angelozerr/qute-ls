@@ -5,7 +5,7 @@ public class QuteProjectDataModelParams {
 	private String projectUri;
 
 	public QuteProjectDataModelParams() {
-		this(null);
+
 	}
 
 	public QuteProjectDataModelParams(String projectUri) {

@@ -7,7 +7,9 @@
  *******************************************************************************/
 package com.redhat.qute.settings.capabilities;
 
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.CODE_LENS_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.COMPLETION_ID;
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_CODELENS_OPTIONS;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_COMPLETION_OPTIONS;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_DOCUMENT_LINK_OPTIONS;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_DEFINITION_ID;
@@ -15,6 +17,7 @@ import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_LINK_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_SYMBOL_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.HOVER_ID;
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_CODE_LENS;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_COMPLETION;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DEFINITION;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DOCUMENT_SYMBOL;
@@ -70,6 +73,9 @@ public class QuteCapabilityManager {
 		}
 		if (this.getClientCapabilities().isCompletionDynamicRegistrationSupported()) {
 			registerCapability(COMPLETION_ID, TEXT_DOCUMENT_COMPLETION, DEFAULT_COMPLETION_OPTIONS);
+		}
+		if (this.getClientCapabilities().isCodeLensDynamicRegistered()) {
+			registerCapability(CODE_LENS_ID, TEXT_DOCUMENT_CODE_LENS, DEFAULT_CODELENS_OPTIONS);
 		}
 		if (this.getClientCapabilities().isHoverDynamicRegistered()) {
 			registerCapability(HOVER_ID, TEXT_DOCUMENT_HOVER);

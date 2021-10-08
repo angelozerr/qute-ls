@@ -11,6 +11,7 @@
 
 package com.redhat.qute.settings.capabilities;
 
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_CODELENS_OPTIONS;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_COMPLETION_OPTIONS;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_DOCUMENT_LINK_OPTIONS;
 
@@ -54,6 +55,9 @@ public class ServerCapabilitiesInitializer {
 		 */
 		if (!clientCapabilities.isCompletionDynamicRegistrationSupported()) {
 			serverCapabilities.setCompletionProvider(DEFAULT_COMPLETION_OPTIONS);
+		}
+		if (!clientCapabilities.isCodeLensDynamicRegistered()) {
+			serverCapabilities.setCodeLensProvider(DEFAULT_CODELENS_OPTIONS);
 		}
 		if (!clientCapabilities.isHoverDynamicRegistered()) {
 			serverCapabilities.setHoverProvider(!clientCapabilities.isHoverDynamicRegistered());

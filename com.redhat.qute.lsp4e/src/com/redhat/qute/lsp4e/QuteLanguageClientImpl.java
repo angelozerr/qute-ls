@@ -29,6 +29,8 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.ProjectDataModel;
+import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.jdt.IJavaDataModelChangedListener;
 import com.redhat.qute.jdt.JavaDataModelManager;
 import com.redhat.qute.jdt.QutePlugin;
@@ -66,6 +68,20 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			IProgressMonitor monitor = getProgressMonitor(cancelChecker);
 			return JavaDataModelManager.getInstance().getProjectInfo(params, JDTUtilsImpl.getInstance(), monitor);
+		});
+	}
+
+	@Override
+	public CompletableFuture<ProjectDataModel> getProjectDataModel(QuteProjectDataModelParams params) {
+		return CompletableFutures.computeAsync((cancelChecker) -> {
+			try {
+				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
+				return JavaDataModelManager.getInstance().getProjectDataModel(params, JDTUtilsImpl.getInstance(),
+						monitor);
+			} catch (CoreException e) {
+				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
+				return null;
+			}
 		});
 	}
 

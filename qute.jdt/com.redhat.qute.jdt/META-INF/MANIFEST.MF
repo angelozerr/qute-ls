@@ -15,6 +15,7 @@ Require-Bundle: org.eclipse.core.runtime,
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Export-Package: com.redhat.qute.commons,
+ com.redhat.qute.commons.datamodel,
  com.redhat.qute.jdt,
  com.redhat.qute.jdt.utils
 Bundle-Activator: com.redhat.qute.jdt.QutePlugin

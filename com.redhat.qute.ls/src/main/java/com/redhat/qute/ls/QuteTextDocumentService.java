@@ -10,6 +10,7 @@
 package com.redhat.qute.ls;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -17,6 +18,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.ClientCapabilities;
+import org.eclipse.lsp4j.CodeLens;
+import org.eclipse.lsp4j.CodeLensParams;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
@@ -143,6 +146,18 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 				});
 
+	}
+
+	@Override
+	public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams params) {
+		if (!sharedSettings.getCodeLensSettings().isEnabled()) {
+			return CompletableFuture.completedFuture(Collections.emptyList());
+		}
+		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
+				(cancelChecker, template) -> {
+					return getQuteLanguageService().getCodeLens(template, sharedSettings.getCodeLensSettings(),
+							cancelChecker);
+				});
 	}
 
 	@Override

@@ -33,7 +33,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	private final Map<String, ResolvedJavaClassInfo> resolvedClassesCache;
 
 	public MockJavaDataModelCache() {
-		super(null, null, null, null);
+		super(null, null, null, null, null);
 		this.resolvedClassesCache = createResolvedClasses();
 	}
 
@@ -94,7 +94,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		registerField("UTF16", "byte", string);
 		createResolvedJavaClassInfo("java.lang.Integer", cache);
 		createResolvedJavaClassInfo("java.math.BigInteger", cache);
-		
+
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);
 		registerField("name", "java.lang.String", review);
 		registerField("average", "java.lang.Integer", review);

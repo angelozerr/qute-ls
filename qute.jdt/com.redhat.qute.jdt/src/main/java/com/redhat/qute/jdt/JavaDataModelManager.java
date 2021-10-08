@@ -45,8 +45,9 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
-import com.redhat.qute.commons.datamodel.ProjectDataModelInfo;
+import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.jdt.utils.IJDTUtils;
 import com.redhat.qute.jdt.utils.JDTMethodUtils;
 import com.redhat.qute.jdt.utils.JDTQuteUtils;
@@ -70,20 +71,20 @@ public class JavaDataModelManager {
 		return new ProjectInfo(JDTQuteUtils.getProjectUri(javaProject));
 	}
 
-	public ProjectDataModelInfo getProjectDataModelInfo(QuteProjectDataModelParams params, IJDTUtils instance,
-			IProgressMonitor monitor) {
+	public ProjectDataModel getProjectDataModel(QuteProjectDataModelParams params, IJDTUtils instance,
+			IProgressMonitor monitor) throws CoreException {
 		String projectUri = params.getProjectUri();
 		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
 			return null;
 		}
-		
-		ProjectDataModelInfo dataModelInfo = new ProjectDataModelInfo();
-		
+
+		ProjectDataModel dataModelInfo = new ProjectDataModel();
+		dataModelInfo.setTemplates(new ArrayList<>());
 		// Scan Java sources to get all classed annotated with @CheckedTemplate
-		SearchPattern pattern = SearchPattern.createPattern(CHECKED_TEMPLATE_ANNOTATION, IJavaSearchConstants.ANNOTATION_TYPE,
-				IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
-				SearchPattern.R_EXACT_MATCH));
+		SearchPattern pattern = SearchPattern.createPattern(CHECKED_TEMPLATE_ANNOTATION,
+				IJavaSearchConstants.ANNOTATION_TYPE, IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
+				SearchPattern.R_EXACT_MATCH);
 		SearchEngine engine = new SearchEngine();
 		int searchScope = IJavaSearchScope.SOURCES;
 		IJavaSearchScope scope = BasicSearchEngine.createJavaSearchScope(true, new IJavaElement[] { javaProject },
@@ -95,20 +96,33 @@ public class JavaDataModelManager {
 					@Override
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
 						if (match.getElement() instanceof IType) {
+							// src/main/resources/templates/${className}/${methodName}.qute.html
+
 							IType type = (IType) match.getElement();
-							JavaClassInfo classInfo = new JavaClassInfo();
-							classInfo.setClassName(type.getFullyQualifiedName('.'));
-							classInfo.setUri(utils.toUri(type.getTypeRoot()));
-							classes.add(classInfo);
-						} else if (match.getElement() instanceof IPackageFragment) {
-							IPackageFragment packageFragment = (IPackageFragment) match.getElement();
-							JavaClassInfo classInfo = new JavaClassInfo();
-							classInfo.setClassName(packageFragment.getElementName());
-							classes.add(classInfo);
+							String className = type.getCompilationUnit() != null
+									? type.getCompilationUnit().getElementName()
+									: type.getClassFile().getElementName();
+							if (className.endsWith(".java")) {
+								className = className.substring(0, className.length() - ".java".length());
+							}
+							IMethod[] methods = type.getMethods();
+							for (IMethod method : methods) {
+								String methodName = method.getElementName();
+								String templateUri = new StringBuilder("src/main/resources/templates/") //
+										.append(className) //
+										.append('/') //
+										.append(methodName) //
+										.toString();
+
+								TemplateDataModel template = new TemplateDataModel();
+								template.setTemplateUri(templateUri);
+								template.setSourceType(type.getFullyQualifiedName('.'));
+								dataModelInfo.getTemplates().add(template);
+							}
 						}
 					}
 				}, monitor);
-		
+
 		return dataModelInfo;
 
 	}

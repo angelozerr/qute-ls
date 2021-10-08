@@ -14,6 +14,7 @@ package com.redhat.qute.services;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentHighlight;
@@ -27,6 +28,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.settings.QuteCodeLensSettings;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 import com.redhat.qute.settings.QuteValidationSettings;
@@ -40,6 +42,7 @@ import com.redhat.qute.settings.SharedSettings;
  */
 public class QuteLanguageService {
 
+	private final QuteCodeLens codelens;
 	private final QuteCompletions completions;
 	private final QuteHover hover;
 	private final QuteHighlighting highlighting;
@@ -50,12 +53,14 @@ public class QuteLanguageService {
 
 	public QuteLanguageService(JavaDataModelCache javaCache) {
 		this.completions = new QuteCompletions(javaCache);
+		this.codelens = new QuteCodeLens(javaCache);
 		this.hover = new QuteHover(javaCache);
 		this.highlighting = new QuteHighlighting();
 		this.definition = new QuteDefinition(javaCache);
 		this.documentLink = new QuteDocumentLink();
 		this.symbolsProvider = new QuteSymbolsProvider();
 		this.diagnostics = new QuteDiagnostics(javaCache);
+
 	}
 
 	/**
@@ -72,6 +77,11 @@ public class QuteLanguageService {
 			QuteCompletionSettings completionSettings, QuteFormattingSettings formattingSettings,
 			CancelChecker cancelChecker) {
 		return completions.doComplete(template, position, completionSettings, formattingSettings, cancelChecker);
+	}
+
+	public CompletableFuture<List<? extends CodeLens>> getCodeLens(Template template, QuteCodeLensSettings settings,
+			CancelChecker cancelChecker) {
+		return codelens.getCodelens(template, settings, cancelChecker);
 	}
 
 	public CompletableFuture<Hover> doHover(Template template, Position position, SharedSettings sharedSettings,

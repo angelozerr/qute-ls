@@ -33,7 +33,7 @@ import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
-import com.redhat.qute.commons.datamodel.ProjectDataModelInfo;
+import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
@@ -56,7 +56,8 @@ import com.redhat.qute.settings.capabilities.ServerCapabilitiesInitializer;
  *
  */
 public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer, QuteLanguageServerAPI,
-		QuteProjectInfoProvider, QuteJavaClassesProvider, QuteResolvedJavaClassProvider, QuteJavaDefinitionProvider, QuteProjectDataModelProvider {
+		QuteProjectInfoProvider, QuteJavaClassesProvider, QuteResolvedJavaClassProvider, QuteJavaDefinitionProvider,
+		QuteProjectDataModelProvider {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteLanguageServer.class.getName());
 
@@ -79,7 +80,7 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 
 	private JavaDataModelCache createDataModelCache() {
 		//return new MockJavaDataModelCache();
-		return new JavaDataModelCache(this, this, this, this);
+		return new JavaDataModelCache(this, this, this, this, this);
 	}
 
 	@Override
@@ -189,13 +190,13 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 		dataModelCache.dataModelChanged(event);
 		textDocumentService.dataModelChanged(event);
 	}
-	
+
 	public JavaDataModelCache getDataModelCache() {
 		return dataModelCache;
 	}
-	
+
 	@Override
-	public CompletableFuture<ProjectDataModelInfo> getProjectDataModel(QuteProjectDataModelParams params) {
+	public CompletableFuture<ProjectDataModel> getProjectDataModel(QuteProjectDataModelParams params) {
 		return getLanguageClient().getProjectDataModel(params);
 	}
 }
