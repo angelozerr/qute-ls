@@ -64,6 +64,8 @@ class QuteDiagnostics {
 
 	private static final String UNKWOWN_JAVA_TYPE_MESSAGE = "`{0}` cannot be resolved to a type.";
 
+	private static final String ITERABLE_REQUIRED_MESSAGE = "`{0}` is not an instance of `java.lang.Iterable`.";
+
 	private static final ResolvedJavaClassInfo NOW = new ResolvedJavaClassInfo();
 
 	private final JavaDataModelCache javaCache;
@@ -145,8 +147,7 @@ class QuteDiagnostics {
 							ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
 							if (NOW.equals(resolvedJavaClass)) {
 								// Java type must be loaded.
-								Range range = QutePositionUtility.createRange(classNameRange.getStart(),
-										classNameRange.getEnd(), template);
+								Range range = QutePositionUtility.createRange(classNameRange, template);
 								String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, className);
 								Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Information,
 										null);
@@ -156,11 +157,10 @@ class QuteDiagnostics {
 
 							if (resolvedJavaClass == null) {
 								// Java type doesn't exist
-								Range range = QutePositionUtility.createRange(classNameRange.getStart(),
-										classNameRange.getEnd(), template);
+								Range range = QutePositionUtility.createRange(classNameRange, template);
 								String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, className);
 								Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-										null);
+										QuteErrorCode.UnkwownType);
 								diagnostics.add(diagnostic);
 							}
 						}
@@ -174,13 +174,13 @@ class QuteDiagnostics {
 				for (Parameter parameter : parameters) {
 					Expression expression = parameter.getExpression();
 					if (expression != null) {
-						validateExpression(expression, resolvingJavaTypeFutures, diagnostics, template);
+						validateExpression(expression, section, template, resolvingJavaTypeFutures, diagnostics);
 					}
 				}
 				break;
 			}
 			case Expression: {
-				validateExpression((Expression) node, resolvingJavaTypeFutures, diagnostics, template);
+				validateExpression((Expression) node, null, template, resolvingJavaTypeFutures, diagnostics);
 				break;
 			}
 			default:
@@ -190,20 +190,19 @@ class QuteDiagnostics {
 		return resolvingJavaTypeFutures;
 	}
 
-	private void validateExpression(Expression expression,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics,
-			Template template) {
+	private void validateExpression(Expression expression, Section ownerSection, Template template,
+			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
 		String projectUri = template.getProjectUri();
 		List<Node> expressionChildren = expression.getExpressionContent();
 		for (Node expressionChild : expressionChildren) {
 			if (expressionChild.getKind() == NodeKind.ExpressionParts) {
 				Parts parts = (Parts) expressionChild;
-				validateExpressionParts(projectUri, parts, resolvingJavaTypeFutures, diagnostics);
+				validateExpressionParts(parts, ownerSection, projectUri, resolvingJavaTypeFutures, diagnostics);
 			}
 		}
 	}
 
-	private void validateExpressionParts(String projectUri, Parts parts,
+	private void validateExpressionParts(Parts parts, Section ownerSection, String projectUri,
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
 		ResolvedJavaClassInfo resolvedJavaClass = null;
 		for (int i = 0; i < parts.getChildCount(); i++) {
@@ -212,7 +211,8 @@ class QuteDiagnostics {
 
 			case Object: {
 				ObjectPart objectPart = (ObjectPart) current;
-				resolvedJavaClass = validateObjectPart(objectPart, projectUri, diagnostics, resolvingJavaTypeFutures);
+				resolvedJavaClass = validateObjectPart(objectPart, ownerSection, projectUri, diagnostics,
+						resolvingJavaTypeFutures);
 				if (resolvedJavaClass == null) {
 					// The Java type of the object part cannot be resolved, stop the validation of
 					// property, method.
@@ -223,8 +223,8 @@ class QuteDiagnostics {
 
 			case Method:
 			case Property: {
-				resolvedJavaClass = validatePropertyPart(current, projectUri, resolvedJavaClass, diagnostics,
-						resolvingJavaTypeFutures);
+				resolvedJavaClass = validatePropertyPart(current, ownerSection, projectUri, resolvedJavaClass,
+						diagnostics, resolvingJavaTypeFutures);
 				if (resolvedJavaClass == null) {
 					// The Java type of the previous part cannot be resolved, stop the validation of
 					// followings property, method.
@@ -238,7 +238,7 @@ class QuteDiagnostics {
 		}
 	}
 
-	private ResolvedJavaClassInfo validateObjectPart(ObjectPart objectPart, String projectUri,
+	private ResolvedJavaClassInfo validateObjectPart(ObjectPart objectPart, Section ownerSection, String projectUri,
 			List<Diagnostic> diagnostics, List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
 		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
 		if (javaTypeInfo == null) {
@@ -252,10 +252,11 @@ class QuteDiagnostics {
 		}
 
 		String javaTypeToResolve = javaTypeInfo.getClassName();
-		return validateJavaTypePart(objectPart, projectUri, diagnostics, resolvingJavaTypeFutures, javaTypeToResolve);
+		return validateJavaTypePart(objectPart, ownerSection, projectUri, diagnostics, resolvingJavaTypeFutures,
+				javaTypeToResolve);
 	}
 
-	private ResolvedJavaClassInfo validatePropertyPart(Part part, String projectUri,
+	private ResolvedJavaClassInfo validatePropertyPart(Part part, Section ownerSection, String projectUri,
 			ResolvedJavaClassInfo resolvedJavaClass, List<Diagnostic> diagnostics,
 			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
 		String property = part.getPartName();
@@ -285,12 +286,13 @@ class QuteDiagnostics {
 		if (last) {
 			return null;
 		}
-		return validateJavaTypePart(part, projectUri, diagnostics, resolvingJavaTypeFutures,
+		return validateJavaTypePart(part, ownerSection, projectUri, diagnostics, resolvingJavaTypeFutures,
 				javaMember.getMemberType());
 	}
 
-	private ResolvedJavaClassInfo validateJavaTypePart(Part part, String projectUri, List<Diagnostic> diagnostics,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, String javaTypeToResolve) {
+	private ResolvedJavaClassInfo validateJavaTypePart(Part part, Section ownerSection, String projectUri,
+			List<Diagnostic> diagnostics, List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures,
+			String javaTypeToResolve) {
 		if (StringUtils.isEmpty(javaTypeToResolve)) {
 			Range range = QutePositionUtility.createRange(part);
 			String message = "Cannot be resolved as type";
@@ -303,7 +305,8 @@ class QuteDiagnostics {
 			return null;
 		}
 
-		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(part, projectUri);
+		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(part, projectUri,
+				false);
 		ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
 		if (NOW.equals(resolvedJavaClass)) {
 			// Java type must be loaded.
@@ -319,9 +322,24 @@ class QuteDiagnostics {
 			// Java type doesn't exist
 			Range range = QutePositionUtility.createRange(part);
 			String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, javaTypeToResolve);
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, null);
+			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
+					QuteErrorCode.UnkwownType);
 			diagnostics.add(diagnostic);
 			return null;
+		}
+
+		if (ownerSection != null && ownerSection.isIterable()) {
+			// The expression is declared inside an iterable section like #for, #each.
+			// Ex: {#for item in items}
+			if (!resolvedJavaClass.isIterable()) {
+				// The Java class is not an iterable class like java.util.List
+				Range range = QutePositionUtility.createRange(part);
+				String message = MessageFormat.format(ITERABLE_REQUIRED_MESSAGE, javaTypeToResolve);
+				Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
+						QuteErrorCode.NotInstanceOfIterable);
+				diagnostics.add(diagnostic);
+				return null;
+			}
 		}
 		return resolvedJavaClass;
 	}

@@ -3,9 +3,10 @@ package com.redhat.qute.services.diagnostics;
 public enum QuteErrorCode implements IQuteErrorCode {
 
 	UndefinedVariable, //
+	UnkwownType, //
 	UnkwownMethod, //
-
-	UnkwownProperty;
+	UnkwownProperty, //
+	NotInstanceOfIterable;
 
 	private final String code;
 

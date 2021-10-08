@@ -32,7 +32,6 @@ import com.redhat.qute.parser.template.SectionMetadata;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.sections.LoopSection;
 import com.redhat.qute.services.JavaDataModelCache;
-import com.redhat.qute.services.QuteCompletions;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 import com.redhat.qute.utils.QutePositionUtility;
@@ -64,12 +63,13 @@ public class QuteCompletionsForExpression {
 			case Method:
 				// ex : { item.n| }
 				// ex : { item.n|ame }
+				// ex : { item.getN|ame() }
 				Parts parts = part.getParent();
 				return doCompleteExpressionForMemberPart(part, parts, template, completionSettings, formattingSettings);
 			default:
 				break;
 			}
-			return QuteCompletions.EMPTY_FUTURE_COMPLETION;
+			return EMPTY_FUTURE_COMPLETION;
 		}
 
 		if (nodeExpression.getKind() == NodeKind.ExpressionParts) {
@@ -85,6 +85,7 @@ public class QuteCompletionsForExpression {
 			case '.': {
 				// ex : { item.| }
 				// ex : { item.|name }
+				// ex : { item.|getName() }
 				Parts parts = (Parts) nodeExpression;
 				Part part = parts.getPartAt(offset + 1);
 				return doCompleteExpressionForMemberPart(part, parts, template, completionSettings, formattingSettings);
@@ -99,8 +100,8 @@ public class QuteCompletionsForExpression {
 		int start = part != null ? part.getStart() : parts.getEnd();
 		int end = part != null ? part.getEnd() : parts.getEnd();
 		String projectUri = template.getProjectUri();
-		int partIndex = parts.getPreviousPartIndex(part);
-		return javaCache.resolveJavaType(parts, partIndex, projectUri) //
+		Part previousPart = parts.getPreviousPart(part);
+		return javaCache.resolveJavaType(previousPart, projectUri) //
 				.thenCompose(resolvedClass -> {
 					if (resolvedClass == null) {
 						return EMPTY_FUTURE_COMPLETION;

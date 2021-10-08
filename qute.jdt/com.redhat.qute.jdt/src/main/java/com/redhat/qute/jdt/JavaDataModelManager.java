@@ -131,25 +131,42 @@ public class JavaDataModelManager {
 
 		String sourceMethod = params.getMethod();
 		if (sourceMethod != null) {
-			int startBracketIndex = sourceMethod.indexOf('(');
-			String methodName = sourceMethod.substring(0, startBracketIndex);
-			// Method signature has been generated with JDT API, so we are sure that we have
-			// a ')' character.
-			int endBracketIndex = sourceMethod.indexOf(')');
-			String methodSignature = sourceMethod.substring(startBracketIndex, endBracketIndex + 1);
-			String[] paramTypes = methodSignature.isEmpty() ? CharOperation.NO_STRINGS
-					: Signature.getParameterTypes(methodSignature);
-
-			// try findMethod for non constructor. If result is null, findMethod for
-			// constructor
-			IMethod method = JavaModelUtil.findMethod(methodName, paramTypes, false, type);
-			if (method == null) {
-				method = JavaModelUtil.findMethod(methodName, paramTypes, true, type);
-			}
+			IMethod method = findMethod(type, sourceMethod);
 			return method != null && method.exists() ? utils.toLocation(method) : null;
 		}
 
 		return utils.toLocation(type);
+	}
+
+	private IMethod findMethod(IType type, String sourceMethod) throws JavaModelException {
+		// For the moment we search method only by name
+		// FIXME:use method signature to retrieve the proper method (see findMethodOLD)
+		IMethod[] methods = type.getMethods();
+		for (IMethod method : methods) {
+			if (sourceMethod.equals(method.getElementName())) {
+				return method;
+			}
+		}
+		return null;
+	}
+
+	private IMethod findMethodOLD(IType type, String sourceMethod) throws JavaModelException {
+		int startBracketIndex = sourceMethod.indexOf('(');
+		String methodName = sourceMethod.substring(0, startBracketIndex);
+		// Method signature has been generated with JDT API, so we are sure that we have
+		// a ')' character.
+		int endBracketIndex = sourceMethod.indexOf(')');
+		String methodSignature = sourceMethod.substring(startBracketIndex, endBracketIndex + 1);
+		String[] paramTypes = methodSignature.isEmpty() ? CharOperation.NO_STRINGS
+				: Signature.getParameterTypes(methodSignature);
+
+		// try findMethod for non constructor. If result is null, findMethod for
+		// constructor
+		IMethod method = JavaModelUtil.findMethod(methodName, paramTypes, false, type);
+		if (method == null) {
+			method = JavaModelUtil.findMethod(methodName, paramTypes, true, type);
+		}
+		return method;
 	}
 
 	public ResolvedJavaClassInfo getResolvedJavaClass(QuteResolvedJavaClassParams params, IJDTUtils utils,
@@ -211,14 +228,15 @@ public class JavaDataModelManager {
 			if (isMethodValid(method)) {
 				try {
 					JavaMethodInfo info = new JavaMethodInfo();
-					
-						  try {
-						    String s = Signature.toString(method.getSignature(), method.getElementName(), method.getParameterNames(), false, ! method.isConstructor());
-						    System.err.println(s);
-						  } catch(JavaModelException e) {
-						    //return method.getElementName(); //fallback
-						  }
-					
+
+					try {
+						String s = Signature.toString(method.getSignature(), method.getElementName(),
+								method.getParameterNames(), false, !method.isConstructor());
+						System.err.println(s);
+					} catch (JavaModelException e) {
+						// return method.getElementName(); //fallback
+					}
+
 					info.setSignature(JDTMethodUtils.getMethodSignature(method));
 					methodsInfo.add(info);
 				} catch (Exception e) {

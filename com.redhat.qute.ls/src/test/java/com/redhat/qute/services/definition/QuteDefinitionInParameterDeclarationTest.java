@@ -33,4 +33,33 @@ public class QuteDefinitionInParameterDeclarationTest {
 				ll("org/acme/Item.java", r(0, 2, 0, 15), MockJavaDataModelCache.JAVA_CLASS_RANGE));
 	}
 
+	@Test
+	public void definitionInExistingClassInsideList() throws Exception {
+		String template = "{@java.util.List<org.ac|me.Item> item}\r\n";
+		testDefinitionFor(template, "test.qute", //
+				ll("org/acme/Item.java", r(0, 17, 0, 30), MockJavaDataModelCache.JAVA_CLASS_RANGE));
+
+		template = "{@java.util.List<|org.acme.Item> item}\r\n";
+		testDefinitionFor(template, "test.qute", //
+				ll("org/acme/Item.java", r(0, 17, 0, 30), MockJavaDataModelCache.JAVA_CLASS_RANGE));
+
+		template = "{@java.util.List<org.acme.Item|> item}\r\n";
+		testDefinitionFor(template, "test.qute", //
+				ll("org/acme/Item.java", r(0, 17, 0, 30), MockJavaDataModelCache.JAVA_CLASS_RANGE));
+	}
+
+	@Test
+	public void definitionInClassList() throws Exception {
+		String template = "{@java.ut|il.List<org.acme.Item> item}\r\n";
+		testDefinitionFor(template, "test.qute", //
+				ll("java/util/List.java", r(0, 2, 0, 16), MockJavaDataModelCache.JAVA_CLASS_RANGE));
+
+		template = "{@|java.util.List<org.acme.Item> item}\r\n";
+		testDefinitionFor(template, "test.qute", //
+				ll("java/util/List.java", r(0, 2, 0, 16), MockJavaDataModelCache.JAVA_CLASS_RANGE));
+
+		template = "{@java.util.List|<org.acme.Item> item}\r\n";
+		testDefinitionFor(template, "test.qute", //
+				ll("java/util/List.java", r(0, 2, 0, 16), MockJavaDataModelCache.JAVA_CLASS_RANGE));
+	}
 }

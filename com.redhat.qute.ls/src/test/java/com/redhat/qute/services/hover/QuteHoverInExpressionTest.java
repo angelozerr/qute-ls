@@ -19,23 +19,50 @@ public class QuteHoverInExpressionTest {
 				"{i|tem}";
 		assertHover(template, //
 				"org.acme.Item", r(1, 1, 1, 5));
-		
+
 		template = "{@org.acme.Item item}\r\n" + //
 				"{item|}";
 		assertHover(template, //
-				"org.acme.Item", r(1, 1, 1, 5));		
+				"org.acme.Item", r(1, 1, 1, 5));
 	}
-	
+
+	@Test
+	public void hoverInUndefinedProperty() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{item.nam|eXXX}";
+		assertHover(template);
+	}
+
 	@Test
 	public void hoverInDefinedProperty() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.nam|e}";
 		assertHover(template, //
 				"java.lang.String", r(1, 6, 1, 10));
-		
+
 		template = "{@org.acme.Item item}\r\n" + //
 				"{item.name|}";
 		assertHover(template, //
-				"java.lang.String", r(1, 6, 1, 10));		
+				"java.lang.String", r(1, 6, 1, 10));
+	}
+	
+	@Test
+	public void hoverInUndefinedMethod() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{item.nam|eXXX()}";
+		assertHover(template);
+	}
+
+	@Test
+	public void hoverInDefinedMethod() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{item.review|2}";
+		assertHover(template, //
+				"org.acme.Review", r(1, 6, 1, 13));
+
+		template = "{@org.acme.Item item}\r\n" + //
+				"{item.getReview|2()}";
+		assertHover(template, //
+				"org.acme.Review", r(1, 6, 1, 16));
 	}
 }

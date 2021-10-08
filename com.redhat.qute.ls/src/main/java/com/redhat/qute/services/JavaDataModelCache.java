@@ -9,8 +9,8 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.JavaClassInfo;
-import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.JavaDataModelChangeEvent;
+import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
@@ -32,7 +32,25 @@ import com.redhat.qute.utils.StringUtils;
 
 public class JavaDataModelCache implements QuteProjectInfoProvider {
 
-	private static CompletableFuture<ResolvedJavaClassInfo> NULL_FUTURE = CompletableFuture.completedFuture(null);
+	private static final CompletableFuture<ResolvedJavaClassInfo> NULL_FUTURE = CompletableFuture.completedFuture(null);
+
+	private static final Map<String, CompletableFuture<ResolvedJavaClassInfo>> javaPrimitiveTypes;
+
+	static {
+		javaPrimitiveTypes = new HashMap<>();
+		registerPrimitiveType("boolean");
+		registerPrimitiveType("double");
+		registerPrimitiveType("float");
+		registerPrimitiveType("int");
+		registerPrimitiveType("long");
+	}
+
+	private static void registerPrimitiveType(String type) {
+		ResolvedJavaClassInfo classInfo = new ResolvedJavaClassInfo();
+		classInfo.setClassName(type);
+		javaPrimitiveTypes.put(type, CompletableFuture.completedFuture(classInfo));
+
+	}
 
 	private static class ProjectContainer {
 
@@ -84,6 +102,11 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 	}
 
 	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(String className, String projectUri) {
+		CompletableFuture<ResolvedJavaClassInfo> primitiveType = javaPrimitiveTypes.get(className);
+		if (primitiveType != null) {
+			// It's a primitive type like boolean, double, float, etc
+			return primitiveType;
+		}
 		if (StringUtils.isEmpty(className) || StringUtils.isEmpty(projectUri)) {
 			return NULL_FUTURE;
 		}
@@ -106,14 +129,15 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 		return container;
 	}
 
-	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Parts parts, int partIndex, String projectUri) {
+	private CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Parts parts, int partIndex, String projectUri,
+			boolean nullIfDontMatchWithIterable) {
 		CompletableFuture<ResolvedJavaClassInfo> future = null;
 		for (int i = 0; i < partIndex + 1; i++) {
 			Part current = ((Part) parts.getChild(i));
 			switch (current.getPartKind()) {
 			case Object:
 				ObjectPart objectPart = (ObjectPart) current;
-				future = getResolvedClass(objectPart, projectUri);
+				future = resolveJavaType(objectPart, projectUri, nullIfDontMatchWithIterable);
 				break;
 			case Property:
 			case Method:
@@ -140,12 +164,18 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 	}
 
 	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Part part, String projectUri) {
-		Parts parts = part.getParent();
-		int partIndex = parts.getPartIndex(part);
-		return resolveJavaType(parts, partIndex, projectUri);
+		return resolveJavaType(part, projectUri, true);
 	}
 
-	private CompletableFuture<ResolvedJavaClassInfo> getResolvedClass(ObjectPart objectPart, String projectUri) {
+	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Part part, String projectUri,
+			boolean nullIfDontMatchWithIterable) {
+		Parts parts = part.getParent();
+		int partIndex = parts.getPartIndex(part);
+		return resolveJavaType(parts, partIndex, projectUri, nullIfDontMatchWithIterable);
+	}
+
+	private CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(ObjectPart objectPart, String projectUri,
+			boolean nullIfDontMatchWithIterable) {
 		CompletableFuture<ResolvedJavaClassInfo> future;
 		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
 		if (javaTypeInfo == null) {
@@ -167,9 +197,26 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 							if (resolvedClass == null) {
 								return NULL_FUTURE;
 							}
-							if (!resolvedClass.isIterable()) {
-								return CompletableFuture.completedFuture(resolvedClass);
+							if (!resolvedClass.isIterable() && nullIfDontMatchWithIterable) {
+								// case when iterable section is associated with a Java class which is not
+								// iterable, the class is not valid
+								// Ex:
+								// {@org.acme.Item items}
+								// {#for item in items}
+								// {item.|}
+								return NULL_FUTURE;
 							}
+							// valid case
+							// Ex:
+							// {@java.util.List<org.acme.Item> items}
+							// {#for item in items}
+							// {item.|}
+
+							// Here
+							// - resolvedClass = java.util.List<org.acme.Item>
+							// - iterClassName = org.acme.Item
+
+							// Resolve org.acme.Item
 							String iterClassName = resolvedClass.getIterableOf();
 							return resolveJavaType(iterClassName, projectUri);
 						});

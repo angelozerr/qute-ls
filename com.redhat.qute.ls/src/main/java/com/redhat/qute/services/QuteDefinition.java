@@ -157,7 +157,7 @@ class QuteDefinition {
 				String className = template.getText(range);
 				QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(className, projectUri);
 				return findJavaDefinition(params,
-						() -> QutePositionUtility.createRange(range.getStart(), range.getEnd(), template));
+						() -> QutePositionUtility.createRange(range, template));
 			}
 		}
 		return NO_DEFINITION;

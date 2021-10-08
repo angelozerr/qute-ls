@@ -76,17 +76,17 @@ public class Parts extends Node {
 		return (Expression) super.getParent();
 	}
 
-	public int getPreviousPartIndex(Part part) {
-		return part != null ? super.getChildren().indexOf(part) - 1 : super.getChildCount() - 1;
-	}
-
 	public int getPartIndex(Part part) {
 		return super.getChildren().indexOf(part);
 	}
 
 	public Part getPreviousPart(Part part) {
-		int partIndex = getPartIndex(part);
-		return (Part) super.getChild(partIndex - 1);
+		int partIndex = getPreviousPartIndex(part);
+		return partIndex != -1 ? (Part) super.getChild(partIndex) : null;
+	}
+
+	private int getPreviousPartIndex(Part part) {
+		return part != null ? super.getChildren().indexOf(part) - 1 : super.getChildCount() - 1;
 	}
 
 }

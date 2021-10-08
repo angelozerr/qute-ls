@@ -71,14 +71,19 @@ public class QuteAssert {
 	public static void testCompletionFor(String value, CompletionItem... expectedItems) throws Exception {
 		testCompletionFor(value, false, expectedItems);
 	}
-
+	
+	public static void testCompletionFor(String value, Integer expectedCount, CompletionItem... expectedItems)
+			throws Exception {
+		testCompletionFor(value, true, expectedCount, expectedItems);
+	}
+	
 	public static void testCompletionFor(String value, boolean snippetSupport, CompletionItem... expectedItems)
 			throws Exception {
-		testCompletionFor(value, snippetSupport, null, null, expectedItems);
+		testCompletionFor(value, snippetSupport,  null, expectedItems);
 	}
 
 	public static void testCompletionFor(String value, boolean snippetSupport, Integer expectedCount,
-			JavaDataModelCache javaCache, CompletionItem... expectedItems) throws Exception {
+			CompletionItem... expectedItems) throws Exception {
 		testCompletionFor(value, snippetSupport, FILE_URI, PROJECT_URI, expectedCount, DEFAULT_JAVA_DATA_MODEL_CACHE,
 				expectedItems);
 	}

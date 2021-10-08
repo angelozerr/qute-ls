@@ -137,4 +137,14 @@ public class QuteCompletionInExpressionWithEachSectionTest {
 				c("getReview2() : org.acme.Review", "getReview2()", r(4, 6, 4, 6)));
 
 	}
+
+	@Test
+	public void noCompletionWithNoIterableClass() throws Exception {
+		String template = "{@org.acme.Item items}\r\n" + //
+				" \r\n" + //
+				"{#each items}\r\n" + //
+				"	{it.|}    \r\n" + //
+				"{/each}}";
+		testCompletionFor(template, 0);
+	}
 }

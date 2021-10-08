@@ -138,4 +138,14 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				c("getReview2() : org.acme.Review", "getReview2()", r(4, 8, 4, 8)));
 
 	}
+	
+	@Test
+	public void noCompletionWithNoIterableClass() throws Exception {
+		String template = "{@org.acme.Item items}\r\n" + //
+				" \r\n" + //
+				"{#for item in items}\r\n" + //
+				"	{item.|}    \r\n" + //
+				"{/for}}";
+		testCompletionFor(template, 0);
+	}
 }
