@@ -62,13 +62,7 @@ public class JDTMethodUtils {
 		String[] parameterTypes = method.getParameterTypes();
 
 		for (int i = 0; i < parameterTypes.length; i++) {
-			try {
-				parameterTypes[i] = createTypeDisplayName(
-						SignatureUtil.getLowerBound(SignatureUtil.fix83600(parameterTypes[i].toCharArray())));
-			} catch (Exception e) {
-				LOGGER.log(Level.WARNING,
-						"Error while getting method parameter '" + i + "' of '" + method.getElementName() + "'.");
-			}
+			parameterTypes[i] = toStringType(parameterTypes[i]);
 		}
 
 		/*
@@ -77,6 +71,15 @@ public class JDTMethodUtils {
 		 * convertToVararg(parameterTypes[index]); }
 		 */
 		return appendParameterSignature(buffer, parameterTypes, parameterNames);
+	}
+
+	public static String toStringType(String type) {
+		try {
+			return createTypeDisplayName(SignatureUtil.getLowerBound(SignatureUtil.fix83600(type.toCharArray())));
+		} catch (Exception e) {
+			LOGGER.log(Level.WARNING, "Error while resolving type " + type);
+			return type;
+		}
 	}
 
 	/**

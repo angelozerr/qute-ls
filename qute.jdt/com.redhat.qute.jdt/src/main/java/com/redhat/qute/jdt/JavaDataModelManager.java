@@ -1,6 +1,7 @@
 package com.redhat.qute.jdt;
 
 import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.CHECKED_TEMPLATE_ANNOTATION;
+import static com.redhat.qute.jdt.utils.JDTMethodUtils.toStringType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,7 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
@@ -96,8 +98,6 @@ public class JavaDataModelManager {
 					@Override
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
 						if (match.getElement() instanceof IType) {
-							// src/main/resources/templates/${className}/${methodName}.qute.html
-
 							IType type = (IType) match.getElement();
 							String className = type.getCompilationUnit() != null
 									? type.getCompilationUnit().getElementName()
@@ -108,6 +108,7 @@ public class JavaDataModelManager {
 							IMethod[] methods = type.getMethods();
 							for (IMethod method : methods) {
 								String methodName = method.getElementName();
+								// src/main/resources/templates/${className}/${methodName}.qute.html
 								String templateUri = new StringBuilder("src/main/resources/templates/") //
 										.append(className) //
 										.append('/') //
@@ -115,8 +116,29 @@ public class JavaDataModelManager {
 										.toString();
 
 								TemplateDataModel template = new TemplateDataModel();
+								template.setParameters(new ArrayList<>());
 								template.setTemplateUri(templateUri);
 								template.setSourceType(type.getFullyQualifiedName('.'));
+								template.setSourceMethod(methodName);
+
+								try {
+									String[] names = method.getParameterNames();
+									String[] types = method.getParameterTypes();
+									for (int i = 0; i < names.length; i++) {
+										String parameterName = names[i];
+										String parameterType = toStringType(types[i]);
+
+										ParameterDataModel parameter = new ParameterDataModel();
+										parameter.setKey(parameterName);
+										parameter.setSourceType(parameterType);
+										template.getParameters().add(parameter);
+									}
+
+								} catch (Exception e) {
+									LOGGER.log(Level.SEVERE, "Error while getting method template parameter of '"
+											+ method.getElementName() + "'.", e);
+								}
+
 								dataModelInfo.getTemplates().add(template);
 							}
 						}
@@ -290,15 +312,6 @@ public class JavaDataModelManager {
 			if (isMethodValid(method)) {
 				try {
 					JavaMethodInfo info = new JavaMethodInfo();
-
-					try {
-						String s = Signature.toString(method.getSignature(), method.getElementName(),
-								method.getParameterNames(), false, !method.isConstructor());
-						System.err.println(s);
-					} catch (JavaModelException e) {
-						// return method.getElementName(); //fallback
-					}
-
 					info.setSignature(JDTMethodUtils.getMethodSignature(method));
 					methodsInfo.add(info);
 				} catch (Exception e) {

@@ -11,6 +11,7 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCodeLensSettings;
 
@@ -26,18 +27,32 @@ class QuteCodeLens {
 			CancelChecker cancelChecker) {
 		return javaCache.getTemplateDataModel(template) //
 				.thenApply(dataModel -> {
-					if(dataModel == null || dataModel.getSourceType() == null) {
+					if (dataModel == null || dataModel.getSourceType() == null) {
 						return Collections.emptyList();
 					}
-					cancelChecker.checkCanceled();					
+					cancelChecker.checkCanceled();
 					List<CodeLens> lenses = new ArrayList<>();
-					
-					String title= dataModel.getSourceType();
-					Range range = new Range(new Position(0,0), new Position(0,0));
+
+					// Method which is bind with the template
+
+					String title = dataModel.getSourceType();
+					Range range = new Range(new Position(0, 0), new Position(0, 0));
 					Command command = new Command(title, "");
 					CodeLens codeLens = new CodeLens(range, command, null);
 					lenses.add(codeLens);
-					
+
+					// Parameters of the template
+					List<ParameterDataModel> parameters = dataModel.getParameters();
+					if (parameters != null) {
+						for (ParameterDataModel parameter : parameters) {
+
+							String parameterTitle = parameter.getKey() + " : " + parameter.getSourceType();
+							Command parameterCommand = new Command(parameterTitle, "");
+							CodeLens parameterCodeLens = new CodeLens(range, parameterCommand, null);
+							lenses.add(parameterCodeLens);
+
+						}
+					}
 					return lenses;
 				});
 	}
