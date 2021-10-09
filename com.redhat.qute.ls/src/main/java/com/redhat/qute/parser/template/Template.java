@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.Position;
 
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.CancelChecker;
@@ -15,6 +17,8 @@ public class Template extends Node {
 	private final TextDocument textDocument;
 
 	private CancelChecker cancelChecker;
+
+	private TemplateDataModelProvider dataModelProvider;
 
 	Template(TextDocument textDocument) {
 		super(0, textDocument.getText().length());
@@ -105,5 +109,34 @@ public class Template extends Node {
 
 	public String getProjectUri() {
 		return projectUri;
+	}
+
+	public void setDataModelProvider(TemplateDataModelProvider dataModelProvider) {
+		this.dataModelProvider = dataModelProvider;
+	}
+
+	public JavaTypeInfoProvider findCheckedTemplate(String partName) {
+		if (dataModelProvider == null) {
+			return null;
+		}
+		TemplateDataModel dataModel = dataModelProvider.getTemplateDataModel(this).getNow(null);
+		if (dataModel != null) {
+			ParameterDataModel parameter = dataModel.getParameter(partName);
+			if (parameter != null) {
+				return new JavaTypeInfoProvider() {
+
+					@Override
+					public Node getNode() {
+						return null;
+					}
+
+					@Override
+					public String getClassName() {
+						return parameter.getSourceType();
+					}
+				};
+			}
+		}
+		return null;
 	}
 }

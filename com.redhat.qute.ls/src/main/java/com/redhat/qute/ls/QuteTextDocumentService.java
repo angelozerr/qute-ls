@@ -76,7 +76,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 		this.quteLanguageServer = quteLanguageServer;
 		this.documents = new QuteTextDocuments((document, cancelChecker) -> {
 			return TemplateParser.parse(document.getText(), document.getUri(), () -> cancelChecker.checkCanceled());
-		}, quteLanguageServer.getDataModelCache());
+		}, quteLanguageServer.getDataModelCache(), quteLanguageServer.getDataModelCache());
 		this.sharedSettings = sharedSettings;
 	}
 

@@ -44,7 +44,12 @@ public class ObjectPart extends Part {
 		}
 
 		// Try to find the class name from parameter declaration
-		return template.findParameterByAlias(partName);
+		JavaTypeInfoProvider parameter = template.findParameterByAlias(partName);
+		if (parameter != null) {
+			return parameter;
+		}
+		// Try to find the class name from @CheckedTemplate
+		return template.findCheckedTemplate(partName);
 	}
 
 }

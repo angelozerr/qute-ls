@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
@@ -34,6 +35,7 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.JavaModelManager;
 import org.eclipse.jdt.internal.core.JavaProject;
 import org.eclipse.jdt.internal.core.search.BasicSearchEngine;
+import org.eclipse.jdt.internal.corext.template.java.SignatureUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4j.Location;
 
@@ -98,7 +100,7 @@ public class JavaDataModelManager {
 					@Override
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
 						if (match.getElement() instanceof IType) {
-							IType type = (IType) match.getElement();
+							IType type = (IType) match.getElement();							
 							String className = type.getCompilationUnit() != null
 									? type.getCompilationUnit().getElementName()
 									: type.getClassFile().getElementName();
@@ -122,17 +124,36 @@ public class JavaDataModelManager {
 								template.setSourceMethod(methodName);
 
 								try {
-									String[] names = method.getParameterNames();
-									String[] types = method.getParameterTypes();
-									for (int i = 0; i < names.length; i++) {
-										String parameterName = names[i];
-										String parameterType = toStringType(types[i]);
-
+									for (ILocalVariable methodParameter : method.getParameters()) {
+										String parameterName = methodParameter.getElementName();
+										String[][] parameterType = type.resolveType(Signature.toString(methodParameter.getTypeSignature()));
+										String[][] genericType = null;
+										String signature = methodParameter.getTypeSignature();
+										int start = signature.indexOf('<');
+										if (start !=-1) {
+											int end = signature.indexOf('>', start);
+											String generic = signature.substring(start + 1, end);
+											genericType = type.resolveType(Signature.toString(generic));
+										}										
 										ParameterDataModel parameter = new ParameterDataModel();
 										parameter.setKey(parameterName);
-										parameter.setSourceType(parameterType);
-										template.getParameters().add(parameter);
+										parameter.setSourceType(parameterType[0][0] + "." + parameterType[0][1]);
+										if (genericType != null) {
+											parameter.setSourceType(parameter.getSourceType() + "<"+  genericType[0][0] + "." + genericType[0][1] + ">");
+										}
+										template.getParameters().add(parameter);										
 									}
+//									String[] names = method.getParameterNames();
+//									String[] types = method.getParameterTypes();
+//									for (int i = 0; i < names.length; i++) {
+//										String parameterName = names[i];
+//										String parameterType = toStringType(types[i]);
+//
+//										ParameterDataModel parameter = new ParameterDataModel();
+//										parameter.setKey(parameterName);
+//										parameter.setSourceType(parameterType);
+//										template.getParameters().add(parameter);
+//									}
 
 								} catch (Exception e) {
 									LOGGER.log(Level.SEVERE, "Error while getting method template parameter of '"
@@ -345,6 +366,9 @@ public class JavaDataModelManager {
 	}
 
 	private static IJavaProject getJavaProjectFromProjectUri(String projectName) {
+		if (projectName == null) {
+			return null;
+		}
 		return JavaModelManager.getJavaModelManager().getJavaModel().getJavaProject(projectName);
 	}
 

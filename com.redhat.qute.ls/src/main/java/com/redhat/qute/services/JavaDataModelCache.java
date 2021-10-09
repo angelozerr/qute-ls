@@ -34,9 +34,10 @@ import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.TemplateDataModelProvider;
 import com.redhat.qute.utils.StringUtils;
 
-public class JavaDataModelCache implements QuteProjectInfoProvider {
+public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateDataModelProvider {
 
 	private static final CompletableFuture<ResolvedJavaClassInfo> NULL_FUTURE = CompletableFuture.completedFuture(null);
 
@@ -83,12 +84,11 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 		}
 
 		public CompletableFuture<ProjectDataModel> getDataModel() {
-			// if (future == null || future.isCancelled() ||
-			// future.isCompletedExceptionally()) {
-			QuteProjectDataModelParams params = new QuteProjectDataModelParams();
-			params.setProjectUri(projectUri);
-			future = dataModelProvider.getProjectDataModel(params);
-			// }
+			if (future == null || future.isCancelled() || future.isCompletedExceptionally()) {
+				QuteProjectDataModelParams params = new QuteProjectDataModelParams();
+				params.setProjectUri(projectUri);
+				future = dataModelProvider.getProjectDataModel(params);
+			}
 			return future;
 		}
 
@@ -265,6 +265,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider {
 		return projectInfoProvider.getProjectInfo(params);
 	}
 
+	@Override
 	public CompletableFuture<TemplateDataModel> getTemplateDataModel(Template template) {
 		String projectUri = template.getProjectUri();
 		return getProjectContainer(projectUri).getDataModel() //

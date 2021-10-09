@@ -21,6 +21,8 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import com.redhat.qute.commons.JavaFieldInfo;
 import com.redhat.qute.commons.JavaMethodInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
@@ -205,6 +207,8 @@ public class QuteCompletionsForExpression {
 
 		// Collect alias declared from parameter declaration
 		doCompleteExpressionForObjectPartWithParameterAlias(template, range, list);
+		// Collect parameters from CheckedTemplate method parameters
+		doCompleteExpressionForObjectPartWithCheckedTemplate(template, range, list);
 		// Collect declared model inside section, let, etc
 		doCompleteExpressionForObjectPartWithParentNodes(part, expression, range, list);
 
@@ -265,4 +269,19 @@ public class QuteCompletionsForExpression {
 		}
 	}
 
+	private void doCompleteExpressionForObjectPartWithCheckedTemplate(Template template, Range range,
+			CompletionList list) {
+		TemplateDataModel dataModel = javaCache.getTemplateDataModel(template).getNow(null);
+		if (dataModel == null || dataModel.getParameters() == null) {
+			return;
+		}
+		for (ParameterDataModel parameter : dataModel.getParameters()) {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(parameter.getKey());
+			item.setKind(CompletionItemKind.Reference);
+			TextEdit textEdit = new TextEdit(range, parameter.getKey());
+			item.setTextEdit(Either.forLeft(textEdit));
+			list.getItems().add(item);
+		}
+	}
 }
