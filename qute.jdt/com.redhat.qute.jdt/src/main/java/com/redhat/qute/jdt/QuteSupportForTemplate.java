@@ -1,7 +1,19 @@
+/*******************************************************************************
+* Copyright (c) 2021 Red Hat Inc. and others.
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License v. 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+* which is available at https://www.apache.org/licenses/LICENSE-2.0.
+*
+* SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+*
+* Contributors:
+*     Red Hat Inc. - initial API and implementation
+*******************************************************************************/
 package com.redhat.qute.jdt;
 
 import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.CHECKED_TEMPLATE_ANNOTATION;
-import static com.redhat.qute.jdt.utils.JDTMethodUtils.toStringType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +47,6 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.JavaModelManager;
 import org.eclipse.jdt.internal.core.JavaProject;
 import org.eclipse.jdt.internal.core.search.BasicSearchEngine;
-import org.eclipse.jdt.internal.corext.template.java.SignatureUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.lsp4j.Location;
 
@@ -57,13 +68,19 @@ import com.redhat.qute.jdt.utils.JDTMethodUtils;
 import com.redhat.qute.jdt.utils.JDTQuteUtils;
 import com.redhat.qute.jdt.utils.JDTTypeUtils;
 
-public class JavaDataModelManager {
+/**
+ * Qute support for Template file.
+ * 
+ * @author Angelo ZERR
+ *
+ */
+public class QuteSupportForTemplate {
 
-	private static final Logger LOGGER = Logger.getLogger(JavaDataModelManager.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(QuteSupportForTemplate.class.getName());
 
-	private static final JavaDataModelManager INSTANCE = new JavaDataModelManager();
+	private static final QuteSupportForTemplate INSTANCE = new QuteSupportForTemplate();
 
-	public static JavaDataModelManager getInstance() {
+	public static QuteSupportForTemplate getInstance() {
 		return INSTANCE;
 	}
 
@@ -120,7 +137,7 @@ public class JavaDataModelManager {
 								TemplateDataModel template = new TemplateDataModel();
 								template.setParameters(new ArrayList<>());
 								template.setTemplateUri(templateUri);
-								template.setSourceType(type.getFullyQualifiedName('.'));
+								template.setSourceType(type.getFullyQualifiedName());
 								template.setSourceMethod(methodName);
 
 								try {
@@ -143,18 +160,6 @@ public class JavaDataModelManager {
 										}
 										template.getParameters().add(parameter);										
 									}
-//									String[] names = method.getParameterNames();
-//									String[] types = method.getParameterTypes();
-//									for (int i = 0; i < names.length; i++) {
-//										String parameterName = names[i];
-//										String parameterType = toStringType(types[i]);
-//
-//										ParameterDataModel parameter = new ParameterDataModel();
-//										parameter.setKey(parameterName);
-//										parameter.setSourceType(parameterType);
-//										template.getParameters().add(parameter);
-//									}
-
 								} catch (Exception e) {
 									LOGGER.log(Level.SEVERE, "Error while getting method template parameter of '"
 											+ method.getElementName() + "'.", e);

@@ -12,6 +12,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.commons.datamodel.ParameterDataModel;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.settings.QuteCodeLensSettings;
 
@@ -34,8 +35,7 @@ class QuteCodeLens {
 					List<CodeLens> lenses = new ArrayList<>();
 
 					// Method which is bind with the template
-
-					String title = dataModel.getSourceType();
+					String title = createCheckedTemplateTitle(dataModel);
 					Range range = new Range(new Position(0, 0), new Position(0, 0));
 					Command command = new Command(title, "");
 					CodeLens codeLens = new CodeLens(range, command, null);
@@ -45,16 +45,24 @@ class QuteCodeLens {
 					List<ParameterDataModel> parameters = dataModel.getParameters();
 					if (parameters != null) {
 						for (ParameterDataModel parameter : parameters) {
-
 							String parameterTitle = parameter.getKey() + " : " + parameter.getSourceType();
 							Command parameterCommand = new Command(parameterTitle, "");
 							CodeLens parameterCodeLens = new CodeLens(range, parameterCommand, null);
 							lenses.add(parameterCodeLens);
-
 						}
 					}
 					return lenses;
 				});
+	}
+
+	private String createCheckedTemplateTitle(TemplateDataModel dataModel) {
+		String className = dataModel.getSourceType();
+		int index = className.lastIndexOf('.');
+		className = className.substring(index + 1, className.length());
+		return new StringBuilder(className) //
+				.append("#") //
+				.append(dataModel.getSourceMethod()) //
+				.toString();
 	}
 
 }

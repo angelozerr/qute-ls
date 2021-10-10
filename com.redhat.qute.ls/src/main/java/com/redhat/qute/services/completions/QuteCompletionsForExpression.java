@@ -145,6 +145,8 @@ public class QuteCompletionsForExpression {
 			String filedName = field.getName();
 			CompletionItem item = new CompletionItem();
 			item.setLabel(filedName);
+			item.setLabel(filedName + " : " + field.getType());
+			item.setFilterText(filedName);
 			item.setKind(CompletionItemKind.Field);
 			TextEdit textEdit = new TextEdit();
 			textEdit.setRange(range);
@@ -161,7 +163,8 @@ public class QuteCompletionsForExpression {
 				// It's a getter method, create a completion item for simple property (value)
 				// from the method name (getValue)
 				CompletionItem item = new CompletionItem();
-				item.setLabel(property);
+				item.setLabel(property + " : " + method.getReturnType());
+				item.setFilterText(property);
 				item.setKind(CompletionItemKind.Property);
 				TextEdit textEdit = new TextEdit();
 				textEdit.setRange(range);
@@ -173,9 +176,8 @@ public class QuteCompletionsForExpression {
 			// Completion for method name (getValue)
 			String methodSignature = method.getSignature();
 			CompletionItem item = new CompletionItem();
-			item.setFilterText(method.getName());
 			item.setLabel(methodSignature);
-			item.setDetail(method.getSignature());
+			item.setFilterText(method.getName());
 			item.setKind(CompletionItemKind.Method);
 			TextEdit textEdit = new TextEdit();
 			textEdit.setRange(range);

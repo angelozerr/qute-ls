@@ -32,7 +32,7 @@ import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.jdt.IJavaDataModelChangedListener;
-import com.redhat.qute.jdt.JavaDataModelManager;
+import com.redhat.qute.jdt.QuteSupportForTemplate;
 import com.redhat.qute.jdt.QutePlugin;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.ls.api.QuteLanguageServerAPI;
@@ -67,7 +67,7 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-			return JavaDataModelManager.getInstance().getProjectInfo(params, JDTUtilsImpl.getInstance(), monitor);
+			return QuteSupportForTemplate.getInstance().getProjectInfo(params, JDTUtilsImpl.getInstance(), monitor);
 		});
 	}
 
@@ -76,7 +76,7 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return JavaDataModelManager.getInstance().getProjectDataModel(params, JDTUtilsImpl.getInstance(),
+				return QuteSupportForTemplate.getInstance().getProjectDataModel(params, JDTUtilsImpl.getInstance(),
 						monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
@@ -90,7 +90,7 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return JavaDataModelManager.getInstance().getJavaClasses(params, JDTUtilsImpl.getInstance(), monitor);
+				return QuteSupportForTemplate.getInstance().getJavaClasses(params, JDTUtilsImpl.getInstance(), monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
 				return Collections.emptyList();
@@ -103,7 +103,7 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return JavaDataModelManager.getInstance().getResolvedJavaClass(params, JDTUtilsImpl.getInstance(),
+				return QuteSupportForTemplate.getInstance().getResolvedJavaClass(params, JDTUtilsImpl.getInstance(),
 						monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
@@ -117,7 +117,7 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return JavaDataModelManager.getInstance().getJavaDefinition(params, JDTUtilsImpl.getInstance(),
+				return QuteSupportForTemplate.getInstance().getJavaDefinition(params, JDTUtilsImpl.getInstance(),
 						monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);

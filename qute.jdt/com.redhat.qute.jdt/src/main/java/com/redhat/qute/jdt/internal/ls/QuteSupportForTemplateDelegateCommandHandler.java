@@ -20,7 +20,7 @@ import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
-import com.redhat.qute.jdt.JavaDataModelManager;
+import com.redhat.qute.jdt.QuteSupportForTemplate;
 
 /**
  * JDT LS commands used by Qute template.
@@ -28,7 +28,7 @@ import com.redhat.qute.jdt.JavaDataModelManager;
  * @author Angelo ZERR
  *
  */
-public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateCommandHandler {
+public class QuteSupportForTemplateDelegateCommandHandler extends AbstractQuteDelegateCommandHandler {
 
 	private static final String PROJECT_URI_ATTR = "projectUri";
 
@@ -71,7 +71,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 
 	private static ProjectInfo getProjectInfo(List<Object> arguments, String commandId, IProgressMonitor monitor) {
 		QuteProjectParams params = createQuteProjectParams(arguments, commandId);
-		return JavaDataModelManager.getInstance().getProjectInfo(params, JDTUtilsLSImpl.getInstance(), monitor);
+		return QuteSupportForTemplate.getInstance().getProjectInfo(params, JDTUtilsLSImpl.getInstance(), monitor);
 	}
 
 	private static QuteProjectParams createQuteProjectParams(List<Object> arguments, String commandId) {
@@ -92,7 +92,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 	private static ProjectDataModel getProjectDataModel(List<Object> arguments, String commandId,
 			IProgressMonitor monitor) throws CoreException {
 		QuteProjectDataModelParams params = createQuteProjectDataModelParams(arguments, commandId);
-		return JavaDataModelManager.getInstance().getProjectDataModel(params, JDTUtilsLSImpl.getInstance(), monitor);
+		return QuteSupportForTemplate.getInstance().getProjectDataModel(params, JDTUtilsLSImpl.getInstance(), monitor);
 	}
 
 	private static QuteProjectDataModelParams createQuteProjectDataModelParams(List<Object> arguments,
@@ -126,7 +126,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		// Create java file information parameter
 		QuteResolvedJavaClassParams params = createQuteResolvedJavaClassParams(arguments, commandId);
 		// Return file information from the parameter
-		return JavaDataModelManager.getInstance().getResolvedJavaClass(params, JDTUtilsLSImpl.getInstance(), monitor);
+		return QuteSupportForTemplate.getInstance().getResolvedJavaClass(params, JDTUtilsLSImpl.getInstance(), monitor);
 	}
 
 	private static QuteResolvedJavaClassParams createQuteResolvedJavaClassParams(List<Object> arguments,
@@ -155,7 +155,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		// Create java file information parameter
 		QuteJavaClassesParams params = createQuteJavaClassParams(arguments, commandId);
 		// Return file information from the parameter
-		return JavaDataModelManager.getInstance().getJavaClasses(params, JDTUtilsLSImpl.getInstance(), monitor);
+		return QuteSupportForTemplate.getInstance().getJavaClasses(params, JDTUtilsLSImpl.getInstance(), monitor);
 	}
 
 	private static QuteJavaClassesParams createQuteJavaClassParams(List<Object> arguments, String commandId) {
@@ -194,7 +194,7 @@ public class QuteTemplateDelegateCommandHandler extends AbstractQuteDelegateComm
 		// Create java definition parameter
 		QuteJavaDefinitionParams params = createQuteJavaDefinitionParams(arguments, commandId);
 		// Return file information from the parameter
-		return JavaDataModelManager.getInstance().getJavaDefinition(params, JDTUtilsLSImpl.getInstance(), monitor);
+		return QuteSupportForTemplate.getInstance().getJavaDefinition(params, JDTUtilsLSImpl.getInstance(), monitor);
 	}
 
 	private static QuteJavaDefinitionParams createQuteJavaDefinitionParams(List<Object> arguments, String commandId) {
