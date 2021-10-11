@@ -33,8 +33,10 @@ import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
@@ -45,8 +47,8 @@ import com.redhat.qute.ls.api.QuteResolvedJavaClassProvider;
 import com.redhat.qute.ls.commons.ParentProcessWatcher.ProcessLanguageServer;
 import com.redhat.qute.ls.commons.client.ExtendedClientCapabilities;
 import com.redhat.qute.ls.commons.client.InitializationOptionsExtendedClientCapabilities;
-import com.redhat.qute.services.JavaDataModelCache;
 import com.redhat.qute.services.QuteLanguageService;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.settings.capabilities.QuteCapabilityManager;
 import com.redhat.qute.settings.capabilities.ServerCapabilitiesInitializer;
@@ -79,7 +81,7 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	}
 
 	private JavaDataModelCache createDataModelCache() {
-		//return new MockJavaDataModelCache();
+		// return new MockJavaDataModelCache();
 		return new JavaDataModelCache(this, this, this, this, this);
 	}
 
@@ -196,7 +198,8 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	}
 
 	@Override
-	public CompletableFuture<ProjectDataModel> getProjectDataModel(QuteProjectDataModelParams params) {
+	public CompletableFuture<ProjectDataModel<TemplateDataModel<ParameterDataModel>>> getProjectDataModel(
+			QuteProjectDataModelParams params) {
 		return getLanguageClient().getProjectDataModel(params);
 	}
 }

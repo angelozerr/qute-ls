@@ -65,10 +65,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"	{item.|}    \r\n" + //
 				"{/for}}";
 		testCompletionFor(template, //
-				c("name", "name", r(3, 7, 3, 7)), //
-				c("price", "price", r(3, 7, 3, 7)), //
-				c("review", "review", r(3, 7, 3, 7)), //
-				c("review2", "review2", r(3, 7, 3, 7)), //
+				c("name : java.lang.String", "name", r(3, 7, 3, 7)), //
+				c("price : java.math.BigInteger", "price", r(3, 7, 3, 7)), //
+				c("review : org.acme.Review", "review", r(3, 7, 3, 7)), //
+				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 7)), //
 				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 7)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
@@ -77,10 +77,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"	{item.n|}    \r\n" + //
 				"{/for}}";
 		testCompletionFor(template, //
-				c("name", "name", r(3, 7, 3, 8)), //
-				c("price", "price", r(3, 7, 3, 8)), //
-				c("review", "review", r(3, 7, 3, 8)), //
-				c("review2", "review2", r(3, 7, 3, 8)), //
+				c("name : java.lang.String", "name", r(3, 7, 3, 8)), //
+				c("price : java.math.BigInteger", "price", r(3, 7, 3, 8)), //
+				c("review : org.acme.Review", "review", r(3, 7, 3, 8)), //
+				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 8)), //
 				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 8)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
@@ -89,10 +89,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"	{item.|n}    \r\n" + //
 				"{/for}}";
 		testCompletionFor(template, //
-				c("name", "name", r(3, 7, 3, 8)), //
-				c("price", "price", r(3, 7, 3, 8)), //
-				c("review", "review", r(3, 7, 3, 8)), //
-				c("review2", "review2", r(3, 7, 3, 8)), //
+				c("name : java.lang.String", "name", r(3, 7, 3, 8)), //
+				c("price : java.math.BigInteger", "price", r(3, 7, 3, 8)), //
+				c("review : org.acme.Review", "review", r(3, 7, 3, 8)), //
+				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 8)), //
 				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 8)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
@@ -101,10 +101,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"	{item.n|a}    \r\n" + //
 				"{/for}}";
 		testCompletionFor(template, //
-				c("name", "name", r(3, 7, 3, 9)), //
-				c("price", "price", r(3, 7, 3, 9)), //
-				c("review", "review", r(3, 7, 3, 9)), //
-				c("review2", "review2", r(3, 7, 3, 9)), //
+				c("name : java.lang.String", "name", r(3, 7, 3, 9)), //
+				c("price : java.math.BigInteger", "price", r(3, 7, 3, 9)), //
+				c("review : org.acme.Review", "review", r(3, 7, 3, 9)), //
+				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 9)), //
 				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 9)));
 
 	}
@@ -131,14 +131,13 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"	{/if}	    \r\n" + //
 				"{/for}";
 		testCompletionFor(template, //
-				c("name", "name", r(4, 8, 4, 8)), //
-				c("price", "price", r(4, 8, 4, 8)), //
-				c("review", "review", r(4, 8, 4, 8)), //
-				c("review2", "review2", r(4, 8, 4, 8)), //
+				c("name : java.lang.String", "name", r(4, 8, 4, 8)), //
+				c("price : java.math.BigInteger", "price", r(4, 8, 4, 8)), //
+				c("review : org.acme.Review", "review", r(4, 8, 4, 8)), //
+				c("review2 : org.acme.Review", "review2", r(4, 8, 4, 8)), //
 				c("getReview2() : org.acme.Review", "getReview2()", r(4, 8, 4, 8)));
-
 	}
-	
+
 	@Test
 	public void noCompletionWithNoIterableClass() throws Exception {
 		String template = "{@org.acme.Item items}\r\n" + //

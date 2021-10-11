@@ -92,7 +92,7 @@ public class QuteSupportForTemplate {
 		return new ProjectInfo(JDTQuteUtils.getProjectUri(javaProject));
 	}
 
-	public ProjectDataModel getProjectDataModel(QuteProjectDataModelParams params, IJDTUtils instance,
+	public ProjectDataModel<TemplateDataModel<ParameterDataModel>> getProjectDataModel(QuteProjectDataModelParams params, IJDTUtils instance,
 			IProgressMonitor monitor) throws CoreException {
 		String projectUri = params.getProjectUri();
 		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
@@ -100,7 +100,7 @@ public class QuteSupportForTemplate {
 			return null;
 		}
 
-		ProjectDataModel dataModelInfo = new ProjectDataModel();
+		ProjectDataModel<TemplateDataModel<ParameterDataModel>> dataModelInfo = new ProjectDataModel<TemplateDataModel<ParameterDataModel>>();
 		dataModelInfo.setTemplates(new ArrayList<>());
 		// Scan Java sources to get all classed annotated with @CheckedTemplate
 		SearchPattern pattern = SearchPattern.createPattern(CHECKED_TEMPLATE_ANNOTATION,
@@ -117,7 +117,7 @@ public class QuteSupportForTemplate {
 					@Override
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
 						if (match.getElement() instanceof IType) {
-							IType type = (IType) match.getElement();							
+							IType type = (IType) match.getElement();
 							String className = type.getCompilationUnit() != null
 									? type.getCompilationUnit().getElementName()
 									: type.getClassFile().getElementName();
@@ -134,7 +134,7 @@ public class QuteSupportForTemplate {
 										.append(methodName) //
 										.toString();
 
-								TemplateDataModel template = new TemplateDataModel();
+								TemplateDataModel<ParameterDataModel> template = new TemplateDataModel<ParameterDataModel>();
 								template.setParameters(new ArrayList<>());
 								template.setTemplateUri(templateUri);
 								template.setSourceType(type.getFullyQualifiedName());
@@ -143,22 +143,24 @@ public class QuteSupportForTemplate {
 								try {
 									for (ILocalVariable methodParameter : method.getParameters()) {
 										String parameterName = methodParameter.getElementName();
-										String[][] parameterType = type.resolveType(Signature.toString(methodParameter.getTypeSignature()));
+										String[][] parameterType = type
+												.resolveType(Signature.toString(methodParameter.getTypeSignature()));
 										String[][] genericType = null;
 										String signature = methodParameter.getTypeSignature();
 										int start = signature.indexOf('<');
-										if (start !=-1) {
+										if (start != -1) {
 											int end = signature.indexOf('>', start);
 											String generic = signature.substring(start + 1, end);
 											genericType = type.resolveType(Signature.toString(generic));
-										}										
+										}
 										ParameterDataModel parameter = new ParameterDataModel();
 										parameter.setKey(parameterName);
 										parameter.setSourceType(parameterType[0][0] + "." + parameterType[0][1]);
 										if (genericType != null) {
-											parameter.setSourceType(parameter.getSourceType() + "<"+  genericType[0][0] + "." + genericType[0][1] + ">");
+											parameter.setSourceType(parameter.getSourceType() + "<" + genericType[0][0]
+													+ "." + genericType[0][1] + ">");
 										}
-										template.getParameters().add(parameter);										
+										template.getParameters().add(parameter);
 									}
 								} catch (Exception e) {
 									LOGGER.log(Level.SEVERE, "Error while getting method template parameter of '"
@@ -242,6 +244,16 @@ public class QuteSupportForTemplate {
 		String sourceMethod = params.getMethod();
 		if (sourceMethod != null) {
 			IMethod method = findMethod(type, sourceMethod);
+			String sourceMethodParameter = params.getMethodParameter();
+			if (sourceMethodParameter != null) {
+				ILocalVariable[] parameters = method.getParameters();
+				for (ILocalVariable parameter : parameters) {
+					if (sourceMethodParameter.equals(parameter.getElementName())) {
+						return utils.toLocation(parameter);
+					}
+				}
+				return null;
+			}
 			return method != null && method.exists() ? utils.toLocation(method) : null;
 		}
 

@@ -18,8 +18,10 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
+import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.jdt.QuteSupportForTemplate;
 
 /**
@@ -35,6 +37,7 @@ public class QuteSupportForTemplateDelegateCommandHandler extends AbstractQuteDe
 	private static final String PATTERN_ATTR = "pattern";
 
 	private static final String METHOD_ATTR = "method";
+	private static final String METHOD_PARAMETER_ATTR = "methodParameter";
 
 	private static final String FIELD_ATTR = "field";
 
@@ -89,7 +92,7 @@ public class QuteSupportForTemplateDelegateCommandHandler extends AbstractQuteDe
 		return new QuteProjectParams(templateFileUri);
 	}
 
-	private static ProjectDataModel getProjectDataModel(List<Object> arguments, String commandId,
+	private static ProjectDataModel<TemplateDataModel<ParameterDataModel>> getProjectDataModel(List<Object> arguments, String commandId,
 			IProgressMonitor monitor) throws CoreException {
 		QuteProjectDataModelParams params = createQuteProjectDataModelParams(arguments, commandId);
 		return QuteSupportForTemplate.getInstance().getProjectDataModel(params, JDTUtilsLSImpl.getInstance(), monitor);
@@ -219,6 +222,8 @@ public class QuteSupportForTemplateDelegateCommandHandler extends AbstractQuteDe
 		params.setField(field);
 		String method = getString(obj, METHOD_ATTR);
 		params.setMethod(method);
+		String methodParameter = getString(obj, METHOD_PARAMETER_ATTR);
+		params.setMethodParameter(methodParameter);
 		return params;
 	}
 

@@ -37,6 +37,7 @@ import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
 import com.redhat.qute.services.diagnostics.QuteErrorCode;
 import com.redhat.qute.settings.QuteValidationSettings;

@@ -8,7 +8,6 @@ import java.util.List;
 import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.Parameter;
-import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.ParameterInfo;
 import com.redhat.qute.parser.template.ParametersInfo;
 import com.redhat.qute.parser.template.Section;
@@ -114,8 +113,8 @@ public abstract class LoopSection extends Section implements JavaTypeInfoProvide
 		}
 		Template template = getOwnerTemplate();
 		// Try to find the class name from parameter declaration
-		ParameterDeclaration parameter = template.findParameterByAlias(iterable);
-		return parameter != null ? parameter.getClassName() : null;
+		JavaTypeInfoProvider javaTypeInfoProvider = template.findInInitialDataModel(iterable);
+		return javaTypeInfoProvider != null ? javaTypeInfoProvider.getClassName() : null;
 	}
 
 	@Override

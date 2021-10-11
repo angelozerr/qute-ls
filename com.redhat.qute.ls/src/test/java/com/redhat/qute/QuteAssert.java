@@ -42,9 +42,9 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
-import com.redhat.qute.services.JavaDataModelCache;
-import com.redhat.qute.services.MockJavaDataModelCache;
 import com.redhat.qute.services.QuteLanguageService;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
+import com.redhat.qute.services.datamodel.MockJavaDataModelCache;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;

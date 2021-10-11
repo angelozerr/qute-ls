@@ -2,10 +2,10 @@ package com.redhat.qute.parser.template;
 
 import java.util.concurrent.CompletableFuture;
 
-import com.redhat.qute.commons.datamodel.TemplateDataModel;
+import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
 
 public interface TemplateDataModelProvider {
 
-	CompletableFuture<TemplateDataModel> getTemplateDataModel(Template template);
+	CompletableFuture<ExtendedTemplateDataModel> getTemplateDataModel(Template template);
 
 }

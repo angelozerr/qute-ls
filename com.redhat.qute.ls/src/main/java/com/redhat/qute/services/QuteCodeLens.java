@@ -14,6 +14,8 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.settings.QuteCodeLensSettings;
 
 class QuteCodeLens {
@@ -42,7 +44,7 @@ class QuteCodeLens {
 					lenses.add(codeLens);
 
 					// Parameters of the template
-					List<ParameterDataModel> parameters = dataModel.getParameters();
+					List<ExtendedParameterDataModel> parameters = dataModel.getParameters();
 					if (parameters != null) {
 						for (ParameterDataModel parameter : parameters) {
 							String parameterTitle = parameter.getKey() + " : " + parameter.getSourceType();

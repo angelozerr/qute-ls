@@ -21,8 +21,6 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import com.redhat.qute.commons.JavaFieldInfo;
 import com.redhat.qute.commons.JavaMethodInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
-import com.redhat.qute.commons.datamodel.ParameterDataModel;
-import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
@@ -33,7 +31,9 @@ import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionMetadata;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.sections.LoopSection;
-import com.redhat.qute.services.JavaDataModelCache;
+import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
+import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 import com.redhat.qute.utils.QutePositionUtility;
@@ -273,11 +273,11 @@ public class QuteCompletionsForExpression {
 
 	private void doCompleteExpressionForObjectPartWithCheckedTemplate(Template template, Range range,
 			CompletionList list) {
-		TemplateDataModel dataModel = javaCache.getTemplateDataModel(template).getNow(null);
+		ExtendedTemplateDataModel dataModel = javaCache.getTemplateDataModel(template).getNow(null);
 		if (dataModel == null || dataModel.getParameters() == null) {
 			return;
 		}
-		for (ParameterDataModel parameter : dataModel.getParameters()) {
+		for (ExtendedParameterDataModel parameter : dataModel.getParameters()) {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(parameter.getKey());
 			item.setKind(CompletionItemKind.Reference);

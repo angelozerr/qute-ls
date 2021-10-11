@@ -2,15 +2,15 @@ package com.redhat.qute.commons.datamodel;
 
 import java.util.List;
 
-public class ProjectDataModel {
+public class ProjectDataModel<T extends TemplateDataModel<?>> {
 
-	private List<TemplateDataModel> templates;
+	private List<T> templates;
 
-	public List<TemplateDataModel> getTemplates() {
+	public List<T> getTemplates() {
 		return templates;
 	}
 
-	public void setTemplates(List<TemplateDataModel> templates) {
+	public void setTemplates(List<T> templates) {
 		this.templates = templates;
 	}
 }

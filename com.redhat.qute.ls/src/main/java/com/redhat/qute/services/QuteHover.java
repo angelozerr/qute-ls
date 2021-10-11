@@ -28,6 +28,7 @@ import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.services.hover.HoverRequest;
 import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.utils.QutePositionUtility;

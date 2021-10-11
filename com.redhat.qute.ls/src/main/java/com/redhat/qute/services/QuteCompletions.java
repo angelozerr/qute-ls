@@ -42,6 +42,7 @@ import com.redhat.qute.parser.template.scanner.TokenType;
 import com.redhat.qute.services.completions.CompletionRequest;
 import com.redhat.qute.services.completions.QuteCompletionsForExpression;
 import com.redhat.qute.services.completions.QuteCompletionsForSnippets;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 import com.redhat.qute.utils.QutePositionUtility;

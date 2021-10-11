@@ -10,6 +10,8 @@ public class QuteJavaDefinitionParams {
 
 	private String method;
 
+	private String methodParameter;
+
 	public QuteJavaDefinitionParams() {
 
 	}
@@ -49,5 +51,13 @@ public class QuteJavaDefinitionParams {
 
 	public void setMethod(String method) {
 		this.method = method;
+	}
+
+	public String getMethodParameter() {
+		return methodParameter;
+	}
+
+	public void setMethodParameter(String methodParameter) {
+		this.methodParameter = methodParameter;
 	}
 }

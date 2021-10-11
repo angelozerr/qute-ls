@@ -19,9 +19,11 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
+import com.redhat.qute.commons.datamodel.ProjectDataModel;
+import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
-import com.redhat.qute.parser.template.Template;
-import com.redhat.qute.services.JavaDataModelCache;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 
 public class MockJavaDataModelCache extends JavaDataModelCache {
 
@@ -30,13 +32,13 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	private final Map<String, ResolvedJavaClassInfo> resolvedClassesCache2;
 
 	public MockJavaDataModelCache() {
-		super(null, null, null, null,null);
+		super(null, null, null, null, null);
 		this.resolvedClassesCache = createResolvedClasses();
 		resolvedClassesCache2 = new HashMap<>();
 	}
 
 	@Override
-	protected CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassesParams params) {
+	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassesParams params) {
 		return CompletableFuture.completedFuture(resolvedClassesCache.values() //
 				.stream() //
 				.collect(Collectors.toList()));
@@ -65,7 +67,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	}
 
 	@Override
-	protected CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
+	public CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
 		return super.getJavaDefinition(params);
 	}
 
@@ -139,11 +141,9 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 			return new ProjectInfo("test-qute");
 		});
 	}
-	
-	@Override
-	public CompletableFuture<TemplateDataModel> getTemplateDataModel(Template template) {
-		TemplateDataModel dataModel = new TemplateDataModel();
-		dataModel.setSourceType("ItemResource.java");
-		return CompletableFuture.completedFuture(dataModel);
+
+	protected CompletableFuture<ProjectDataModel<TemplateDataModel<ParameterDataModel>>> getProjectDataModel(
+			QuteProjectDataModelParams params) {
+		return CompletableFuture.completedFuture(null);
 	}
 }

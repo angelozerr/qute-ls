@@ -6,7 +6,7 @@ import static com.redhat.qute.QuteAssert.testDefinitionFor;
 
 import org.junit.jupiter.api.Test;
 
-import com.redhat.qute.services.MockJavaDataModelCache;
+import com.redhat.qute.services.datamodel.MockJavaDataModelCache;
 
 public class QuteDefinitionInExpressionTest {
 

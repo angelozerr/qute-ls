@@ -1,14 +1,14 @@
 package com.redhat.qute.parser.template;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.Position;
 
-import com.redhat.qute.commons.datamodel.ParameterDataModel;
-import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.CancelChecker;
+import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
 
 public class Template extends Node {
 
@@ -82,18 +82,6 @@ public class Template extends Node {
 		return textDocument.getText();
 	}
 
-	public ParameterDeclaration findParameterByAlias(String alias) {
-		Optional<ParameterDeclaration> result = super.getChildren().stream() //
-				.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
-				.filter(parameter -> alias.equals(((ParameterDeclaration) parameter).getAlias())) //
-				.map(n -> ((ParameterDeclaration) n)) //
-				.findFirst();
-		if (result.isPresent()) {
-			return result.get();
-		}
-		return null;
-	}
-
 	public String getText(RangeOffset range) {
 		return getText(range.getStart(), range.getEnd());
 	}
@@ -115,28 +103,45 @@ public class Template extends Node {
 		this.dataModelProvider = dataModelProvider;
 	}
 
-	public JavaTypeInfoProvider findCheckedTemplate(String partName) {
-		if (dataModelProvider == null) {
-			return null;
+	/**
+	 * Try to find the class name
+	 * <ul>
+	 * <li>- from parameter declaration.</li>
+	 * <li>- from @CheckedTemplate.</li>
+	 * </ul>
+	 * 
+	 * @param partName
+	 * @return
+	 */
+	public JavaTypeInfoProvider findInInitialDataModel(String partName) {
+		// Try to find the class name from parameter declaration
+		JavaTypeInfoProvider parameter = findParameterByAlias(partName);
+		if (parameter != null) {
+			return parameter;
 		}
-		TemplateDataModel dataModel = dataModelProvider.getTemplateDataModel(this).getNow(null);
-		if (dataModel != null) {
-			ParameterDataModel parameter = dataModel.getParameter(partName);
-			if (parameter != null) {
-				return new JavaTypeInfoProvider() {
+		// Try to find the class name from @CheckedTemplate
+		return findParameterDataModel(partName).getNow(null);
+	}
 
-					@Override
-					public Node getNode() {
-						return null;
-					}
-
-					@Override
-					public String getClassName() {
-						return parameter.getSourceType();
-					}
-				};
-			}
+	private ParameterDeclaration findParameterByAlias(String alias) {
+		Optional<ParameterDeclaration> result = super.getChildren().stream() //
+				.filter(n -> n.getKind() == NodeKind.ParameterDeclaration) //
+				.filter(parameter -> alias.equals(((ParameterDeclaration) parameter).getAlias())) //
+				.map(n -> ((ParameterDeclaration) n)) //
+				.findFirst();
+		if (result.isPresent()) {
+			return result.get();
 		}
 		return null;
+	}
+	
+	private CompletableFuture<ExtendedParameterDataModel> findParameterDataModel(String parameterName) {
+		if (dataModelProvider == null) {
+			return CompletableFuture.completedFuture(null);
+		}
+		return dataModelProvider.getTemplateDataModel(this). //
+				thenApply(dataModel -> {
+					return dataModel != null ? dataModel.getParameter(parameterName) : null;
+				});
 	}
 }

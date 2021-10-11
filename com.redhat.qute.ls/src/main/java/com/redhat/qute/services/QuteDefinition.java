@@ -45,6 +45,9 @@ import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionKind;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.sections.LoopSection;
+import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
+import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
+import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.services.definition.DefinitionRequest;
 import com.redhat.qute.utils.QutePositionUtility;
 
@@ -265,6 +268,22 @@ class QuteDefinition {
 					break;
 				}
 				default:
+				}
+			} else {
+				if (resolvedJavaType instanceof ExtendedParameterDataModel) {
+					String projectUri = template.getProjectUri();
+					if (projectUri != null) {
+						ExtendedParameterDataModel parameter = (ExtendedParameterDataModel) resolvedJavaType;
+						ExtendedTemplateDataModel templateDataModel = parameter.getTemplate();
+						String sourceType = templateDataModel.getSourceType();
+						String sourceMethod = templateDataModel.getSourceMethod();
+						String sourceParameter = parameter.getKey();
+
+						QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(sourceType, projectUri);
+						params.setMethod(sourceMethod);
+						params.setMethodParameter(sourceParameter);
+						return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
+					}
 				}
 			}
 		}
