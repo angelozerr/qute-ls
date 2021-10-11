@@ -13,8 +13,6 @@
 *******************************************************************************/
 package com.redhat.qute.jdt;
 
-import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.CHECKED_TEMPLATE_ANNOTATION;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -63,6 +61,7 @@ import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
+import com.redhat.qute.jdt.internal.ExternalDataModelTemplateSupport;
 import com.redhat.qute.jdt.utils.IJDTUtils;
 import com.redhat.qute.jdt.utils.JDTMethodUtils;
 import com.redhat.qute.jdt.utils.JDTQuteUtils;
@@ -92,89 +91,14 @@ public class QuteSupportForTemplate {
 		return new ProjectInfo(JDTQuteUtils.getProjectUri(javaProject));
 	}
 
-	public ProjectDataModel<TemplateDataModel<ParameterDataModel>> getProjectDataModel(QuteProjectDataModelParams params, IJDTUtils instance,
-			IProgressMonitor monitor) throws CoreException {
+	public ProjectDataModel<TemplateDataModel<ParameterDataModel>> getProjectDataModel(
+			QuteProjectDataModelParams params, IJDTUtils instance, IProgressMonitor monitor) throws CoreException {
 		String projectUri = params.getProjectUri();
 		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
 			return null;
 		}
-
-		ProjectDataModel<TemplateDataModel<ParameterDataModel>> dataModelInfo = new ProjectDataModel<TemplateDataModel<ParameterDataModel>>();
-		dataModelInfo.setTemplates(new ArrayList<>());
-		// Scan Java sources to get all classed annotated with @CheckedTemplate
-		SearchPattern pattern = SearchPattern.createPattern(CHECKED_TEMPLATE_ANNOTATION,
-				IJavaSearchConstants.ANNOTATION_TYPE, IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
-				SearchPattern.R_EXACT_MATCH);
-		SearchEngine engine = new SearchEngine();
-		int searchScope = IJavaSearchScope.SOURCES;
-		IJavaSearchScope scope = BasicSearchEngine.createJavaSearchScope(true, new IJavaElement[] { javaProject },
-				searchScope);
-
-		engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope,
-				new SearchRequestor() {
-
-					@Override
-					public void acceptSearchMatch(SearchMatch match) throws CoreException {
-						if (match.getElement() instanceof IType) {
-							IType type = (IType) match.getElement();
-							String className = type.getCompilationUnit() != null
-									? type.getCompilationUnit().getElementName()
-									: type.getClassFile().getElementName();
-							if (className.endsWith(".java")) {
-								className = className.substring(0, className.length() - ".java".length());
-							}
-							IMethod[] methods = type.getMethods();
-							for (IMethod method : methods) {
-								String methodName = method.getElementName();
-								// src/main/resources/templates/${className}/${methodName}.qute.html
-								String templateUri = new StringBuilder("src/main/resources/templates/") //
-										.append(className) //
-										.append('/') //
-										.append(methodName) //
-										.toString();
-
-								TemplateDataModel<ParameterDataModel> template = new TemplateDataModel<ParameterDataModel>();
-								template.setParameters(new ArrayList<>());
-								template.setTemplateUri(templateUri);
-								template.setSourceType(type.getFullyQualifiedName());
-								template.setSourceMethod(methodName);
-
-								try {
-									for (ILocalVariable methodParameter : method.getParameters()) {
-										String parameterName = methodParameter.getElementName();
-										String[][] parameterType = type
-												.resolveType(Signature.toString(methodParameter.getTypeSignature()));
-										String[][] genericType = null;
-										String signature = methodParameter.getTypeSignature();
-										int start = signature.indexOf('<');
-										if (start != -1) {
-											int end = signature.indexOf('>', start);
-											String generic = signature.substring(start + 1, end);
-											genericType = type.resolveType(Signature.toString(generic));
-										}
-										ParameterDataModel parameter = new ParameterDataModel();
-										parameter.setKey(parameterName);
-										parameter.setSourceType(parameterType[0][0] + "." + parameterType[0][1]);
-										if (genericType != null) {
-											parameter.setSourceType(parameter.getSourceType() + "<" + genericType[0][0]
-													+ "." + genericType[0][1] + ">");
-										}
-										template.getParameters().add(parameter);
-									}
-								} catch (Exception e) {
-									LOGGER.log(Level.SEVERE, "Error while getting method template parameter of '"
-											+ method.getElementName() + "'.", e);
-								}
-
-								dataModelInfo.getTemplates().add(template);
-							}
-						}
-					}
-				}, monitor);
-
-		return dataModelInfo;
-
+		return ExternalDataModelTemplateSupport.getProjectDataModel(javaProject, monitor);
 	}
 
 	public List<JavaClassInfo> getJavaClasses(QuteJavaClassesParams params, IJDTUtils utils, IProgressMonitor monitor)
