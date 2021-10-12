@@ -84,10 +84,18 @@ class QuteDiagnostics {
 	 * @return the result of the validation.
 	 */
 	public List<Diagnostic> doDiagnostics(Template template, QuteValidationSettings validationSettings,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, CancelChecker cancelChecker) {
+			List<CompletableFuture<?>> resolvingJavaTypeFutures, CancelChecker cancelChecker) {
 		if (validationSettings == null) {
 			validationSettings = QuteValidationSettings.DEFAULT;
 		}
+		String projectUri = template.getProjectUri();
+		if (projectUri != null) {
+			CompletableFuture<?> f = template.getTemplateDataModel();
+			if (!f.isDone()) {
+				resolvingJavaTypeFutures.add(f);
+			}
+		}
+
 		List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
 		if (validationSettings.isEnabled()) {
 			validateWithRealQuteParser(template, diagnostics);
@@ -124,8 +132,8 @@ class QuteDiagnostics {
 		}
 	}
 
-	private List<CompletableFuture<ResolvedJavaClassInfo>> validateDataModel(Node parent, Template template,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
+	private void validateDataModel(Node parent, Template template, List<CompletableFuture<?>> resolvingJavaTypeFutures,
+			List<Diagnostic> diagnostics) {
 		List<Node> children = parent.getChildren();
 		for (Node node : children) {
 			switch (node.getKind()) {
@@ -188,11 +196,10 @@ class QuteDiagnostics {
 			}
 			validateDataModel(node, template, resolvingJavaTypeFutures, diagnostics);
 		}
-		return resolvingJavaTypeFutures;
 	}
 
 	private void validateExpression(Expression expression, Section ownerSection, Template template,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
+			List<CompletableFuture<?>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
 		String projectUri = template.getProjectUri();
 		List<Node> expressionChildren = expression.getExpressionContent();
 		for (Node expressionChild : expressionChildren) {
@@ -204,7 +211,7 @@ class QuteDiagnostics {
 	}
 
 	private void validateExpressionParts(Parts parts, Section ownerSection, String projectUri,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
+			List<CompletableFuture<?>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
 		ResolvedJavaClassInfo resolvedJavaClass = null;
 		for (int i = 0; i < parts.getChildCount(); i++) {
 			Part current = ((Part) parts.getChild(i));
@@ -224,6 +231,25 @@ class QuteDiagnostics {
 
 			case Method:
 			case Property: {
+				if (resolvedJavaClass.isIterable()) {
+					// Expression uses iterable type
+					// {@java.util.List<org.acme.Item items>
+					// {items.size()}
+					// Property, method to validate must be done for iterable type (ex : java.util.List>
+					String iterableType = resolvedJavaClass.getIterableType();
+					CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(iterableType, projectUri);
+					resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
+					if (NOW.equals(resolvedJavaClass)) {
+						// Java type must be loaded.
+						Range range = QutePositionUtility.createRange(current);
+						String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, iterableType);
+						Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Information, null);
+						diagnostics.add(diagnostic);
+						resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
+						return;
+					}			
+				}
+				
 				resolvedJavaClass = validatePropertyPart(current, ownerSection, projectUri, resolvedJavaClass,
 						diagnostics, resolvingJavaTypeFutures);
 				if (resolvedJavaClass == null) {
@@ -240,7 +266,7 @@ class QuteDiagnostics {
 	}
 
 	private ResolvedJavaClassInfo validateObjectPart(ObjectPart objectPart, Section ownerSection, String projectUri,
-			List<Diagnostic> diagnostics, List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
+			List<Diagnostic> diagnostics, List<CompletableFuture<?>> resolvingJavaTypeFutures) {
 		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
 		if (javaTypeInfo == null) {
 			// ex : {item}
@@ -259,7 +285,7 @@ class QuteDiagnostics {
 
 	private ResolvedJavaClassInfo validatePropertyPart(Part part, Section ownerSection, String projectUri,
 			ResolvedJavaClassInfo resolvedJavaClass, List<Diagnostic> diagnostics,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures) {
+			List<CompletableFuture<?>> resolvingJavaTypeFutures) {
 		String property = part.getPartName();
 		JavaMemberInfo javaMember = resolvedJavaClass.findMember(property);
 		if (javaMember == null) {
@@ -292,7 +318,7 @@ class QuteDiagnostics {
 	}
 
 	private ResolvedJavaClassInfo validateJavaTypePart(Part part, Section ownerSection, String projectUri,
-			List<Diagnostic> diagnostics, List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures,
+			List<Diagnostic> diagnostics, List<CompletableFuture<?>> resolvingJavaTypeFutures,
 			String javaTypeToResolve) {
 		if (StringUtils.isEmpty(javaTypeToResolve)) {
 			Range range = QutePositionUtility.createRange(part);

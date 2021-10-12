@@ -1,9 +1,11 @@
 package com.redhat.qute.jdt.internal;
 
 import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.CHECKED_TEMPLATE_ANNOTATION;
+import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.OLD_CHECKED_TEMPLATE_ANNOTATION;
 import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.TEMPLATE_EXTENSION_ANNOTATION;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,6 +52,11 @@ public class ExternalDataModelTemplateSupport {
 
 	private static final Logger LOGGER = Logger.getLogger(ExternalDataModelTemplateSupport.class.getName());
 
+	private final static SearchPattern QUTE_SEARCH_PATTERN = createQuteSearchPattern();
+
+	private static final List<String> javaPrimitiveTypes = Arrays.asList("boolean", "byte", "double", "float", "int",
+			"long");
+
 	public static ProjectDataModel<TemplateDataModel<ParameterDataModel>> getProjectDataModel(IJavaProject javaProject,
 			IProgressMonitor monitor) throws CoreException {
 		ProjectDataModel<TemplateDataModel<ParameterDataModel>> project = new ProjectDataModel<TemplateDataModel<ParameterDataModel>>();
@@ -58,28 +65,44 @@ public class ExternalDataModelTemplateSupport {
 		return project;
 	}
 
+	private static SearchPattern createQuteSearchPattern() {
+		// Pattern for io.quarkus.qute.CheckedTemplate
+		SearchPattern checkedTemplatePattern = SearchPattern.createPattern(CHECKED_TEMPLATE_ANNOTATION,
+				IJavaSearchConstants.ANNOTATION_TYPE, IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
+				SearchPattern.R_EXACT_MATCH);
+		// Pattern for (old annotation) io.quarkus.qute.api.CheckedTemplate
+		SearchPattern oldCheckedTemplatePattern = SearchPattern.createPattern(OLD_CHECKED_TEMPLATE_ANNOTATION,
+				IJavaSearchConstants.ANNOTATION_TYPE, IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
+				SearchPattern.R_EXACT_MATCH);
+		// Pattern for io.quarkus.qute.TemplateExtension
+		SearchPattern templateExtensionPattern = SearchPattern.createPattern(TEMPLATE_EXTENSION_ANNOTATION,
+				IJavaSearchConstants.ANNOTATION_TYPE, IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
+				SearchPattern.R_EXACT_MATCH);
+		SearchPattern pattern = SearchPattern.createOrPattern(checkedTemplatePattern, oldCheckedTemplatePattern);
+		return SearchPattern.createOrPattern(pattern, templateExtensionPattern);
+	}
+
 	private static List<TemplateDataModel<ParameterDataModel>> collectTemplatesDataModel(IJavaProject javaProject,
 			IProgressMonitor monitor) throws CoreException {
 		List<TemplateDataModel<ParameterDataModel>> templates = new ArrayList<>();
 
 		// Scan Java sources to get all classed annotated with @CheckedTemplate
-		SearchPattern pattern = SearchPattern.createPattern(CHECKED_TEMPLATE_ANNOTATION,
-				IJavaSearchConstants.ANNOTATION_TYPE, IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
-				SearchPattern.R_EXACT_MATCH);
+
 		SearchEngine engine = new SearchEngine();
 		int searchScope = IJavaSearchScope.SOURCES;
 		IJavaSearchScope scope = BasicSearchEngine.createJavaSearchScope(true, new IJavaElement[] { javaProject },
 				searchScope);
 
-		engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope,
-				new SearchRequestor() {
+		engine.search(QUTE_SEARCH_PATTERN, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
+				scope, new SearchRequestor() {
 
 					@Override
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
 						if (match.getElement() instanceof IType) {
 							IType type = (IType) match.getElement();
 
-							if (AnnotationUtils.hasAnnotation(type, CHECKED_TEMPLATE_ANNOTATION)) {
+							if (AnnotationUtils.hasAnnotation(type, CHECKED_TEMPLATE_ANNOTATION)
+									|| AnnotationUtils.hasAnnotation(type, OLD_CHECKED_TEMPLATE_ANNOTATION)) {
 								// See https://quarkus.io/guides/qute-reference#typesafe_templates
 
 								// The Java type class is annotated with @CheckedTemplate
@@ -155,23 +178,47 @@ public class ExternalDataModelTemplateSupport {
 	private static ParameterDataModel createParameterDataModel(ILocalVariable methodParameter, IType type)
 			throws JavaModelException {
 		String parameterName = methodParameter.getElementName();
-		String[][] parameterType = type.resolveType(Signature.toString(methodParameter.getTypeSignature()));
-		String[][] genericType = null;
-		String signature = methodParameter.getTypeSignature();
-		int start = signature.indexOf('<');
-		if (start != -1) {
-			int end = signature.indexOf('>', start);
-			String generic = signature.substring(start + 1, end);
-			genericType = type.resolveType(Signature.toString(generic));
-		}
+		String parameterType = resolveSignature(methodParameter, type);
+
 		ParameterDataModel parameter = new ParameterDataModel();
 		parameter.setKey(parameterName);
-		parameter.setSourceType(parameterType[0][0] + "." + parameterType[0][1]);
-		if (genericType != null) {
-			parameter
-					.setSourceType(parameter.getSourceType() + "<" + genericType[0][0] + "." + genericType[0][1] + ">");
-		}
+		parameter.setSourceType(parameterType);
 		return parameter;
+	}
+
+	private static String resolveSignature(ILocalVariable methodParameter, IType type) {
+		return resolveSignature(methodParameter.getTypeSignature(), type);
+	}
+
+	private static String resolveSignature(String signature, IType type) {
+		int start = signature.indexOf('<');
+		if (start == -1) {
+			// No generic
+			return resolveSignature2(signature, type);
+		}
+
+		String mainSignature = resolveSignature2(signature, type);
+		int end = signature.indexOf('>', start);
+		String genericSignature = resolveSignature2(signature.substring(start + 1, end), type);
+		return mainSignature + "<" + genericSignature + ">";
+	}
+
+	private static String resolveSignature2(String signature, IType type) {
+		String resolvedSignatureWithoutPackage = Signature.toString(signature);
+		if (javaPrimitiveTypes.contains(resolvedSignatureWithoutPackage)) {
+			return resolvedSignatureWithoutPackage;
+		}
+
+		try {
+			String[][] resolvedSignature = type.resolveType(resolvedSignatureWithoutPackage);
+			if (resolvedSignature != null) {
+				return resolvedSignature[0][0] + "." + resolvedSignature[0][1];
+			}
+		} catch (JavaModelException e) {
+			LOGGER.log(Level.SEVERE, "Error while resolving signature '" + resolvedSignatureWithoutPackage + "'.",
+					e);
+		}
+		return resolvedSignatureWithoutPackage;
 	}
 
 }

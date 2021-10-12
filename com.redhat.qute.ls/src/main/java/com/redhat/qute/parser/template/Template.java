@@ -9,6 +9,7 @@ import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.CancelChecker;
 import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
+import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
 
 public class Template extends Node {
 
@@ -120,7 +121,7 @@ public class Template extends Node {
 			return parameter;
 		}
 		// Try to find the class name from @CheckedTemplate
-		return findParameterDataModel(partName).getNow(null);
+		return getParameterDataModel(partName).getNow(null);
 	}
 
 	private ParameterDeclaration findParameterByAlias(String alias) {
@@ -135,13 +136,17 @@ public class Template extends Node {
 		return null;
 	}
 	
-	private CompletableFuture<ExtendedParameterDataModel> findParameterDataModel(String parameterName) {
-		if (dataModelProvider == null) {
-			return CompletableFuture.completedFuture(null);
-		}
-		return dataModelProvider.getTemplateDataModel(this). //
+	private CompletableFuture<ExtendedParameterDataModel> getParameterDataModel(String parameterName) {		
+		return getTemplateDataModel(). //
 				thenApply(dataModel -> {
 					return dataModel != null ? dataModel.getParameter(parameterName) : null;
 				});
+	}
+
+	public CompletableFuture<ExtendedTemplateDataModel> getTemplateDataModel() {
+		if (dataModelProvider == null || getProjectUri() == null) {
+			return CompletableFuture.completedFuture(null);
+		}
+		return dataModelProvider.getTemplateDataModel(this);
 	}
 }

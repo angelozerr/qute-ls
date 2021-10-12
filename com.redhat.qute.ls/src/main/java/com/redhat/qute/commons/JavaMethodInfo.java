@@ -75,7 +75,7 @@ public class JavaMethodInfo extends JavaMemberInfo {
 		return (methodName.charAt(index) + "").toLowerCase() + methodName.substring(index + 1, methodName.length());
 	}
 
-	private boolean hasParameters() {
+	public boolean hasParameters() {
 		String signature = getSignature();
 		int start = signature.indexOf('(');
 		int end = signature.indexOf(')', start - 1);

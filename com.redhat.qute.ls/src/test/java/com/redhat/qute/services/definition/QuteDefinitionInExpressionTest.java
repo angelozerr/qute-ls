@@ -45,8 +45,7 @@ public class QuteDefinitionInExpressionTest {
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"{item.name|}";
-		testDefinitionFor(template,
-				ll("org/acme/Item.java", r(1, 6, 1, 10), MockJavaDataModelCache.JAVA_FIELD_RANGE));
+		testDefinitionFor(template, ll("org/acme/Item.java", r(1, 6, 1, 10), MockJavaDataModelCache.JAVA_FIELD_RANGE));
 	}
 
 	@Test
@@ -60,5 +59,14 @@ public class QuteDefinitionInExpressionTest {
 				"{item.review2|}";
 		testDefinitionFor(template, //
 				ll("org/acme/Item.java", r(1, 6, 1, 13), MockJavaDataModelCache.JAVA_METHOD_RANGE));
+	}
+
+	@Test
+	public void methodDefinitionForIterable() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				"{items.siz|e}";
+		testDefinitionFor(template, //
+				ll("java/util/List.java", r(1, 7, 1, 11), MockJavaDataModelCache.JAVA_METHOD_RANGE));
+
 	}
 }

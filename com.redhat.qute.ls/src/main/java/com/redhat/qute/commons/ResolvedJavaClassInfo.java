@@ -2,7 +2,8 @@ package com.redhat.qute.commons;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+
+import com.redhat.qute.utils.StringUtils;
 
 public class ResolvedJavaClassInfo extends JavaClassInfo {
 
@@ -69,26 +70,35 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 	}
 
 	public JavaFieldInfo findField(String fieldName) {
-		if (fields == null) {
+		if (fields == null || fields.isEmpty() || StringUtils.isEmpty(fieldName)) {
 			return null;
 		}
-
-		Optional<JavaFieldInfo> fieldInfo = fields.stream()//
-				.filter(field -> fieldName.equals(field.getName())) //
-				.findFirst();
-		return fieldInfo.isPresent() ? fieldInfo.get() : null;
+		for (JavaFieldInfo field : fields) {
+			if (fieldName.equals(field.getName())) {
+				return field;
+			}
+		}
+		return null;
 	}
 
 	public JavaMethodInfo findMethod(String propertyOrMethodName) {
-		if (fields == null) {
+		if (methods == null || methods.isEmpty() || StringUtils.isEmpty(propertyOrMethodName)) {
 			return null;
 		}
+		String getterMethodName = "get" + (propertyOrMethodName.charAt(0) + "").toUpperCase()
+				+ propertyOrMethodName.substring(1, propertyOrMethodName.length());
+		for (JavaMethodInfo method : methods) {
+			if (isMatchMethod(method, propertyOrMethodName, getterMethodName)) {
+				return method;
+			}
+		}
+		return null;
+	}
 
-		String getterMethodName = "get" + (propertyOrMethodName.charAt(0) + "").toUpperCase() + propertyOrMethodName.substring(1, propertyOrMethodName.length());
-
-		Optional<JavaMethodInfo> methodInfo = methods.stream()//
-				.filter(method -> propertyOrMethodName.equals(method.getName()) || getterMethodName.equals(method.getName())) //
-				.findFirst();
-		return methodInfo.isPresent() ? methodInfo.get() : null;
+	private static boolean isMatchMethod(JavaMethodInfo method, String propertyOrMethodName, String getterMethodName) {
+		if (propertyOrMethodName.equals(method.getName()) || getterMethodName.equals(method.getName())) {
+			return true;
+		}
+		return false;
 	}
 }

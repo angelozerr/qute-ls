@@ -22,7 +22,7 @@ public class JavaMethodInfo extends JavaMemberInfo {
 		if (returnType == null) {
 			String signature = getSignature();
 			int index = signature.lastIndexOf(':');
-			returnType = index != -1 ? signature.substring(index, signature.length()).trim() : NO_VALUE;
+			returnType = index != -1 ? signature.substring(index + 1, signature.length()).trim() : NO_VALUE;
 		}
 		return NO_VALUE.equals(returnType) ? null : returnType;
 	}
@@ -75,7 +75,7 @@ public class JavaMethodInfo extends JavaMemberInfo {
 		return (methodName.charAt(index) + "").toLowerCase() + methodName.substring(index + 1, methodName.length());
 	}
 
-	private boolean hasParameters() {
+	public boolean hasParameters() {
 		String signature = getSignature();
 		int start = signature.indexOf('(');
 		int end = signature.indexOf(')', start - 1);

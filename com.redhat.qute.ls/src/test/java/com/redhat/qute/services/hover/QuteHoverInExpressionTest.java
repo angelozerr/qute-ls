@@ -65,4 +65,22 @@ public class QuteHoverInExpressionTest {
 		assertHover(template, //
 				"org.acme.Review", r(1, 6, 1, 16));
 	}
+	
+	@Test
+	public void objectHoverForIterable() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				"{ite|ms.size}";
+		assertHover(template, //
+				"java.util.List<org.acme.Item>", r(1, 1, 1, 6));
+
+	}
+
+	@Test
+	public void methodHoverForIterable() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				"{items.siz|e}";
+		assertHover(template, //
+				"int", r(1, 7, 1, 11));
+
+	}
 }

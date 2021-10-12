@@ -233,7 +233,7 @@ public class QuteTextDocumentService implements TextDocumentService {
 
 	private void triggerValidationFor(QuteTextDocument document) {
 		getTemplate(document, (cancelChecker, template) -> {
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures = new ArrayList<>();
+			List<CompletableFuture<?>> resolvingJavaTypeFutures = new ArrayList<>();
 			List<Diagnostic> diagnostics = getQuteLanguageService().doDiagnostics(template,
 					getSharedSettings().getValidationSettings(), resolvingJavaTypeFutures, cancelChecker);
 			quteLanguageServer.getLanguageClient()

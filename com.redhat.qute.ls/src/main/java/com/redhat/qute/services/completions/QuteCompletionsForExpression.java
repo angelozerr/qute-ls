@@ -193,9 +193,11 @@ public class QuteCompletionsForExpression {
 			QuteFormattingSettings formattingSettings) {
 		String methodName = method.getName();
 		StringBuilder snippet = new StringBuilder(methodName);
-		snippet.append("(");
-		// TODO : parameters
-		snippet.append(")");
+		if (method.hasParameters()) {
+			snippet.append("(");
+			// TODO : parameters
+			snippet.append(")");
+		}
 		return snippet.toString();
 	}
 

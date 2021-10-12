@@ -215,10 +215,6 @@ public class QuteAssert {
 	// ------------------- Diagnostics assert
 
 	public static void testDiagnosticsFor(String value, Diagnostic... expected) {
-		testDiagnosticsFor(value, null, expected);
-	}
-
-	public static void testDiagnosticsFor(String value, String catalogPath, Diagnostic... expected) {
 		testDiagnosticsFor(value, FILE_URI, PROJECT_URI, false, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
 	}
 

@@ -56,7 +56,7 @@ public class QuteCompletionInExpressionTest {
 				c("price : java.math.BigInteger", "price", r(1, 12, 1, 12)), //
 				c("review : org.acme.Review", "review", r(1, 12, 1, 12)), //
 				c("review2 : org.acme.Review", "review2", r(1, 12, 1, 12)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 12)));
+				c("getReview2() : org.acme.Review", "getReview2", r(1, 12, 1, 12)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.n|}";
@@ -65,7 +65,7 @@ public class QuteCompletionInExpressionTest {
 				c("price : java.math.BigInteger", "price", r(1, 12, 1, 13)), //
 				c("review : org.acme.Review", "review", r(1, 12, 1, 13)), //
 				c("review2 : org.acme.Review", "review2", r(1, 12, 1, 13)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 13)));
+				c("getReview2() : org.acme.Review", "getReview2", r(1, 12, 1, 13)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.|n}";
@@ -74,7 +74,7 @@ public class QuteCompletionInExpressionTest {
 				c("price : java.math.BigInteger", "price", r(1, 12, 1, 13)), //
 				c("review : org.acme.Review", "review", r(1, 12, 1, 13)), //
 				c("review2 : org.acme.Review", "review2", r(1, 12, 1, 13)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 13)));
+				c("getReview2() : org.acme.Review", "getReview2", r(1, 12, 1, 13)));
 
 		template = "{@org.acme.Item item}\r\n" + //
 				"Item: {item.n|a}";
@@ -83,7 +83,7 @@ public class QuteCompletionInExpressionTest {
 				c("price : java.math.BigInteger", "price", r(1, 12, 1, 14)), //
 				c("review : org.acme.Review", "review", r(1, 12, 1, 14)), //
 				c("review2 : org.acme.Review", "review2", r(1, 12, 1, 14)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(1, 12, 1, 14)));
+				c("getReview2() : org.acme.Review", "getReview2", r(1, 12, 1, 14)));
 	}
 
 	@Test

@@ -121,7 +121,7 @@ public class QuteLanguageService {
 	 * @return the result of the validation.
 	 */
 	public List<Diagnostic> doDiagnostics(Template template, QuteValidationSettings validationSettings,
-			List<CompletableFuture<ResolvedJavaClassInfo>> resolvingJavaTypeFutures, CancelChecker cancelChecker) {
+			List<CompletableFuture<?>> resolvingJavaTypeFutures, CancelChecker cancelChecker) {
 		return diagnostics.doDiagnostics(template, validationSettings, resolvingJavaTypeFutures, cancelChecker);
 	}
 

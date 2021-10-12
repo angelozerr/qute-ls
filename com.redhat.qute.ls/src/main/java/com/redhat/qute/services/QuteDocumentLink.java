@@ -25,12 +25,17 @@ public class QuteDocumentLink {
 	private void findDocumentLinks(Node node, Template template, List<DocumentLink> links) {
 		List<Node> children = node.getChildren();
 		for (Node child : children) {
-			if(child.getKind() == NodeKind.Section) {
+			if (child.getKind() == NodeKind.Section) {
 				Section section = (Section) child;
 				if (section.getSectionKind() == SectionKind.INCLUDE) {
+					// #include section case:
+
+					// {#include base.qute.html}
+					// In this case 'base.qute.html' is a document link
 					Parameter includedTemplateId = section.getParameterAt(0);
 					if (includedTemplateId != null) {
-							Range range = QutePositionUtility.createRange(includedTemplateId.getStart(), includedTemplateId.getEnd(), template);
+						Range range = QutePositionUtility.createRange(includedTemplateId.getStart(),
+								includedTemplateId.getEnd(), template);
 						if (range != null) {
 							String target = includedTemplateId.getValue();
 							links.add(new DocumentLink(range, target));

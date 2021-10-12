@@ -28,6 +28,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.JavaMemberInfo.JavaMemberKind;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.expression.MethodPart;
 import com.redhat.qute.parser.expression.ObjectPart;
@@ -205,37 +206,6 @@ class QuteDefinition {
 		}
 	}
 
-	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromPropertyPart(Part part,
-			Template template) {
-		Parts parts = part.getParent();
-		Part previousPart = parts.getPreviousPart(part);
-		String projectUri = template.getProjectUri();
-		if (projectUri != null) {
-			return javaCache.resolveJavaType(previousPart, projectUri) //
-					.thenCompose(previousResolvedType -> {
-						if (previousResolvedType != null) {
-							// The Java class type from the previous part had been resolved, resolve the
-							// property
-							String property = part.getPartName();
-							JavaMemberInfo member = previousResolvedType.findMember(property);
-
-							QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(
-									previousResolvedType.getClassName(), projectUri);
-							if (member != null && member.getKind() == JavaMemberKind.METHOD) {
-								// Try to find a method definition
-								params.setMethod(member.getName());
-							} else {
-								// Try to find a field definition
-								params.setField(property);
-							}
-							return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
-						}
-						return NO_DEFINITION;
-					});
-		}
-		return NO_DEFINITION;
-	}
-
 	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromObjectPart(Part part, Template template) {
 		JavaTypeInfoProvider resolvedJavaType = ((ObjectPart) part).resolveJavaType();
 		if (resolvedJavaType != null) {
@@ -288,6 +258,54 @@ class QuteDefinition {
 			}
 		}
 		return NO_DEFINITION;
+	}
+	
+	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromPropertyPart(Part part,
+			Template template) {		
+		String projectUri = template.getProjectUri();
+		if (projectUri != null) {
+			Parts parts = part.getParent();
+			Part previousPart = parts.getPreviousPart(part);
+			return javaCache.resolveJavaType(previousPart, projectUri) //
+					.thenCompose(previousResolvedType -> {
+						if (previousResolvedType != null) {
+							if (previousResolvedType.isIterable()) {
+								// Expression uses iterable type
+								// {@java.util.List<org.acme.Item items>
+								// {items.si|ze()}
+								// Property, method to find as definition must be done for iterable type (ex :
+								// java.util.List>
+								String iterableType = previousResolvedType.getIterableType();
+								CompletableFuture<ResolvedJavaClassInfo> iterableResolvedTypeFuture = javaCache
+										.resolveJavaType(iterableType, projectUri);
+								return iterableResolvedTypeFuture.thenCompose((iterableResolvedType) -> {
+									return findDefinitionFromPropertyPart(part, projectUri, iterableResolvedType);
+								});
+							}
+							return findDefinitionFromPropertyPart(part, projectUri, previousResolvedType);
+						}
+						return NO_DEFINITION;
+					});
+		}
+		return NO_DEFINITION;
+	}
+
+	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromPropertyPart(Part part, String projectUri,
+			ResolvedJavaClassInfo previousResolvedType) {
+		// The Java class type from the previous part had been resolved, resolve the
+		// property
+		String property = part.getPartName();
+		JavaMemberInfo member = previousResolvedType.findMember(property);
+
+		QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(previousResolvedType.getClassName(), projectUri);
+		if (member != null && member.getKind() == JavaMemberKind.METHOD) {
+			// Try to find a method definition
+			params.setMethod(member.getName());
+		} else {
+			// Try to find a field definition
+			params.setField(property);
+		}
+		return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));
 	}
 
 }

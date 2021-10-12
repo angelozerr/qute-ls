@@ -22,8 +22,11 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+import com.redhat.qute.commons.JavaMemberInfo;
+import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.expression.Part;
+import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.RangeOffset;
@@ -101,16 +104,71 @@ public class QuteHover {
 
 	private CompletableFuture<Hover> doHoverForExpressionPart(Part part, Template template, HoverRequest hoverRequest,
 			CancelChecker cancelChecker) {
-		return javaCache.resolveJavaType(part, template.getProjectUri()) //
-				.thenApply(resolvedType -> {
-					if (resolvedType != null) {
-						boolean hasMarkdown = true;
-						String markupKind = hasMarkdown ? MarkupKind.MARKDOWN : MarkupKind.PLAINTEXT;
-						String content = resolvedType.getClassName();
-						Range range = QutePositionUtility.createRange(part);
-						return new Hover(new MarkupContent(markupKind, content), range);
+		String projectUri = template.getProjectUri();
+		switch (part.getPartKind()) {
+		case Object:
+			return doHoverForObjectPart(part, projectUri);
+		case Method:
+		case Property:
+			return doHoverForPropertyPart(part, projectUri);
+		default:
+			return NO_HOVER;
+		}
+	}
+
+	private CompletableFuture<Hover> doHoverForPropertyPart(Part part, String projectUri) {
+		Parts parts = part.getParent();
+		Part previousPart = parts.getPreviousPart(part);
+		return javaCache.resolveJavaType(previousPart, projectUri) //
+				.thenCompose(resolvedJavaType -> {
+					if (resolvedJavaType != null) {
+						if (resolvedJavaType.isIterable()) {
+							// Expression uses iterable type
+							// {@java.util.List<org.acme.Item items>
+							// {items.si|ze()}
+							// Property, method to find as hover must be done for iterable type (ex :
+							// java.util.List>
+							String iterableType = resolvedJavaType.getIterableType();
+							CompletableFuture<ResolvedJavaClassInfo> iterableResolvedTypeFuture = javaCache
+									.resolveJavaType(iterableType, projectUri);
+							return iterableResolvedTypeFuture.thenApply((iterableResolvedType) -> {
+								return doHoverForPropertyPart(part, projectUri, iterableResolvedType);
+							});
+						}
+
+						Hover hover = doHoverForPropertyPart(part, projectUri, resolvedJavaType);
+						return CompletableFuture.completedFuture(hover);
+					}
+					return NO_HOVER;
+				});
+	}
+
+	private CompletableFuture<Hover> doHoverForObjectPart(Part part, String projectUri) {
+		return javaCache.resolveJavaType(part, projectUri) //
+				.thenApply(resolvedJavaType -> {
+					if (resolvedJavaType != null) {
+						return createHover(part, resolvedJavaType.getClassName());
 					}
 					return null;
 				});
+	}
+
+	private Hover doHoverForPropertyPart(Part part, String projectUri, ResolvedJavaClassInfo previousResolvedType) {
+		// The Java class type from the previous part had been resolved, resolve the
+		// property
+		String property = part.getPartName();
+		JavaMemberInfo member = previousResolvedType.findMember(property);
+		if (member == null) {
+			return null;
+		}
+		return createHover(part, member.getMemberType());
+	}
+
+	private static Hover createHover(Part part, String javaType) {
+		boolean hasMarkdown = true;
+		String markupKind = hasMarkdown ? MarkupKind.MARKDOWN : MarkupKind.PLAINTEXT;
+		String content = javaType;
+		Range range = QutePositionUtility.createRange(part);
+		return new Hover(new MarkupContent(markupKind, content), range);
 	}
 }

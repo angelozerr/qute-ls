@@ -69,7 +69,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 7)), //
 				c("review : org.acme.Review", "review", r(3, 7, 3, 7)), //
 				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 7)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 7)));
+				c("getReview2() : org.acme.Review", "getReview2", r(3, 7, 3, 7)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
 				" \r\n" + //
@@ -81,7 +81,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 8)), //
 				c("review : org.acme.Review", "review", r(3, 7, 3, 8)), //
 				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 8)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 8)));
+				c("getReview2() : org.acme.Review", "getReview2", r(3, 7, 3, 8)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
 				" \r\n" + //
@@ -93,7 +93,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 8)), //
 				c("review : org.acme.Review", "review", r(3, 7, 3, 8)), //
 				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 8)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 8)));
+				c("getReview2() : org.acme.Review", "getReview2", r(3, 7, 3, 8)));
 
 		template = "{@java.util.List<org.acme.Item> items}\r\n" + //
 				" \r\n" + //
@@ -105,7 +105,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 9)), //
 				c("review : org.acme.Review", "review", r(3, 7, 3, 9)), //
 				c("review2 : org.acme.Review", "review2", r(3, 7, 3, 9)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(3, 7, 3, 9)));
+				c("getReview2() : org.acme.Review", "getReview2", r(3, 7, 3, 9)));
 
 	}
 
@@ -135,7 +135,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				c("price : java.math.BigInteger", "price", r(4, 8, 4, 8)), //
 				c("review : org.acme.Review", "review", r(4, 8, 4, 8)), //
 				c("review2 : org.acme.Review", "review2", r(4, 8, 4, 8)), //
-				c("getReview2() : org.acme.Review", "getReview2()", r(4, 8, 4, 8)));
+				c("getReview2() : org.acme.Review", "getReview2", r(4, 8, 4, 8)));
 	}
 
 	@Test
