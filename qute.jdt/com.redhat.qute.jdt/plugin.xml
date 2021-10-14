@@ -13,4 +13,12 @@
        </delegateCommandHandler>
    </extension>
 
+   <!-- Delegate command handler for Java files-->
+   <extension point="org.eclipse.jdt.ls.core.delegateCommandHandler">
+      <delegateCommandHandler class="com.redhat.qute.jdt.internal.ls.QuteSupportForJavaDelegateCommandHandler">      
+            <command id="qute/java/codeLens"/>
+            <command id="qute/java/diagnostics"/>
+       </delegateCommandHandler>
+   </extension>
+   
 </plugin>

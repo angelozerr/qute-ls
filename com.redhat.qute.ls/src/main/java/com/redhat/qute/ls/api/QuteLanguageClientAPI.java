@@ -18,5 +18,5 @@ import org.eclipse.lsp4j.services.LanguageClient;
  *
  */
 public interface QuteLanguageClientAPI extends LanguageClient, QuteJavaClassesProvider, QuteResolvedJavaClassProvider,
-		QuteJavaDefinitionProvider, QuteProjectInfoProvider, QuteProjectDataModelProvider {
+		QuteJavaDefinitionProvider, QuteProjectInfoProvider, QuteProjectDataModelProvider, QuteJavaCodeLensProvider {
 }

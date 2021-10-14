@@ -147,11 +147,7 @@ public class ExternalDataModelTemplateSupport {
 			IType type) {
 		String methodName = method.getElementName();
 		// src/main/resources/templates/${className}/${methodName}.qute.html
-		String templateUri = new StringBuilder("src/main/resources/templates/") //
-				.append(className) //
-				.append('/') //
-				.append(methodName) //
-				.toString();
+		String templateUri = getTemplatePath(className, methodName);
 
 		// Create template data model with:
 		// - template uri : Qute template file which must be bind with data model.
@@ -173,6 +169,14 @@ public class ExternalDataModelTemplateSupport {
 					"Error while getting method template parameter of '" + method.getElementName() + "'.", e);
 		}
 		return template;
+	}
+
+	public static String getTemplatePath(String className, String methodName) {
+		return new StringBuilder("src/main/resources/templates/") //
+				.append(className) //
+				.append('/') //
+				.append(methodName) //
+				.toString();
 	}
 
 	private static ParameterDataModel createParameterDataModel(ILocalVariable methodParameter, IType type)

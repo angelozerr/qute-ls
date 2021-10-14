@@ -36,6 +36,10 @@
             contentType="com.redhat.qute.lsp4e.html"
             id="com.redhat.qute.lsp4e.html">
       </contentTypeMapping>
+      <contentTypeMapping
+            contentType="org.eclipse.jdt.core.javaSource"
+            id="com.redhat.qute.lsp4e.html">            
+      </contentTypeMapping>      
    </extension>
    
    <extension

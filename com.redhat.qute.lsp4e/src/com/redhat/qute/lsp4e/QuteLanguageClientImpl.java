@@ -18,6 +18,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.lsp4e.LanguageClientImpl;
+import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
@@ -25,6 +26,7 @@ import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import com.redhat.qute.commons.JavaClassInfo;
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteJavaClassesParams;
+import com.redhat.qute.commons.QuteJavaCodeLensParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
@@ -34,8 +36,9 @@ import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
 import com.redhat.qute.jdt.IJavaDataModelChangedListener;
-import com.redhat.qute.jdt.QuteSupportForTemplate;
 import com.redhat.qute.jdt.QutePlugin;
+import com.redhat.qute.jdt.QuteSupportForJava;
+import com.redhat.qute.jdt.QuteSupportForTemplate;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
 import com.redhat.qute.ls.api.QuteLanguageServerAPI;
 import com.redhat.qute.lsp4e.internal.JDTUtilsImpl;
@@ -74,7 +77,8 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<ProjectDataModel<TemplateDataModel<ParameterDataModel>>> getProjectDataModel(QuteProjectDataModelParams params) {
+	public CompletableFuture<ProjectDataModel<TemplateDataModel<ParameterDataModel>>> getProjectDataModel(
+			QuteProjectDataModelParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
@@ -125,6 +129,19 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
 				return null;
 			}
+		});
+	}
+
+	@Override
+	public CompletableFuture<List<? extends CodeLens>> getJavaCodelens(QuteJavaCodeLensParams javaParams) {
+		return CompletableFutures.computeAsync((cancelChecker) -> {
+			//try {
+				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
+				return QuteSupportForJava.getInstance().codeLens(javaParams, JDTUtilsImpl.getInstance(), monitor);
+			/*} catch (CoreException e) {
+				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
+				return null;
+			}*/
 		});
 	}
 

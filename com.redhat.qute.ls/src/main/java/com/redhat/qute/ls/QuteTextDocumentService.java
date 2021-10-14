@@ -9,52 +9,47 @@
 *******************************************************************************/
 package com.redhat.qute.ls;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.ClientCapabilities;
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CodeLensParams;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DefinitionParams;
-import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
+import org.eclipse.lsp4j.DocumentFormattingParams;
 import org.eclipse.lsp4j.DocumentHighlight;
 import org.eclipse.lsp4j.DocumentHighlightParams;
 import org.eclipse.lsp4j.DocumentLink;
 import org.eclipse.lsp4j.DocumentLinkParams;
+import org.eclipse.lsp4j.DocumentRangeFormattingParams;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
-import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentClientCapabilities;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.eclipse.lsp4j.TextDocumentItem;
+import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
-import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
-import com.redhat.qute.parser.template.Template;
-import com.redhat.qute.parser.template.TemplateParser;
-import com.redhat.qute.services.QuteLanguageService;
-import com.redhat.qute.settings.QuteValidationSettings;
+import com.redhat.qute.ls.java.JavaFileTextDocumentService;
+import com.redhat.qute.ls.template.TemplateFileTextDocumentService;
 import com.redhat.qute.settings.SharedSettings;
-import com.redhat.qute.utils.QutePositionUtility;
 
 /**
  * LSP text document service for Qute template file.
@@ -62,22 +57,16 @@ import com.redhat.qute.utils.QutePositionUtility;
  */
 public class QuteTextDocumentService implements TextDocumentService {
 
-	private final QuteTextDocuments documents;
-
-	private final QuteLanguageServer quteLanguageServer;
-
 	private final SharedSettings sharedSettings;
 
-	private boolean hierarchicalDocumentSymbolSupport;
+	private final JavaFileTextDocumentService javaFileTextDocumentService;
 
-	private boolean definitionLinkSupport;
+	private final TemplateFileTextDocumentService templateFileTextDocumentService;
 
 	public QuteTextDocumentService(QuteLanguageServer quteLanguageServer, SharedSettings sharedSettings) {
-		this.quteLanguageServer = quteLanguageServer;
-		this.documents = new QuteTextDocuments((document, cancelChecker) -> {
-			return TemplateParser.parse(document.getText(), document.getUri(), () -> cancelChecker.checkCanceled());
-		}, quteLanguageServer.getDataModelCache(), quteLanguageServer.getDataModelCache());
 		this.sharedSettings = sharedSettings;
+		this.javaFileTextDocumentService = new JavaFileTextDocumentService(quteLanguageServer, sharedSettings);
+		this.templateFileTextDocumentService = new TemplateFileTextDocumentService(quteLanguageServer, sharedSettings);
 	}
 
 	/**
@@ -89,260 +78,169 @@ public class QuteTextDocumentService implements TextDocumentService {
 		TextDocumentClientCapabilities textDocumentClientCapabilities = capabilities.getTextDocument();
 		if (textDocumentClientCapabilities != null) {
 			sharedSettings.getCompletionSettings().setCapabilities(textDocumentClientCapabilities.getCompletion());
-			hierarchicalDocumentSymbolSupport = textDocumentClientCapabilities.getDocumentSymbol() != null
-					&& textDocumentClientCapabilities.getDocumentSymbol().getHierarchicalDocumentSymbolSupport() != null
-					&& textDocumentClientCapabilities.getDocumentSymbol().getHierarchicalDocumentSymbolSupport();
-			definitionLinkSupport = textDocumentClientCapabilities.getDefinition() != null
-					&& textDocumentClientCapabilities.getDefinition().getLinkSupport() != null
-					&& textDocumentClientCapabilities.getDefinition().getLinkSupport();
 		}
+		templateFileTextDocumentService.updateClientCapabilities(capabilities);
+		javaFileTextDocumentService.updateClientCapabilities(capabilities);
 	}
 
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
-		QuteTextDocument document = (QuteTextDocument) documents.onDidOpenTextDocument(params);
-		document.getProjectInfoFuture() //
-				.thenAccept(projectInfo -> {
-					if (projectInfo != null) {
-						// At this step we get informations about the Java project (used to collect Java
-						// classes available for the given Qute template)
-						// We retrigger the validation to validate data model.
-						triggerValidationFor(document);
-					}
-				});
-		triggerValidationFor(document);
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			service.didOpen(params);
+		}
 	}
 
 	@Override
 	public void didChange(DidChangeTextDocumentParams params) {
-		QuteTextDocument document = (QuteTextDocument) documents.onDidChangeTextDocument(params);
-		triggerValidationFor(document);
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			service.didChange(params);
+		}
 	}
 
 	@Override
 	public void didClose(DidCloseTextDocumentParams params) {
-		documents.onDidCloseTextDocument(params);
-		TextDocumentIdentifier document = params.getTextDocument();
-		String uri = document.getUri();
-		quteLanguageServer.getLanguageClient()
-				.publishDiagnostics(new PublishDiagnosticsParams(uri, new ArrayList<Diagnostic>()));
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			service.didClose(params);
+		}
 	}
 
 	@Override
 	public void didSave(DidSaveTextDocumentParams params) {
-
-	}
-
-	@Override
-	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
-		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
-				(cancelChecker, template) -> {
-					return getQuteLanguageService()
-							.doComplete(template, params.getPosition(), sharedSettings.getCompletionSettings(),
-									sharedSettings.getFormattingSettings(), cancelChecker) //
-							.thenApply(list -> {
-								return Either.forRight(list);
-							});
-
-				});
-
-	}
-
-	@Override
-	public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams params) {
-		if (!sharedSettings.getCodeLensSettings().isEnabled()) {
-			return CompletableFuture.completedFuture(Collections.emptyList());
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			service.didSave(params);
 		}
-		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
-				(cancelChecker, template) -> {
-					return getQuteLanguageService().getCodeLens(template, sharedSettings.getCodeLensSettings(),
-							cancelChecker);
-				});
+	}
+
+	@Override
+	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams position) {
+		TextDocumentService service = getTextDocumentService(position.getTextDocument());
+		if (service != null) {
+			return service.completion(position);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
 	@Override
 	public CompletableFuture<Hover> hover(HoverParams params) {
-		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
-				(cancelChecker, template) -> {
-					return getQuteLanguageService().doHover(template, params.getPosition(), sharedSettings,
-							cancelChecker);
-				});
-	}
-
-	@Override
-	public CompletableFuture<List<? extends DocumentHighlight>> documentHighlight(DocumentHighlightParams params) {
-		return getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
-			return getQuteLanguageService().findDocumentHighlights(template, params.getPosition(), cancelChecker);
-		});
-	}
-
-	@Override
-	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
-			DefinitionParams params) {
-		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
-				(cancelChecker, template) -> {
-					return getQuteLanguageService() //
-							.findDefinition(template, params.getPosition(), cancelChecker) //
-							.thenApply(definitions -> {
-								if (definitionLinkSupport) {
-									return Either.forRight(definitions);
-								}
-								List<? extends Location> locations = definitions //
-										.stream() //
-										.map(locationLink -> QutePositionUtility.toLocation(locationLink)) //
-										.collect(Collectors.toList());
-								return Either.forLeft(locations);
-							});
-
-				});
-	}
-
-	@Override
-	public CompletableFuture<List<DocumentLink>> documentLink(DocumentLinkParams params) {
-		return getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
-			return getQuteLanguageService().findDocumentLinks(template);
-		});
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.hover(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
 	@Override
 	public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
 			DocumentSymbolParams params) {
-		return getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
-			if (hierarchicalDocumentSymbolSupport) {
-				return getQuteLanguageService().findDocumentSymbols(template, cancelChecker) //
-						.stream() //
-						.map(s -> {
-							Either<SymbolInformation, DocumentSymbol> e = Either.forRight(s);
-							return e;
-						}) //
-						.collect(Collectors.toList());
-			}
-			return getQuteLanguageService().findSymbolInformations(template, cancelChecker) //
-					.stream() //
-					.map(s -> {
-						Either<SymbolInformation, DocumentSymbol> e = Either.forLeft(s);
-						return e;
-					}) //
-					.collect(Collectors.toList());
-		});
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.documentSymbol(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	private QuteLanguageService getQuteLanguageService() {
-		return quteLanguageServer.getQuarkusLanguageService();
+	@Override
+	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
+			DefinitionParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.definition(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	private void triggerValidationFor(QuteTextDocument document) {
-		getTemplate(document, (cancelChecker, template) -> {
-			List<CompletableFuture<?>> resolvingJavaTypeFutures = new ArrayList<>();
-			List<Diagnostic> diagnostics = getQuteLanguageService().doDiagnostics(template,
-					getSharedSettings().getValidationSettings(), resolvingJavaTypeFutures, cancelChecker);
-			quteLanguageServer.getLanguageClient()
-					.publishDiagnostics(new PublishDiagnosticsParams(template.getUri(), diagnostics));
-
-			if (!resolvingJavaTypeFutures.isEmpty()) {
-				// Some Java types was not loaded, wait for that all Java types are resolved to
-				// retrigger the validation.
-				CompletableFuture<Void> allFutures = CompletableFuture.allOf(
-						resolvingJavaTypeFutures.toArray(new CompletableFuture[resolvingJavaTypeFutures.size()]));
-				allFutures.thenAccept(Void -> {
-					triggerValidationFor(document);
-				});
-			}
-
-			return null;
-		});
+	@Override
+	public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.formatting(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	/**
-	 * Returns the text document from the given uri.
-	 *
-	 * @param uri the uri
-	 * @return the text document from the given uri.
-	 */
-	public QuteTextDocument getDocument(String uri) {
-		return (QuteTextDocument) documents.get(uri);
+	@Override
+	public CompletableFuture<List<? extends TextEdit>> rangeFormatting(DocumentRangeFormattingParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.rangeFormatting(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	/**
-	 * Returns the properties model for a given uri in a future and then apply the
-	 * given function.
-	 *
-	 * @param <R>
-	 * @param documentIdentifier the document identifier.
-	 * @param code               a bi function that accepts a {@link CancelChecker}
-	 *                           and parsed {@link Template} and returns the to be
-	 *                           computed value
-	 * @return the properties model for a given uri in a future and then apply the
-	 *         given function.
-	 */
-	public <R> CompletableFuture<R> getTemplate(TextDocumentIdentifier documentIdentifier,
-			BiFunction<CancelChecker, Template, R> code) {
-		return getTemplate(getDocument(documentIdentifier.getUri()), code);
+	@Override
+	public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.codeAction(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	/**
-	 * Returns the properties model for a given uri in a future and then apply the
-	 * given function.
-	 *
-	 * @param <R>
-	 * @param documentIdentifier the document identifier.
-	 * @param code               a bi function that accepts a {@link CancelChecker}
-	 *                           and parsed {@link Template} and returns the to be
-	 *                           computed value
-	 * @return the properties model for a given uri in a future and then apply the
-	 *         given function.
-	 */
-	public <R> CompletableFuture<R> getTemplate(QuteTextDocument document,
-			BiFunction<CancelChecker, Template, R> code) {
-		return computeModelAsync(document.getModel(), code);
+	@Override
+	public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.codeLens(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	private static <R, M> CompletableFuture<R> computeModelAsync(CompletableFuture<M> loadModel,
-			BiFunction<CancelChecker, M, R> code) {
-		CompletableFuture<CancelChecker> start = new CompletableFuture<>();
-		CompletableFuture<R> result = start.thenCombineAsync(loadModel, code);
-		CancelChecker cancelIndicator = () -> {
-			if (result.isCancelled())
-				throw new CancellationException();
-		};
-		start.complete(cancelIndicator);
-		return result;
+	@Override
+	public CompletableFuture<List<? extends DocumentHighlight>> documentHighlight(DocumentHighlightParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.documentHighlight(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	private static <R, M> CompletableFuture<R> computeModelAsync2(CompletableFuture<M> loadModel,
-			BiFunction<CancelChecker, M, CompletableFuture<R>> code) {
-		CompletableFuture<CancelChecker> start = new CompletableFuture<>();
-		CompletableFuture<R> result = start.thenCombineAsync(loadModel, code)//
-				.thenCompose(a -> {
-					return a;
-				});
-		CancelChecker cancelIndicator = () -> {
-			if (result.isCancelled())
-				throw new CancellationException();
-		};
-		start.complete(cancelIndicator);
-		return result;
+	@Override
+	public CompletableFuture<List<DocumentLink>> documentLink(DocumentLinkParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.documentLink(params);
+		}
+		return CompletableFuture.completedFuture(null);
 	}
 
-	public void updateValidationSettings(QuteValidationSettings newValidation) {
-		// Update validation settings
-		QuteValidationSettings validation = sharedSettings.getValidationSettings();
-		validation.update(newValidation);
-		// trigger validation for all opened Qute template files
-		documents.all().stream().forEach(document -> {
-			triggerValidationFor((QuteTextDocument) document);
-		});
+	private TextDocumentService getTextDocumentService(TextDocumentIdentifier document) {
+		String fileExtension = getFileExtension(document);
+		if ("java".equals(fileExtension) || "class".equals(fileExtension)) {
+			return javaFileTextDocumentService;
+		}
+		return templateFileTextDocumentService;
+	}
+
+	private TextDocumentService getTextDocumentService(TextDocumentItem document) {
+		String fileExtension = getFileExtension(document);
+		if ("java".equals(fileExtension) || "class".equals(fileExtension)) {
+			return javaFileTextDocumentService;
+		}
+		return templateFileTextDocumentService;
+	}
+
+	private static String getFileExtension(TextDocumentIdentifier document) {
+		return getFileExtension(document.getUri());
+	}
+
+	private static String getFileExtension(TextDocumentItem document) {
+		return getFileExtension(document.getUri());
+	}
+
+	private static String getFileExtension(String uri) {
+		int index = uri != null ? uri.lastIndexOf('.') : -1;
+		return index != -1 ? uri.substring(index + 1, uri.length()) : null;
+	}
+
+	public void dataModelChanged(JavaDataModelChangeEvent event) {
+		templateFileTextDocumentService.dataModelChanged(event);
 	}
 
 	public SharedSettings getSharedSettings() {
 		return sharedSettings;
 	}
-
-	public void dataModelChanged(JavaDataModelChangeEvent event) {
-		// trigger validation for all opened Qute template files
-		documents.all().stream().forEach(document -> {
-			triggerValidationFor((QuteTextDocument) document);
-		});
-	}
-
 }

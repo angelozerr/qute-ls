@@ -17,9 +17,9 @@ import * as requirements from './languageServer/requirements';
 
 import { VSCodeCommands } from './definitions/constants';
 
-import { DidChangeConfigurationNotification, LanguageClientOptions } from 'vscode-languageclient';
+import { CodeLensParams, DidChangeConfigurationNotification, LanguageClientOptions, TextDocumentIdentifier } from 'vscode-languageclient';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { ExtensionContext, commands, window, workspace } from 'vscode';
+import { ExtensionContext, commands, window, workspace, CodeLensProvider, CancellationToken, CodeLens, Event, ProviderResult, TextDocument, languages } from 'vscode';
 import { QuarkusContext } from './QuarkusContext';
 import { addExtensionsWizard } from './addExtensions/addExtensionsWizard';
 import { createTerminateDebugListener } from './debugging/terminateProcess';
@@ -41,6 +41,9 @@ export function activate(context: ExtensionContext) {
 
   context.subscriptions.push(createTerminateDebugListener());
 
+  //context.subscriptions.push(
+  //  languages.registerCodeLensProvider([{ scheme: 'file', language: 'java' }], new QuteCodeLensProviderForJavaFile()));
+
   connectToQuteLS(context).then(() => {
     bindQuteRequest('qute/template/project');
     bindQuteRequest('qute/template/projectDataModel');
@@ -48,6 +51,7 @@ export function activate(context: ExtensionContext) {
     bindQuteRequest('qute/template/resolvedJavaClass');
     bindQuteRequest('qute/template/javaDefinition');
     bindQuteNotification('qute/dataModelChanged');
+    bindQuteRequest('qute/java/codeLens');
   }).catch((error) => {
     window.showErrorMessage(error.message, error.label).then((selection) => {
       if (error.label && error.label === selection && error.openUrl) {
@@ -58,7 +62,7 @@ export function activate(context: ExtensionContext) {
 
   function bindQuteRequest(request: string) {
     quteLanguageClient.onRequest(request, async (params: any) =>
-      <any> await commands.executeCommand("java.execute.workspaceCommand", request, params)
+      <any>await commands.executeCommand("java.execute.workspaceCommand", request, params)
     );
   }
 
@@ -70,7 +74,7 @@ export function activate(context: ExtensionContext) {
 
   function bindRequest(request: string) {
     languageClient.onRequest(request, async (params: any) =>
-      <any> await commands.executeCommand("java.execute.workspaceCommand", request, params)
+      <any>await commands.executeCommand("java.execute.workspaceCommand", request, params)
     );
   }
 
@@ -139,7 +143,8 @@ function connectToQuteLS(context: ExtensionContext) {
         { scheme: 'file', language: 'qute-yaml' },
         { scheme: 'file', language: 'qute-txt' },
         { scheme: 'untitled', language: 'qute-html' },
-        { scheme: 'vscode-notebook-cell', language: 'qute-html' }
+        { scheme: 'vscode-notebook-cell', language: 'qute-html' },
+        { scheme: 'file', language: 'java' }
       ],
       // wrap with key 'settings' so it can be handled same a DidChangeConfiguration
       initializationOptions: {
@@ -185,7 +190,7 @@ function connectToQuteLS(context: ExtensionContext) {
       quarkus = defaultValue;
     } else {
       const x = JSON.stringify(configQuarkus); // configQuarkus is not a JSON type
-      quarkus = { quarkus : JSON.parse(x)};
+      quarkus = { quarkus: JSON.parse(x) };
     }
     return quarkus;
   }
@@ -199,3 +204,15 @@ function registerQuteNotebook(context: ExtensionContext) {
     new QBookController()
   );
 }
+
+/*class QuteCodeLensProviderForJavaFile implements CodeLensProvider {
+  onDidChangeCodeLenses?: Event<void>;
+  provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]> {
+   /* const params: CodeLensParams = {
+      textDocument: TextDocumentIdentifier.create(document.uri.toString())
+    };*/
+  /*  const uri = document.uri.toString();
+    return commands.executeCommand("java.execute.workspaceCommand", 'qute/java/codeLens', {uri : uri });
+  }
+}*/
+
