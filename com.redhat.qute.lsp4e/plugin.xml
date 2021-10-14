@@ -65,5 +65,12 @@
             path="language-configurations/language-configuration.json">
       </languageConfiguration>
    </extension>
-        
+   
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="com.redhat.qute.lsp4e.internal.commands.OpenFileUri"
+            commandId="qute.command.open.uri">
+      </handler>
+   </extension>
 </plugin>

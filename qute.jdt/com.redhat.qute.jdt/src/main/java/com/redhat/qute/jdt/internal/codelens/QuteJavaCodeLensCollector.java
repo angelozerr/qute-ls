@@ -3,6 +3,7 @@ package com.redhat.qute.jdt.internal.codelens;
 import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.CHECKED_TEMPLATE_ANNOTATION;
 import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.OLD_CHECKED_TEMPLATE_ANNOTATION;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,12 +80,11 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 				templateFilePath = templateFilePathWithoutExtension + ".html";
 				templateFile = project.getFile(templateFilePath);
 			}
-
 			Command command = null;
 			if (templateFile.exists()) {
-				command = new Command(templateFilePath, "");
+				command = new Command(templateFilePath, "qute.command.open.uri", Arrays.asList(templateFile.getLocationURI().toString()));
 			} else {
-				command = new Command("Click here to create Qute template '" + templateFilePathWithoutExtension + "'",
+				command = new Command("Create Qute template '" + templateFilePathWithoutExtension + "'",
 						"");
 			}
 			Range range = utils.toRange(typeRoot, methodDeclaration.getStartPosition(), methodDeclaration.getLength());

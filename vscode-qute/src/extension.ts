@@ -19,7 +19,7 @@ import { VSCodeCommands } from './definitions/constants';
 
 import { CodeLensParams, DidChangeConfigurationNotification, LanguageClientOptions, TextDocumentIdentifier } from 'vscode-languageclient';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { ExtensionContext, commands, window, workspace, CodeLensProvider, CancellationToken, CodeLens, Event, ProviderResult, TextDocument, languages } from 'vscode';
+import { ExtensionContext, commands, window, workspace, CodeLensProvider, CancellationToken, CodeLens, Event, ProviderResult, TextDocument, languages, Uri } from 'vscode';
 import { QuarkusContext } from './QuarkusContext';
 import { addExtensionsWizard } from './addExtensions/addExtensionsWizard';
 import { createTerminateDebugListener } from './debugging/terminateProcess';
@@ -132,6 +132,7 @@ function registerVSCodeCommands(context: ExtensionContext) {
    */
   context.subscriptions.push(registerConfigurationUpdateCommand());
   context.subscriptions.push(registerOpenURICommand());
+  registerOpenUriCommand(context);
 }
 
 function connectToQuteLS(context: ExtensionContext) {
@@ -203,6 +204,12 @@ function registerQuteNotebook(context: ExtensionContext) {
     ),
     new QBookController()
   );
+}
+
+function registerOpenUriCommand(context: ExtensionContext) {
+  context.subscriptions.push(commands.registerCommand('qute.command.open.uri', async (uri?: string) => {
+    commands.executeCommand('vscode.open', Uri.parse(uri));
+  }));
 }
 
 /*class QuteCodeLensProviderForJavaFile implements CodeLensProvider {
