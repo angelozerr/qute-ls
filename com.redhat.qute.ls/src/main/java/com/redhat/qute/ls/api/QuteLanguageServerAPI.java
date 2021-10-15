@@ -9,6 +9,8 @@
 *******************************************************************************/
 package com.redhat.qute.ls.api;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
 import org.eclipse.lsp4j.services.LanguageServer;
 
@@ -35,4 +37,6 @@ public interface QuteLanguageServerAPI extends LanguageServer {
 	 */
 	@JsonNotification("qute/dataModelChanged")
 	void dataModelChanged(JavaDataModelChangeEvent event);
+	
+	// CompletableFuture<String> generateTemplate(dataModel);
 }

@@ -30,7 +30,6 @@ import org.eclipse.jdt.internal.core.search.BasicSearchEngine;
 
 import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
-import com.redhat.qute.jdt.internal.TemplateDataCollector;
 
 class CheckedTemplateSupport {
 

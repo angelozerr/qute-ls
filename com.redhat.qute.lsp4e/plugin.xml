@@ -73,8 +73,17 @@
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            class="com.redhat.qute.lsp4e.internal.commands.OpenFileUri"
+            class="com.redhat.qute.lsp4e.internal.commands.OpenUri"
             commandId="qute.command.open.uri">
       </handler>
    </extension>
+
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="com.redhat.qute.lsp4e.internal.commands.GenerateTemplateFile"
+            commandId="qute.command.generate.template.file">
+      </handler>
+   </extension>
+
 </plugin>

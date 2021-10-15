@@ -8,6 +8,8 @@ public class QuteJavaConstants {
 
 	public static final String TEMPLATE_EXTENSION_ANNOTATION = "io.quarkus.qute.TemplateExtension";
 
+	public static final String LOCATION_ANNOTATION = "io.quarkus.qute.Location";
+
 	public static final String TEMPLATE_CLASS = "io.quarkus.qute.Template";
 
 }

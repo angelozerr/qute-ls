@@ -27,6 +27,7 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 
 import com.redhat.qute.services.commands.IDelegateCommandHandler;
 import com.redhat.qute.services.commands.QuteGenerateCommandHandler;
+import com.redhat.qute.services.commands.QuteGenerateTemplateContentCommandHandler;
 
 /**
  * Qute workspace service.
@@ -52,7 +53,7 @@ public class QuteWorkspaceService implements WorkspaceService {
 	public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
 
 	}
-	
+
 	@Override
 	public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
 		synchronized (commands) {
@@ -78,8 +79,9 @@ public class QuteWorkspaceService implements WorkspaceService {
 	}
 
 	private Map<String, IDelegateCommandHandler> registerCommands() {
-		 Map<String, IDelegateCommandHandler>  commands = new HashMap<>();
-		 commands.put(QuteGenerateCommandHandler.COMMAND_ID, new QuteGenerateCommandHandler());
+		Map<String, IDelegateCommandHandler> commands = new HashMap<>();
+		commands.put(QuteGenerateCommandHandler.COMMAND_ID, new QuteGenerateCommandHandler());
+		commands.put(QuteGenerateTemplateContentCommandHandler.COMMAND_ID, new QuteGenerateTemplateContentCommandHandler());
 		return commands;
 	}
 

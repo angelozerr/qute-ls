@@ -31,6 +31,7 @@ import { QuarkusConfig } from './QuarkusConfig';
 import { registerConfigurationUpdateCommand, registerOpenURICommand, CommandKind } from './lsp-commands';
 import { QBookSerializer } from './quteNotebook/qBookSerializer';
 import { QBookController } from './quteNotebook/qBookController';
+import { TextEncoder } from 'util';
 
 let languageClient: LanguageClient;
 let quteLanguageClient: LanguageClient;
@@ -133,6 +134,7 @@ function registerVSCodeCommands(context: ExtensionContext) {
   context.subscriptions.push(registerConfigurationUpdateCommand());
   context.subscriptions.push(registerOpenURICommand());
   registerOpenUriCommand(context);
+  registerGenerateTemplateFileCommand(context);
 }
 
 function connectToQuteLS(context: ExtensionContext) {
@@ -212,14 +214,23 @@ function registerOpenUriCommand(context: ExtensionContext) {
   }));
 }
 
+function registerGenerateTemplateFileCommand(context: ExtensionContext) {
+  context.subscriptions.push(commands.registerCommand('qute.command.generate.template.file', async (uri?: string) => {
+    const templateContent: string = await commands.executeCommand('qute.command.generate.template.content', 'X');
+    const fileUri = Uri.parse(uri);
+    await workspace.fs.writeFile(fileUri, new TextEncoder().encode(templateContent));
+    window.showTextDocument(fileUri, { preview: false });
+  }));
+}
+
 /*class QuteCodeLensProviderForJavaFile implements CodeLensProvider {
   onDidChangeCodeLenses?: Event<void>;
   provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]> {
    /* const params: CodeLensParams = {
       textDocument: TextDocumentIdentifier.create(document.uri.toString())
     };*/
-  /*  const uri = document.uri.toString();
-    return commands.executeCommand("java.execute.workspaceCommand", 'qute/java/codeLens', {uri : uri });
-  }
+/*  const uri = document.uri.toString();
+  return commands.executeCommand("java.execute.workspaceCommand", 'qute/java/codeLens', {uri : uri });
+}
 }*/
 
