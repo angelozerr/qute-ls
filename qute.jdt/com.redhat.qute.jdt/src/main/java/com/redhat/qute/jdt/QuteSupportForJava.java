@@ -13,24 +13,17 @@
 *******************************************************************************/
 package com.redhat.qute.jdt;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ITypeRoot;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.lsp4j.CodeLens;
 
 import com.redhat.qute.commons.QuteJavaCodeLensParams;
-import com.redhat.qute.jdt.internal.QuteAnnotationConstants;
-import com.redhat.qute.jdt.internal.codelens.QuteJavaCodeLensCollector;
+import com.redhat.qute.jdt.internal.java.QuarkusIntegrationForQute;
 import com.redhat.qute.jdt.utils.IJDTUtils;
-import com.redhat.qute.jdt.utils.JDTTypeUtils;
 
 /**
  * Qute support for Java file.
@@ -49,18 +42,7 @@ public class QuteSupportForJava {
 	public List<? extends CodeLens> codeLens(QuteJavaCodeLensParams params, IJDTUtils utils, IProgressMonitor monitor) {
 		String uri = params.getUri();
 		ITypeRoot typeRoot = resolveTypeRoot(uri, utils, monitor);
-		if (typeRoot == null || !hasQuteSupport(typeRoot.getJavaProject())) {
-			return Collections.emptyList();
-		}
-		List<CodeLens> lenses = new ArrayList<>();
-		CompilationUnit cu = getASTRoot(typeRoot);
-		cu.accept(new QuteJavaCodeLensCollector(typeRoot, lenses, utils, monitor));
-		return lenses;
-	}
-
-	private static boolean hasQuteSupport(IJavaProject javaProject) {
-		return JDTTypeUtils.findType(javaProject, QuteAnnotationConstants.CHECKED_TEMPLATE_ANNOTATION) != null
-				|| JDTTypeUtils.findType(javaProject, QuteAnnotationConstants.OLD_CHECKED_TEMPLATE_ANNOTATION) != null;
+		return QuarkusIntegrationForQute.codeLens(typeRoot, utils, monitor);
 	}
 
 	/**
@@ -87,9 +69,5 @@ public class QuteSupportForJava {
 			}
 		}
 		return unit != null ? unit : classFile;
-	}
-
-	private static CompilationUnit getASTRoot(ITypeRoot typeRoot) {
-		return ASTResolving.createQuickFixAST((ICompilationUnit) typeRoot, null);
 	}
 }

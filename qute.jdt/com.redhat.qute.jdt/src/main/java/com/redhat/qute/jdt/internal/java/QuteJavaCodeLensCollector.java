@@ -1,7 +1,7 @@
-package com.redhat.qute.jdt.internal.codelens;
+package com.redhat.qute.jdt.internal.java;
 
-import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.CHECKED_TEMPLATE_ANNOTATION;
-import static com.redhat.qute.jdt.internal.QuteAnnotationConstants.OLD_CHECKED_TEMPLATE_ANNOTATION;
+import static com.redhat.qute.jdt.internal.QuteJavaConstants.CHECKED_TEMPLATE_ANNOTATION;
+import static com.redhat.qute.jdt.internal.QuteJavaConstants.OLD_CHECKED_TEMPLATE_ANNOTATION;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,17 +13,22 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SimpleType;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Range;
 
-import com.redhat.qute.jdt.internal.ExternalDataModelTemplateSupport;
 import com.redhat.qute.jdt.utils.AnnotationUtils;
 import com.redhat.qute.jdt.utils.IJDTUtils;
+import com.redhat.qute.jdt.utils.JDTQuteUtils;
 
 public class QuteJavaCodeLensCollector extends ASTVisitor {
 
@@ -43,6 +48,22 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 	}
 
 	@Override
+	public boolean visit(FieldDeclaration node) {
+		Type type = node.getType();
+		if (type.isSimpleType()) {
+			if ("Template".equals(((SimpleType) type).getName().toString())) {
+				List fragments = node.fragments();
+				if (fragments != null && !fragments.isEmpty()) {
+					VariableDeclaration variable = (VariableDeclaration) fragments.get(0);
+					String fieldName = variable.getName().toString();
+					addTemplatePathCodeLens(node, null, fieldName);
+				}
+			}
+		}
+		return super.visit(node);
+	}
+
+	@Override
 	public boolean visit(TypeDeclaration node) {
 		List modifiers = node.modifiers();
 		for (Object modifier : modifiers) {
@@ -53,7 +74,7 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 					List body = node.bodyDeclarations();
 					for (Object declaration : body) {
 						if (declaration instanceof MethodDeclaration) {
-							addTemplatePathCodeLens((MethodDeclaration) declaration, node);
+							addTemplatePathCodeLens((MethodDeclaration) declaration);
 						}
 					}
 				}
@@ -63,15 +84,18 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 		return super.visit(node);
 	}
 
-	private void addTemplatePathCodeLens(MethodDeclaration methodDeclaration, TypeDeclaration typeDeclaration) {
+	private void addTemplatePathCodeLens(MethodDeclaration methodDeclaration) {
+		String className = typeRoot.getElementName();
+		if (className.endsWith(".java")) {
+			className = className.substring(0, className.length() - ".java".length());
+		}
+		String methodName = methodDeclaration.getName().getIdentifier();
+		addTemplatePathCodeLens(methodDeclaration, className, methodName);
+	}
+
+	private void addTemplatePathCodeLens(ASTNode methodDeclaration, String className, String methodName) {
 		try {
-			String className = typeRoot.getElementName();
-			if (className.endsWith(".java")) {
-				className = className.substring(0, className.length() - ".java".length());
-			}
-			String methodName = methodDeclaration.getName().getIdentifier();
-			String templateFilePathWithoutExtension = ExternalDataModelTemplateSupport.getTemplatePath(className,
-					methodName);
+			String templateFilePathWithoutExtension = JDTQuteUtils.getTemplatePath(className, methodName);
 
 			IProject project = typeRoot.getJavaProject().getProject();
 			String templateFilePath = templateFilePathWithoutExtension + ".qute.html";
@@ -82,10 +106,10 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 			}
 			Command command = null;
 			if (templateFile.exists()) {
-				command = new Command(templateFilePath, "qute.command.open.uri", Arrays.asList(templateFile.getLocationURI().toString()));
+				command = new Command(templateFilePath, "qute.command.open.uri",
+						Arrays.asList(templateFile.getLocationURI().toString()));
 			} else {
-				command = new Command("Create Qute template '" + templateFilePathWithoutExtension + "'",
-						"");
+				command = new Command("Create Qute template '" + templateFilePathWithoutExtension + "'", "");
 			}
 			Range range = utils.toRange(typeRoot, methodDeclaration.getStartPosition(), methodDeclaration.getLength());
 			CodeLens codeLens = new CodeLens(range, command, null);

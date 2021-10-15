@@ -61,7 +61,7 @@ import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
-import com.redhat.qute.jdt.internal.ExternalDataModelTemplateSupport;
+import com.redhat.qute.jdt.internal.template.QuarkusIntegrationForQute;
 import com.redhat.qute.jdt.utils.IJDTUtils;
 import com.redhat.qute.jdt.utils.JDTMethodUtils;
 import com.redhat.qute.jdt.utils.JDTQuteUtils;
@@ -98,7 +98,7 @@ public class QuteSupportForTemplate {
 		if (javaProject == null) {
 			return null;
 		}
-		return ExternalDataModelTemplateSupport.getProjectDataModel(javaProject, monitor);
+		return QuarkusIntegrationForQute.getProjectDataModel(javaProject, monitor);
 	}
 
 	public List<JavaClassInfo> getJavaClasses(QuteJavaClassesParams params, IJDTUtils utils, IProgressMonitor monitor)

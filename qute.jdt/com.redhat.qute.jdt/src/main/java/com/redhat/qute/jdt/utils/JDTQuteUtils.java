@@ -17,7 +17,13 @@ import java.util.logging.Logger;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.ITypeRoot;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
+
+import com.redhat.qute.jdt.internal.QuteJavaConstants;
 
 /**
  * JDT Qute utilities.
@@ -50,7 +56,7 @@ public class JDTQuteUtils {
 	 * @return the project URI of the given project.
 	 */
 	public static String getProjectURI(IProject project) {
-		return project.getName(); //.getLocation().toOSString();
+		return project.getName(); // .getLocation().toOSString();
 	}
 
 	/**
@@ -70,4 +76,21 @@ public class JDTQuteUtils {
 		}
 	}
 
+	public static boolean hasQuteSupport(IJavaProject javaProject) {
+		return JDTTypeUtils.findType(javaProject, QuteJavaConstants.CHECKED_TEMPLATE_ANNOTATION) != null
+				|| JDTTypeUtils.findType(javaProject, QuteJavaConstants.OLD_CHECKED_TEMPLATE_ANNOTATION) != null;
+	}
+
+	public static String getTemplatePath(String className, String methodOrFieldName) {
+		StringBuilder path = new StringBuilder("src/main/resources/templates/");
+		if (className != null) {
+			path.append(className);
+			path.append('/');
+		}
+		return path.append(methodOrFieldName).toString();
+	}
+
+	public static CompilationUnit getASTRoot(ITypeRoot typeRoot) {
+		return ASTResolving.createQuickFixAST((ICompilationUnit) typeRoot, null);
+	}
 }
