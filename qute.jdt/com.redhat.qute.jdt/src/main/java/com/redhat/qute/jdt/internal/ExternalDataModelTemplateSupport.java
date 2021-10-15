@@ -12,13 +12,17 @@ import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -26,11 +30,15 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 import org.eclipse.jdt.internal.core.search.BasicSearchEngine;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
+import org.eclipse.lsp4j.Location;
 
 import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
+import com.redhat.qute.jdt.internal.codelens.QuteJavaCodeLensCollector;
 import com.redhat.qute.jdt.utils.AnnotationUtils;
 
 /**
@@ -115,7 +123,7 @@ public class ExternalDataModelTemplateSupport {
 								// }
 
 								// Collect for each methods (book, books) a template data model
-								collectTemplateDataModelForCheckedTemplate(type, templates);
+								collectTemplateDataModelForCheckedTemplate(type, templates, monitor);
 							} else if (AnnotationUtils.hasAnnotation(type, TEMPLATE_EXTENSION_ANNOTATION)) {
 								// See https://quarkus.io/guides/qute-reference#template_extension_methods
 								// TODO
@@ -128,7 +136,7 @@ public class ExternalDataModelTemplateSupport {
 	}
 
 	private static void collectTemplateDataModelForCheckedTemplate(IType type,
-			List<TemplateDataModel<ParameterDataModel>> templates) throws JavaModelException {
+			List<TemplateDataModel<ParameterDataModel>> templates, IProgressMonitor monitor) throws JavaModelException {
 		String className = type.getCompilationUnit() != null ? type.getCompilationUnit().getElementName()
 				: type.getClassFile().getElementName();
 		if (className.endsWith(".java")) {
@@ -138,13 +146,13 @@ public class ExternalDataModelTemplateSupport {
 		// method.
 		IMethod[] methods = type.getMethods();
 		for (IMethod method : methods) {
-			TemplateDataModel<ParameterDataModel> template = createTemplateDataModel(method, className, type);
+			TemplateDataModel<ParameterDataModel> template = createTemplateDataModel(method, className, type, monitor);
 			templates.add(template);
 		}
 	}
 
 	private static TemplateDataModel<ParameterDataModel> createTemplateDataModel(IMethod method, String className,
-			IType type) {
+			IType type, IProgressMonitor monitor) {
 		String methodName = method.getElementName();
 		// src/main/resources/templates/${className}/${methodName}.qute.html
 		String templateUri = getTemplatePath(className, methodName);
@@ -168,6 +176,47 @@ public class ExternalDataModelTemplateSupport {
 			LOGGER.log(Level.SEVERE,
 					"Error while getting method template parameter of '" + method.getElementName() + "'.", e);
 		}
+		
+		SearchEngine engine = new SearchEngine();
+		SearchPattern pattern = SearchPattern.createPattern(method, IJavaSearchConstants.REFERENCES);
+		int searchScope = IJavaSearchScope.SOURCES;
+		IJavaSearchScope scope = BasicSearchEngine.createJavaSearchScope(true, new IJavaElement[] { method.getJavaProject() },
+				searchScope);
+		try {
+			engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+
+				@Override
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					Object o = match.getElement();
+					if (o instanceof IMethod) {
+						IMethod element = (IMethod) o;
+						CompilationUnit cu = getASTRoot(element.getCompilationUnit());
+						cu.accept(new TemplateDataCollector(element, template, monitor));
+						
+						/*ICompilationUnit compilationUnit = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
+						if (compilationUnit != null) {
+							Location location = JDTUtils.toLocation(compilationUnit, match.getOffset(), match.getLength());
+							locations.add(location);
+						} else if (includeClassFiles) {
+							IClassFile cf = (IClassFile) element.getAncestor(IJavaElement.CLASS_FILE);
+							if (cf != null && cf.getSourceRange() != null) {
+								Location location = JDTUtils.toLocation(cf, match.getOffset(), match.getLength());
+								locations.add(location);
+							} else if (includeDecompiledSources && cf != null) {
+								List<Location> result = JDTUtils.searchDecompiledSources(element, cf, false, false, monitor);
+								locations.addAll(result);
+							}
+						}*/
+
+					}
+				}
+			}, monitor);
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		
 		return template;
 	}
 
@@ -225,4 +274,7 @@ public class ExternalDataModelTemplateSupport {
 		return resolvedSignatureWithoutPackage;
 	}
 
+	private static CompilationUnit getASTRoot(ITypeRoot typeRoot) {
+		return ASTResolving.createQuickFixAST((ICompilationUnit) typeRoot, null);
+	}
 }

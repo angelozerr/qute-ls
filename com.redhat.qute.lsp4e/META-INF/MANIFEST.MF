@@ -21,7 +21,9 @@ Require-Bundle: org.eclipse.lsp4e,
  com.google.gson,
  org.eclipse.jdt.core.manipulation,
  org.eclipse.jdt.ui,
- com.redhat.qute.jdt
+ com.redhat.qute.jdt,
+ org.eclipse.core.filesystem,
+ org.eclipse.ui.ide
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: org.jboss.tools.quarkus.lsp4e
 Bundle-ActivationPolicy: lazy
