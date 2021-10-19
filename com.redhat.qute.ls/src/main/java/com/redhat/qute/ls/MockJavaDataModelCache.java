@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.Location;
 
@@ -79,6 +80,12 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
 		registerField("UTF16", "byte", string);
 
+		ResolvedJavaClassInfo collection = createResolvedJavaClassInfo("java.util.Collection", cache);
+		registerField("get2", "java.lang.String", collection);
+
+		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache, collection);
+		registerField("get", "java.lang.String", list);
+
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);
 		registerField("name", "java.lang.String", review);
 		registerField("average", "java.lang.Integer", review);
@@ -88,10 +95,10 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		registerField("price", "java.math.BigInteger", item);
 		registerField("review", "org.acme.Review", item);
 		registerMethod("getReview() : org.acme.Review", item);
+		registerMethod("getReviews() : java.util.List<org.acme.Review>", item);
+		createResolvedJavaClassInfo("java.util.List<org.acme.Review>", "java.util.List", "org.acme.Review", cache);
 
 		createResolvedJavaClassInfo("java.util.List<org.acme.Item>", "java.util.List", "org.acme.Item", cache);
-		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache);
-		registerField("get", "java.lang.String", list);
 
 		return cache;
 	}
@@ -113,12 +120,12 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	}
 
 	protected static ResolvedJavaClassInfo createResolvedJavaClassInfo(String className,
-			Map<String, ResolvedJavaClassInfo> cache) {
-		return createResolvedJavaClassInfo(className, null, null, cache);
+			Map<String, ResolvedJavaClassInfo> cache, ResolvedJavaClassInfo... extendedTypes) {
+		return createResolvedJavaClassInfo(className, null, null, cache, extendedTypes);
 	}
 
 	protected static ResolvedJavaClassInfo createResolvedJavaClassInfo(String className, String iterableType,
-			String iterableOf, Map<String, ResolvedJavaClassInfo> cache) {
+			String iterableOf, Map<String, ResolvedJavaClassInfo> cache, ResolvedJavaClassInfo... extendedTypes) {
 		ResolvedJavaClassInfo resolvedClass = new ResolvedJavaClassInfo();
 		resolvedClass.setUri(className + ".java");
 		resolvedClass.setClassName(className);
@@ -126,6 +133,11 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		resolvedClass.setIterableOf(iterableOf);
 		resolvedClass.setFields(new ArrayList<>());
 		resolvedClass.setMethods(new ArrayList<>());
+		if (extendedTypes != null) {
+			resolvedClass.setExtendedTypes(Stream.of(extendedTypes)//
+					.map(c -> c.getClassName()) //
+					.collect(Collectors.toList()));
+		}
 		cache.put(resolvedClass.getClassName(), resolvedClass);
 		return resolvedClass;
 	}
@@ -134,7 +146,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				Thread.sleep(5000);
+				//Thread.sleep(5000);
 			} catch (Exception e) {
 
 			}

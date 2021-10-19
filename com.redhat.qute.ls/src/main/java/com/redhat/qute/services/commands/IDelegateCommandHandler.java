@@ -1,5 +1,7 @@
 package com.redhat.qute.services.commands;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
@@ -22,6 +24,6 @@ public interface IDelegateCommandHandler {
 	 *                   <code>org.eclipse.lsp4j.jsonrpc.ResponseErrorException</code>
 	 *                   and be wired back to the JSON-RPC protocol caller
 	 */
-	Object executeCommand(ExecuteCommandParams params, SharedSettings sharedSettings, CancelChecker cancelChecker)
-			throws Exception;
+	CompletableFuture<Object> executeCommand(ExecuteCommandParams params, SharedSettings sharedSettings,
+			CancelChecker cancelChecker) throws Exception;
 }

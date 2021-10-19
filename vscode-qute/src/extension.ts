@@ -215,8 +215,9 @@ function registerOpenUriCommand(context: ExtensionContext) {
 }
 
 function registerGenerateTemplateFileCommand(context: ExtensionContext) {
-  context.subscriptions.push(commands.registerCommand('qute.command.generate.template.file', async (uri?: string) => {
-    const templateContent: string = await commands.executeCommand('qute.command.generate.template.content', 'X');
+  context.subscriptions.push(commands.registerCommand('qute.command.generate.template.file', async (info?) => {
+    const templateContent: string = await commands.executeCommand('qute.command.generate.template.content', info);
+    const uri = info.templateFileUri;
     const fileUri = Uri.parse(uri);
     await workspace.fs.writeFile(fileUri, new TextEncoder().encode(templateContent));
     window.showTextDocument(fileUri, { preview: false });

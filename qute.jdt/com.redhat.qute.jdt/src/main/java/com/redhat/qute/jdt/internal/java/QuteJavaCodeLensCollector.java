@@ -4,6 +4,7 @@ import static com.redhat.qute.jdt.internal.QuteJavaConstants.CHECKED_TEMPLATE_AN
 import static com.redhat.qute.jdt.internal.QuteJavaConstants.OLD_CHECKED_TEMPLATE_ANNOTATION;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -19,10 +20,12 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
@@ -31,6 +34,8 @@ import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Range;
 
+import com.redhat.qute.commons.datamodel.GenerateTemplateInfo;
+import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.jdt.QuteCommandConstants;
 import com.redhat.qute.jdt.utils.AnnotationUtils;
 import com.redhat.qute.jdt.utils.IJDTUtils;
@@ -76,10 +81,13 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 				MarkerAnnotation annotation = (MarkerAnnotation) modifier;
 				if (AnnotationUtils.isMatchAnnotation(annotation, CHECKED_TEMPLATE_ANNOTATION)
 						|| AnnotationUtils.isMatchAnnotation(annotation, OLD_CHECKED_TEMPLATE_ANNOTATION)) {
+					// @CheckedTemplate
+					// public static class Templates {
+					// public static native TemplateInstance book(Book book);
 					List body = node.bodyDeclarations();
 					for (Object declaration : body) {
 						if (declaration instanceof MethodDeclaration) {
-							addTemplatePathCodeLens((MethodDeclaration) declaration);
+							addTemplatePathCodeLens((MethodDeclaration) declaration, node);
 						}
 					}
 				}
@@ -101,7 +109,8 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 							String location = ((StringLiteral) expression).getLiteralValue();
 							if (StringUtils.isNotBlank(location)) {
 								String templateFilePathWithExtension = JDTQuteUtils.getTemplatePath(null, location);
-								addTemplatePathCodeLens(node, templateFilePathWithExtension, false);
+								addTemplatePathCodeLens(node, (TypeDeclaration) node.getParent(),
+										templateFilePathWithExtension, false);
 							}
 							return;
 						}
@@ -115,21 +124,21 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 			VariableDeclaration variable = (VariableDeclaration) fragments.get(0);
 			String fieldName = variable.getName().toString();
 			String templateFilePathWithoutExtension = JDTQuteUtils.getTemplatePath(null, fieldName);
-			addTemplatePathCodeLens(node, templateFilePathWithoutExtension, true);
+			addTemplatePathCodeLens(node, (TypeDeclaration) node.getParent(), templateFilePathWithoutExtension, true);
 		}
 	}
 
-	private void addTemplatePathCodeLens(MethodDeclaration methodDeclaration) {
+	private void addTemplatePathCodeLens(MethodDeclaration methodDeclaration, TypeDeclaration type) {
 		String className = typeRoot.getElementName();
 		if (className.endsWith(".java")) {
 			className = className.substring(0, className.length() - ".java".length());
 		}
 		String methodName = methodDeclaration.getName().getIdentifier();
 		String templateFilePathWithoutExtension = JDTQuteUtils.getTemplatePath(className, methodName);
-		addTemplatePathCodeLens(methodDeclaration, templateFilePathWithoutExtension, true);
+		addTemplatePathCodeLens(methodDeclaration, type, templateFilePathWithoutExtension, true);
 	}
 
-	private void addTemplatePathCodeLens(ASTNode node, String templateFilePathWithoutExtension,
+	private void addTemplatePathCodeLens(ASTNode node, TypeDeclaration type, String templateFilePathWithoutExtension,
 			boolean withoutExtension) {
 		try {
 			IFile templateFile = null;
@@ -155,10 +164,14 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 						QuteCommandConstants.QUTE_COMMAND_OPEN_URI,
 						Arrays.asList(templateFile.getLocationURI().toString()));
 			} else {
-				command = new Command(
-						MessageFormat.format(QUTE_COMMAND_GENERATE_TEMPLATE_MESSAGE, templateFilePath), //
-						QuteCommandConstants.QUTE_COMMAND_GENERATE_TEMPLATE_FILE,
-						Arrays.asList(templateFile.getLocationURI().toString(), templateFilePath));
+				List<ParameterDataModel> parameters = createParameters(node);
+				GenerateTemplateInfo info = new GenerateTemplateInfo();
+				info.setParameters(parameters);
+				info.setProjectUri(JDTQuteUtils.getProjectUri(typeRoot.getJavaProject()));
+				info.setTemplateFileUri(templateFile.getLocationURI().toString());
+				info.setTemplateFilePath(templateFilePath);
+				command = new Command(MessageFormat.format(QUTE_COMMAND_GENERATE_TEMPLATE_MESSAGE, templateFilePath), //
+						QuteCommandConstants.QUTE_COMMAND_GENERATE_TEMPLATE_FILE, Arrays.asList(info));
 			}
 			Range range = utils.toRange(typeRoot, node.getStartPosition(), node.getLength());
 			CodeLens codeLens = new CodeLens(range, command, null);
@@ -167,4 +180,33 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 			LOGGER.log(Level.SEVERE, "Error while creating Qute CodeLens for Java file.", e);
 		}
 	}
+
+	private List<ParameterDataModel> createParameters(ASTNode node) {
+		if (node.getNodeType() == ASTNode.FIELD_DECLARATION) {
+			return create1((FieldDeclaration) node);
+		}
+		return create2((MethodDeclaration) node);
+	}
+
+	private List<ParameterDataModel> create2(MethodDeclaration method) {
+		List<ParameterDataModel> parameters = new ArrayList<>();
+		List methodParameters = method.parameters();
+		for (Object methodParameter : methodParameters) {
+			SingleVariableDeclaration variable = (SingleVariableDeclaration) methodParameter;
+			String parameterName = variable.getName().getFullyQualifiedName();
+			Type parameterType = variable.getType();
+			ITypeBinding binding = parameterType.resolveBinding();
+			ParameterDataModel parameter = new ParameterDataModel();
+			parameter.setKey(parameterName);
+			parameter.setSourceType(binding.getQualifiedName());
+			parameters.add(parameter);
+		}
+		return parameters;
+	}
+
+	private List<ParameterDataModel> create1(FieldDeclaration node) {
+		List<ParameterDataModel> parameters = new ArrayList<>();
+		return parameters;
+	}
+
 }

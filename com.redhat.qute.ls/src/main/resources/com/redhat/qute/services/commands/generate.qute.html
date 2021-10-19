@@ -1,0 +1,21 @@
+{@java.util.List<com.redhat.qute.services.commands.ResolvedParameterDataModel> classes}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+</head>
+<body>
+
+{#for class in classes}
+	<p>
+		{class.key} : {class.sourceType}
+
+		<ul>
+			{#for item in class.resolvedJavaType.}
+				<li></li>
+			{/for}
+		</ul>
+	</p>
+{/for}
+</body>

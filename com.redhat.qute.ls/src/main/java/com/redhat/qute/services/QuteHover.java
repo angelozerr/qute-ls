@@ -34,6 +34,7 @@ import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.services.hover.HoverRequest;
 import com.redhat.qute.settings.SharedSettings;
+import com.redhat.qute.utils.DocumentationUtils;
 import com.redhat.qute.utils.QutePositionUtility;
 
 /**
@@ -89,11 +90,10 @@ public class QuteHover {
 				return javaCache.resolveJavaType(className, template.getProjectUri()) //
 						.thenApply(resolvedType -> {
 							if (resolvedType != null) {
-								boolean hasMarkdown = true;
-								String markupKind = hasMarkdown ? MarkupKind.MARKDOWN : MarkupKind.PLAINTEXT;
-								String content = resolvedType.getClassName();
+								boolean hasMarkdown = hoverRequest.canSupportMarkupKind(MarkupKind.MARKDOWN);
+								MarkupContent content = DocumentationUtils.getDocumentation(resolvedType, hasMarkdown);
 								Range range = QutePositionUtility.createRange(classNameRange, template);
-								return new Hover(new MarkupContent(markupKind, content), range);
+								return new Hover(content, range);
 							}
 							return null;
 						});
@@ -107,16 +107,16 @@ public class QuteHover {
 		String projectUri = template.getProjectUri();
 		switch (part.getPartKind()) {
 		case Object:
-			return doHoverForObjectPart(part, projectUri);
+			return doHoverForObjectPart(part, projectUri, hoverRequest);
 		case Method:
 		case Property:
-			return doHoverForPropertyPart(part, projectUri);
+			return doHoverForPropertyPart(part, projectUri, hoverRequest);
 		default:
 			return NO_HOVER;
 		}
 	}
 
-	private CompletableFuture<Hover> doHoverForPropertyPart(Part part, String projectUri) {
+	private CompletableFuture<Hover> doHoverForPropertyPart(Part part, String projectUri, HoverRequest hoverRequest) {
 		Parts parts = part.getParent();
 		Part previousPart = parts.getPreviousPart(part);
 		return javaCache.resolveJavaType(previousPart, projectUri) //
@@ -132,43 +132,42 @@ public class QuteHover {
 							CompletableFuture<ResolvedJavaClassInfo> iterableResolvedTypeFuture = javaCache
 									.resolveJavaType(iterableType, projectUri);
 							return iterableResolvedTypeFuture.thenApply((iterableResolvedType) -> {
-								return doHoverForPropertyPart(part, projectUri, iterableResolvedType);
+								return doHoverForPropertyPart(part, projectUri, iterableResolvedType, hoverRequest);
 							});
 						}
 
-						Hover hover = doHoverForPropertyPart(part, projectUri, resolvedJavaType);
+						Hover hover = doHoverForPropertyPart(part, projectUri, resolvedJavaType, hoverRequest);
 						return CompletableFuture.completedFuture(hover);
 					}
 					return NO_HOVER;
 				});
 	}
 
-	private CompletableFuture<Hover> doHoverForObjectPart(Part part, String projectUri) {
+	private CompletableFuture<Hover> doHoverForObjectPart(Part part, String projectUri, HoverRequest hoverRequest) {
 		return javaCache.resolveJavaType(part, projectUri) //
 				.thenApply(resolvedJavaType -> {
 					if (resolvedJavaType != null) {
-						return createHover(part, resolvedJavaType.getClassName());
+						boolean hasMarkdown = hoverRequest.canSupportMarkupKind(MarkupKind.MARKDOWN);
+						MarkupContent content = DocumentationUtils.getDocumentation(resolvedJavaType, hasMarkdown);
+						Range range = QutePositionUtility.createRange(part);
+						return new Hover(content, range);
 					}
 					return null;
 				});
 	}
 
-	private Hover doHoverForPropertyPart(Part part, String projectUri, ResolvedJavaClassInfo previousResolvedType) {
+	private Hover doHoverForPropertyPart(Part part, String projectUri, ResolvedJavaClassInfo previousResolvedType,
+			HoverRequest hoverRequest) {
 		// The Java class type from the previous part had been resolved, resolve the
 		// property
 		String property = part.getPartName();
-		JavaMemberInfo member = previousResolvedType.findMember(property);
+		JavaMemberInfo member = javaCache.findMember(property, previousResolvedType, projectUri);
 		if (member == null) {
 			return null;
 		}
-		return createHover(part, member.getMemberType());
-	}
-
-	private static Hover createHover(Part part, String javaType) {
-		boolean hasMarkdown = true;
-		String markupKind = hasMarkdown ? MarkupKind.MARKDOWN : MarkupKind.PLAINTEXT;
-		String content = javaType;
+		boolean hasMarkdown = hoverRequest.canSupportMarkupKind(MarkupKind.MARKDOWN);
+		MarkupContent content = DocumentationUtils.getDocumentation(member, hasMarkdown);
 		Range range = QutePositionUtility.createRange(part);
-		return new Hover(new MarkupContent(markupKind, content), range);
+		return new Hover(content, range);
 	}
 }

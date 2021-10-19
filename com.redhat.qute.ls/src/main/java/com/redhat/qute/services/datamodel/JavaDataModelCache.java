@@ -1,5 +1,6 @@
 package com.redhat.qute.services.datamodel;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +148,34 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 		CompletableFuture<ResolvedJavaClassInfo> future = container.getResolvedJavaClass(className);
 		if (future == null || future.isCancelled() || future.isCompletedExceptionally()) {
 			QuteResolvedJavaClassParams params = new QuteResolvedJavaClassParams(className, projectUri);
-			future = getResolvedJavaClass(params);
+			future = getResolvedJavaClass(params) //
+					.thenCompose(c -> {
+						// Update members with the resolved class
+						c.getFields().forEach(f -> {
+							f.setResolvedClass(c);
+						});
+						c.getMethods().forEach(m -> {
+							m.setResolvedClass(c);
+						});
+						if (c != null && c.getExtendedTypes() != null) {
+							// Load extended types
+							List<CompletableFuture<ResolvedJavaClassInfo>> resolvingExtendedFutures = new ArrayList<>();
+							for (String extendedType : c.getExtendedTypes()) {
+								CompletableFuture<ResolvedJavaClassInfo> extendedFuture = resolveJavaType(extendedType,
+										projectUri);
+								if (!extendedFuture.isDone()) {
+									resolvingExtendedFutures.add(extendedFuture);
+								}
+							}
+							if (!resolvingExtendedFutures.isEmpty()) {
+								CompletableFuture<Void> allFutures = CompletableFuture.allOf(resolvingExtendedFutures
+										.toArray(new CompletableFuture[resolvingExtendedFutures.size()]));
+								return allFutures //
+										.thenApply(a -> c);
+							}
+						}
+						return CompletableFuture.completedFuture(c);
+					});
 			container.registerResolvedJavaClass(className, future);
 		}
 		return future;
@@ -181,7 +209,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 									return NULL_FUTURE;
 								}
 								String property = current.getPartName();
-								JavaMemberInfo member = resolvedClass.findMember(property);
+								JavaMemberInfo member = findMember(property, resolvedClass, projectUri);
 								if (member == null) {
 									return NULL_FUTURE;
 								}
@@ -297,5 +325,25 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 	protected CompletableFuture<ProjectDataModel<TemplateDataModel<ParameterDataModel>>> getProjectDataModel(
 			QuteProjectDataModelParams params) {
 		return dataModelProvider.getProjectDataModel(params);
+	}
+
+	public JavaMemberInfo findMember(String property, ResolvedJavaClassInfo resolvedType, String projectUri) {
+		JavaMemberInfo memberInfo = resolvedType.findMember(property);
+		if (memberInfo != null) {
+			return memberInfo;
+		}
+		if (resolvedType.getExtendedTypes() == null) {
+			return null;
+		}
+		for (String extendedType : resolvedType.getExtendedTypes()) {
+			ResolvedJavaClassInfo resolvedExtendedType = resolveJavaType(extendedType, projectUri).getNow(null);
+			if (resolvedExtendedType != null) {
+				memberInfo = resolvedExtendedType.findMember(property);
+				if (memberInfo != null) {
+					return memberInfo;
+				}
+			}
+		}
+		return null;
 	}
 }

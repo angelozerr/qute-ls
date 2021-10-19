@@ -8,6 +8,8 @@ public abstract class JavaMemberInfo {
 
 	private String name;
 
+	private transient ResolvedJavaClassInfo resolvedClass;
+	
 	public String getName() {
 		return name;
 	}
@@ -16,6 +18,14 @@ public abstract class JavaMemberInfo {
 		this.name = name;
 	}
 
+	public ResolvedJavaClassInfo getResolvedClass() {
+		return resolvedClass;
+	}
+	
+	public void setResolvedClass(ResolvedJavaClassInfo resolvedClass) {
+		this.resolvedClass = resolvedClass;
+	}
+	
 	public abstract JavaMemberKind getKind();
 
 	public abstract String getMemberType();

@@ -259,9 +259,9 @@ class QuteDefinition {
 		}
 		return NO_DEFINITION;
 	}
-	
+
 	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromPropertyPart(Part part,
-			Template template) {		
+			Template template) {
 		String projectUri = template.getProjectUri();
 		if (projectUri != null) {
 			Parts parts = part.getParent();
@@ -295,9 +295,10 @@ class QuteDefinition {
 		// The Java class type from the previous part had been resolved, resolve the
 		// property
 		String property = part.getPartName();
-		JavaMemberInfo member = previousResolvedType.findMember(property);
+		JavaMemberInfo member = javaCache.findMember(property, previousResolvedType, projectUri);
 
-		QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(previousResolvedType.getClassName(), projectUri);
+		QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(member.getResolvedClass().getClassName(),
+				projectUri);
 		if (member != null && member.getKind() == JavaMemberKind.METHOD) {
 			// Try to find a method definition
 			params.setMethod(member.getName());

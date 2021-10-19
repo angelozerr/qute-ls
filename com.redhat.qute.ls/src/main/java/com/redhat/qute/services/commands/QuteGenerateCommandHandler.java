@@ -1,6 +1,7 @@
 package com.redhat.qute.services.commands;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
@@ -16,17 +17,17 @@ public class QuteGenerateCommandHandler implements IDelegateCommandHandler {
 	public static final String COMMAND_ID = "qute.generate";
 
 	@Override
-	public Object executeCommand(ExecuteCommandParams params, SharedSettings sharedSettings,
+	public CompletableFuture<Object> executeCommand(ExecuteCommandParams params, SharedSettings sharedSettings,
 			CancelChecker cancelChecker) throws Exception {
-		String templateContent = ArgumentsUtils.getArgAt(params, 0,  String.class);
-		String data = ArgumentsUtils.getArgAt(params, 1,  String.class);
+		String templateContent = ArgumentsUtils.getArgAt(params, 0, String.class);
+		String data = ArgumentsUtils.getArgAt(params, 1, String.class);
 
-		
 		Map d = new Gson().fromJson(data, Map.class);
-		
+
 		Engine engine = Engine.builder().addDefaults().build();
 		Template template = engine.parse(templateContent);
-		return template.data(d).render();
+		String result = template.data(d).render();
+		return CompletableFuture.completedFuture(result);
 	}
 
 }

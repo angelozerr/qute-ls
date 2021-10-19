@@ -235,9 +235,11 @@ class QuteDiagnostics {
 					// Expression uses iterable type
 					// {@java.util.List<org.acme.Item items>
 					// {items.size()}
-					// Property, method to validate must be done for iterable type (ex : java.util.List>
+					// Property, method to validate must be done for iterable type (ex :
+					// java.util.List>
 					String iterableType = resolvedJavaClass.getIterableType();
-					CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(iterableType, projectUri);
+					CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache
+							.resolveJavaType(iterableType, projectUri);
 					resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
 					if (NOW.equals(resolvedJavaClass)) {
 						// Java type must be loaded.
@@ -247,9 +249,9 @@ class QuteDiagnostics {
 						diagnostics.add(diagnostic);
 						resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
 						return;
-					}			
+					}
 				}
-				
+
 				resolvedJavaClass = validatePropertyPart(current, ownerSection, projectUri, resolvedJavaClass,
 						diagnostics, resolvingJavaTypeFutures);
 				if (resolvedJavaClass == null) {
@@ -287,7 +289,7 @@ class QuteDiagnostics {
 			ResolvedJavaClassInfo resolvedJavaClass, List<Diagnostic> diagnostics,
 			List<CompletableFuture<?>> resolvingJavaTypeFutures) {
 		String property = part.getPartName();
-		JavaMemberInfo javaMember = resolvedJavaClass.findMember(property);
+		JavaMemberInfo javaMember = javaCache.findMember(property, resolvedJavaClass, projectUri);
 		if (javaMember == null) {
 			IQuteErrorCode errorCode = null;
 			String message = null;

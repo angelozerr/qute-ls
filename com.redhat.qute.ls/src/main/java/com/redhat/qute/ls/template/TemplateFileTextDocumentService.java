@@ -17,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.eclipse.lsp4j.ClientCapabilities;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CodeLensParams;
 import org.eclipse.lsp4j.CompletionItem;
@@ -41,13 +40,12 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.SymbolInformation;
-import org.eclipse.lsp4j.TextDocumentClientCapabilities;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
+import com.redhat.qute.ls.AbstractTextDocumentService;
 import com.redhat.qute.ls.QuteLanguageServer;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
@@ -60,42 +58,15 @@ import com.redhat.qute.utils.QutePositionUtility;
  * LSP text document service for Qute template file.
  *
  */
-public class TemplateFileTextDocumentService implements TextDocumentService {
+public class TemplateFileTextDocumentService extends AbstractTextDocumentService {
 
 	private final QuteTextDocuments documents;
 
-	private final QuteLanguageServer quteLanguageServer;
-
-	private final SharedSettings sharedSettings;
-
-	private boolean hierarchicalDocumentSymbolSupport;
-
-	private boolean definitionLinkSupport;
-
 	public TemplateFileTextDocumentService(QuteLanguageServer quteLanguageServer, SharedSettings sharedSettings) {
-		this.quteLanguageServer = quteLanguageServer;
+		super(quteLanguageServer, sharedSettings);
 		this.documents = new QuteTextDocuments((document, cancelChecker) -> {
 			return TemplateParser.parse(document.getText(), document.getUri(), () -> cancelChecker.checkCanceled());
 		}, quteLanguageServer.getDataModelCache(), quteLanguageServer.getDataModelCache());
-		this.sharedSettings = sharedSettings;
-	}
-
-	/**
-	 * Update shared settings from the client capabilities.
-	 *
-	 * @param capabilities the client capabilities
-	 */
-	public void updateClientCapabilities(ClientCapabilities capabilities) {
-		TextDocumentClientCapabilities textDocumentClientCapabilities = capabilities.getTextDocument();
-		if (textDocumentClientCapabilities != null) {
-			sharedSettings.getCompletionSettings().setCapabilities(textDocumentClientCapabilities.getCompletion());
-			hierarchicalDocumentSymbolSupport = textDocumentClientCapabilities.getDocumentSymbol() != null
-					&& textDocumentClientCapabilities.getDocumentSymbol().getHierarchicalDocumentSymbolSupport() != null
-					&& textDocumentClientCapabilities.getDocumentSymbol().getHierarchicalDocumentSymbolSupport();
-			definitionLinkSupport = textDocumentClientCapabilities.getDefinition() != null
-					&& textDocumentClientCapabilities.getDefinition().getLinkSupport() != null
-					&& textDocumentClientCapabilities.getDefinition().getLinkSupport();
-		}
 	}
 
 	@Override
@@ -184,7 +155,7 @@ public class TemplateFileTextDocumentService implements TextDocumentService {
 					return getQuteLanguageService() //
 							.findDefinition(template, params.getPosition(), cancelChecker) //
 							.thenApply(definitions -> {
-								if (definitionLinkSupport) {
+								if (super.isDefinitionLinkSupport()) {
 									return Either.forRight(definitions);
 								}
 								List<? extends Location> locations = definitions //
@@ -208,7 +179,7 @@ public class TemplateFileTextDocumentService implements TextDocumentService {
 	public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
 			DocumentSymbolParams params) {
 		return getTemplate(params.getTextDocument(), (cancelChecker, template) -> {
-			if (hierarchicalDocumentSymbolSupport) {
+			if (super.isHierarchicalDocumentSymbolSupport()) {
 				return getQuteLanguageService().findDocumentSymbols(template, cancelChecker) //
 						.stream() //
 						.map(s -> {
@@ -332,10 +303,6 @@ public class TemplateFileTextDocumentService implements TextDocumentService {
 		documents.all().stream().forEach(document -> {
 			triggerValidationFor((QuteTextDocument) document);
 		});
-	}
-
-	public SharedSettings getSharedSettings() {
-		return sharedSettings;
 	}
 
 	public void dataModelChanged(JavaDataModelChangeEvent event) {

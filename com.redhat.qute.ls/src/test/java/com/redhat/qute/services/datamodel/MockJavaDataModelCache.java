@@ -108,7 +108,9 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 		registerField("price", "java.math.BigInteger", item);
 		registerField("review", "org.acme.Review", item);
 		registerMethod("getReview2() : org.acme.Review", item);
-
+		registerMethod("getReviews() : java.util.List<org.acme.Review>", item);
+		createResolvedJavaClassInfo("java.util.List<org.acme.Review>", "java.util.List", "org.acme.Review", cache);
+		
 		createResolvedJavaClassInfo("java.util.List<org.acme.Item>", "java.util.List", "org.acme.Item", cache);
 		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache);
 		registerMethod("size() : int", list);

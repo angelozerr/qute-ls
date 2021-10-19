@@ -81,8 +81,8 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	}
 
 	private JavaDataModelCache createDataModelCache() {
-		// return new MockJavaDataModelCache();
-		return new JavaDataModelCache(this, this, this, this, this);
+		return new MockJavaDataModelCache();
+		//return new JavaDataModelCache(this, this, this, this, this);
 	}
 
 	@Override

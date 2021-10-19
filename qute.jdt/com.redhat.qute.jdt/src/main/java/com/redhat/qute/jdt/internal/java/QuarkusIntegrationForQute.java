@@ -19,7 +19,7 @@ public class QuarkusIntegrationForQute {
 	public static List<? extends CodeLens> codeLens(ITypeRoot typeRoot, IJDTUtils utils, IProgressMonitor monitor) {
 		if (typeRoot == null || !hasQuteSupport(typeRoot.getJavaProject())) {
 			return Collections.emptyList();
-		}
+		}		
 		List<CodeLens> lenses = new ArrayList<>();
 		CompilationUnit cu = getASTRoot(typeRoot);
 		cu.accept(new QuteJavaCodeLensCollector(typeRoot, lenses, utils, monitor));

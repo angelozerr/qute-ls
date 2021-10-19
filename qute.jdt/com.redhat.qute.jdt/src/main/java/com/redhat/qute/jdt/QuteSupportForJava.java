@@ -13,6 +13,7 @@
 *******************************************************************************/
 package com.redhat.qute.jdt;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -42,6 +43,9 @@ public class QuteSupportForJava {
 	public List<? extends CodeLens> codeLens(QuteJavaCodeLensParams params, IJDTUtils utils, IProgressMonitor monitor) {
 		String uri = params.getUri();
 		ITypeRoot typeRoot = resolveTypeRoot(uri, utils, monitor);
+		if (monitor.isCanceled()) {
+			return Collections.emptyList();
+		}
 		return QuarkusIntegrationForQute.codeLens(typeRoot, utils, monitor);
 	}
 

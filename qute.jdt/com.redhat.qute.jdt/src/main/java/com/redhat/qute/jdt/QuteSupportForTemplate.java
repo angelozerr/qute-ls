@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -278,15 +279,38 @@ public class QuteSupportForTemplate {
 					methodsInfo.add(info);
 				} catch (Exception e) {
 					LOGGER.log(Level.SEVERE,
-							"Error while getting method signature of '" + method.getElementName() + "'.");
+							"Error while getting method signature of '" + method.getElementName() + "'.", e);
 				}
 			}
+		}
+
+		// Collect type extensions
+		List<String> extendedTypes = null;
+		if (type.isInterface()) {
+			IType[] interfaces = findImplementedInterfaces(type, monitor);
+			if (interfaces != null && interfaces.length > 0) {
+				extendedTypes = Stream.of(interfaces) //
+						.map(interfaceType -> interfaceType.getFullyQualifiedName()) //
+						.collect(Collectors.toList());
+			}
+		} else {
+			ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(monitor);
+			IType[] rootClasses = typeHierarchy.getAllClasses();
+			extendedTypes = Stream.of(rootClasses) //
+					.map(interfaceType -> interfaceType.getFullyQualifiedName()) //
+					.collect(Collectors.toList());
+
+		}
+
+		if (extendedTypes != null) {
+			extendedTypes.remove(className);
 		}
 
 		ResolvedJavaClassInfo resolvedClass = new ResolvedJavaClassInfo();
 		resolvedClass.setClassName(className);
 		resolvedClass.setFields(fieldsInfo);
 		resolvedClass.setMethods(methodsInfo);
+		resolvedClass.setExtendedTypes(extendedTypes);
 		return resolvedClass;
 	}
 
@@ -299,8 +323,11 @@ public class QuteSupportForTemplate {
 			if (method.isConstructor()) {
 				return false;
 			}
-		} catch (JavaModelException e) {
-			LOGGER.log(Level.SEVERE, "Error while checking if '" + method.getElementName() + "' is valid.");
+			if (!Flags.isPublic(method.getFlags())) {
+				return false;
+			}
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error while checking if '" + method.getElementName() + "' is valid.", e);
 			return false;
 		}
 		return true;

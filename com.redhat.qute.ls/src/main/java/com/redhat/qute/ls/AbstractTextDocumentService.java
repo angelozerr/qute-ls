@@ -38,14 +38,12 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
-import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentClientCapabilities;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
-import com.redhat.qute.commons.DocumentFormat;
 import com.redhat.qute.settings.SharedSettings;
 
 /**
@@ -66,8 +64,6 @@ public abstract class AbstractTextDocumentService implements TextDocumentService
 
 	private boolean definitionLinkSupport;
 
-	private DocumentFormat documentFormat;
-
 	public AbstractTextDocumentService(QuteLanguageServer quteLanguageServer, SharedSettings sharedSettings) {
 		this.quteLanguageServer = quteLanguageServer;
 		this.sharedSettings = sharedSettings;
@@ -81,25 +77,14 @@ public abstract class AbstractTextDocumentService implements TextDocumentService
 	public void updateClientCapabilities(ClientCapabilities capabilities) {
 		TextDocumentClientCapabilities textDocumentClientCapabilities = capabilities.getTextDocument();
 		if (textDocumentClientCapabilities != null) {
+			sharedSettings.getHoverSettings().setCapabilities(textDocumentClientCapabilities.getHover());
+			sharedSettings.getCompletionSettings().setCapabilities(textDocumentClientCapabilities.getCompletion());
 			hierarchicalDocumentSymbolSupport = textDocumentClientCapabilities.getDocumentSymbol() != null
 					&& textDocumentClientCapabilities.getDocumentSymbol().getHierarchicalDocumentSymbolSupport() != null
 					&& textDocumentClientCapabilities.getDocumentSymbol().getHierarchicalDocumentSymbolSupport();
 			definitionLinkSupport = textDocumentClientCapabilities.getDefinition() != null
 					&& textDocumentClientCapabilities.getDefinition().getLinkSupport() != null
 					&& textDocumentClientCapabilities.getDefinition().getLinkSupport();
-			// Update document format
-			if (textDocumentClientCapabilities.getCompletion() != null
-					&& textDocumentClientCapabilities.getCompletion().getCompletionItem() != null
-					&& textDocumentClientCapabilities.getCompletion().getCompletionItem()
-							.getDocumentationFormat() != null
-					&& textDocumentClientCapabilities.getCompletion().getCompletionItem().getDocumentationFormat()
-							.contains(MarkupKind.MARKDOWN)) {
-				documentFormat = DocumentFormat.Markdown;
-			} else if (textDocumentClientCapabilities.getHover() != null
-					&& textDocumentClientCapabilities.getHover().getContentFormat() != null
-					&& textDocumentClientCapabilities.getHover().getContentFormat().contains(MarkupKind.MARKDOWN)) {
-				documentFormat = DocumentFormat.Markdown;
-			}
 		}
 	}
 
@@ -163,7 +148,7 @@ public abstract class AbstractTextDocumentService implements TextDocumentService
 		return definitionLinkSupport;
 	}
 
-	public DocumentFormat getDocumentFormat() {
-		return documentFormat;
+	public SharedSettings getSharedSettings() {
+		return sharedSettings;
 	}
 }

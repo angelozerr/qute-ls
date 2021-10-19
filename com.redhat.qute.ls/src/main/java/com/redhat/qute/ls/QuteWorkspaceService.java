@@ -15,11 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
-import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
+import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.eclipse.lsp4j.jsonrpc.CompletableFutures.FutureCancelChecker;
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError;
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
@@ -62,7 +64,7 @@ public class QuteWorkspaceService implements WorkspaceService {
 				throw new ResponseErrorException(new ResponseError(ResponseErrorCode.InternalError,
 						"No command handler for the command: " + params.getCommand(), null));
 			}
-			return CompletableFutures.computeAsync(cancelChecker -> {
+			return computeAsync(cancelChecker -> {
 				try {
 					return handler.executeCommand(params, quteLanguageServer.getSharedSettings(), cancelChecker);
 				} catch (Exception e) {
@@ -81,11 +83,20 @@ public class QuteWorkspaceService implements WorkspaceService {
 	private Map<String, IDelegateCommandHandler> registerCommands() {
 		Map<String, IDelegateCommandHandler> commands = new HashMap<>();
 		commands.put(QuteGenerateCommandHandler.COMMAND_ID, new QuteGenerateCommandHandler());
-		commands.put(QuteGenerateTemplateContentCommandHandler.COMMAND_ID, new QuteGenerateTemplateContentCommandHandler());
+		commands.put(QuteGenerateTemplateContentCommandHandler.COMMAND_ID,
+				new QuteGenerateTemplateContentCommandHandler(quteLanguageServer.getDataModelCache()));
 		return commands;
 	}
 
 	public List<String> getCommandIds() {
 		return new ArrayList<>(commands.keySet());
 	}
+
+	public static <R> CompletableFuture<R> computeAsync(Function<CancelChecker, CompletableFuture<R>> code) {
+		CompletableFuture<CancelChecker> start = new CompletableFuture<>();
+		CompletableFuture<R> result = start.thenComposeAsync(cancelChecker -> code.apply(cancelChecker));
+		start.complete(new FutureCancelChecker(result));
+		return result;
+	}
+
 }

@@ -3,8 +3,6 @@ package com.redhat.qute.commons;
 import java.util.Collections;
 import java.util.List;
 
-import com.redhat.qute.utils.StringUtils;
-
 public class ResolvedJavaClassInfo extends JavaClassInfo {
 
 	private List<String> extendedTypes;
@@ -70,7 +68,7 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 	}
 
 	public JavaFieldInfo findField(String fieldName) {
-		if (fields == null || fields.isEmpty() || StringUtils.isEmpty(fieldName)) {
+		if (fields == null || fields.isEmpty() || isEmpty(fieldName)) {
 			return null;
 		}
 		for (JavaFieldInfo field : fields) {
@@ -82,7 +80,7 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 	}
 
 	public JavaMethodInfo findMethod(String propertyOrMethodName) {
-		if (methods == null || methods.isEmpty() || StringUtils.isEmpty(propertyOrMethodName)) {
+		if (methods == null || methods.isEmpty() || isEmpty(propertyOrMethodName)) {
 			return null;
 		}
 		String getterMethodName = "get" + (propertyOrMethodName.charAt(0) + "").toUpperCase()
@@ -101,4 +99,9 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 		}
 		return false;
 	}
+
+	private static boolean isEmpty(String value) {
+		return value == null || value.isEmpty();
+	}
+
 }

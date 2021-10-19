@@ -138,9 +138,21 @@ public class QuteCompletionsForExpression {
 		CompletionList list = new CompletionList();
 		list.setItems(new ArrayList<>());
 		Range range = QutePositionUtility.createRange(start, end, template);
+		String projectUri = template.getProjectUri();
 
 		Set<String> existingProperties = new HashSet<>();
 		// Completion for Java fields
+		fillCompletionField(range, list, resolvedClass, projectUri, existingProperties);
+
+		// Completion for Java methods
+		fillCompletionMethod(range, list, resolvedClass, projectUri, completionSettings, formattingSettings,
+				existingProperties);
+
+		return list;
+	}
+
+	private void fillCompletionField(Range range, CompletionList list, ResolvedJavaClassInfo resolvedClass,
+			String projectUri, Set<String> existingProperties) {
 		for (JavaFieldInfo field : resolvedClass.getFields()) {
 			String filedName = field.getName();
 			CompletionItem item = new CompletionItem();
@@ -155,8 +167,21 @@ public class QuteCompletionsForExpression {
 			list.getItems().add(item);
 			existingProperties.add(filedName);
 		}
+		List<String> extendedTypes = resolvedClass.getExtendedTypes();
+		if (extendedTypes != null) {
+			for (String extendedType : extendedTypes) {
+				ResolvedJavaClassInfo resolvedExtendedType = javaCache.resolveJavaType(extendedType, projectUri)
+						.getNow(null);
+				if (resolvedExtendedType != null) {
+					fillCompletionField(range, list, resolvedExtendedType, projectUri, existingProperties);
+				}
+			}
+		}
+	}
 
-		// Completion for Java methods
+	private void fillCompletionMethod(Range range, CompletionList list, ResolvedJavaClassInfo resolvedClass,
+			String projectUri, QuteCompletionSettings completionSettings, QuteFormattingSettings formattingSettings,
+			Set<String> existingProperties) {
 		for (JavaMethodInfo method : resolvedClass.getMethods()) {
 			String property = method.getGetterName();
 			if (property != null && !existingProperties.contains(property)) {
@@ -185,8 +210,17 @@ public class QuteCompletionsForExpression {
 			item.setTextEdit(Either.forLeft(textEdit));
 			list.getItems().add(item);
 		}
-
-		return list;
+		List<String> extendedTypes = resolvedClass.getExtendedTypes();
+		if (extendedTypes != null) {
+			for (String extendedType : extendedTypes) {
+				ResolvedJavaClassInfo resolvedExtendedType = javaCache.resolveJavaType(extendedType, projectUri)
+						.getNow(null);
+				if (resolvedExtendedType != null) {
+					fillCompletionMethod(range, list, resolvedExtendedType, projectUri, completionSettings,
+							formattingSettings, existingProperties);
+				}
+			}
+		}
 	}
 
 	private static String createMethodSnippet(JavaMethodInfo method, QuteCompletionSettings completionSettings,
