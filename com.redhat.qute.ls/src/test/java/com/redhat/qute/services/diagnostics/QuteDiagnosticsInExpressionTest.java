@@ -132,4 +132,12 @@ public class QuteDiagnosticsInExpressionTest {
 						"`sizeXXX` cannot be resolved or is not a method for `java.util.List` Java type.",
 						DiagnosticSeverity.Error));
 	}
+
+	@Test
+	public void unkwownMethodForPrimitive() {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				"{items.size.XXX}";
+		testDiagnosticsFor(template, d(1, 12, 1, 15, QuteErrorCode.UnkwownProperty,
+				"`XXX` cannot be resolved or is not a field for `int` Java type.", DiagnosticSeverity.Error));
+	}
 }

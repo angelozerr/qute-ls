@@ -5,6 +5,9 @@ import static com.redhat.qute.parser.template.ParameterInfo.EMPTY;
 import java.util.Arrays;
 import java.util.List;
 
+import com.redhat.qute.parser.expression.Part;
+import com.redhat.qute.parser.expression.Parts;
+import com.redhat.qute.parser.template.ExpressionParameter;
 import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.Parameter;
@@ -69,36 +72,20 @@ public abstract class LoopSection extends Section implements JavaTypeInfoProvide
 		return null;
 	}
 
-	public String getIterable() {
+	private ExpressionParameter getIterable() {
 		int nbParameters = getParameters().size();
 		if (nbParameters >= 2) {
 			Parameter iterable = getParameterAt(ITERABLE_PARAMETER_INDEX);
 			if (iterable != null) {
-				return iterable.getValue();
+				return iterable.getExpression();
 			}
 		} else {
 			Parameter iterable = getParameterAt(0);
 			if (iterable != null) {
-				return iterable.getValue();
+				return iterable.getExpression();
 			}
 		}
 		return null;
-	}
-
-	public int getIterableAliasStart() {
-		return getStartTagOpenOffset() + getTag().length();
-	}
-
-	public int getClassNameEnd() {
-		Template template = getOwnerTemplate();
-		String text = template.getText();
-		for (int i = getIterableAliasStart(); i < getStartTagCloseOffset(); i++) {
-			char c = text.charAt(i);
-			if (c == ' ') {
-				// return i;
-			}
-		}
-		return getStartTagCloseOffset();
 	}
 
 	@Override
@@ -107,14 +94,26 @@ public abstract class LoopSection extends Section implements JavaTypeInfoProvide
 	}
 
 	public String getClassName() {
-		String iterable = getIterable();
-		if (iterable == null) {
+		/*ExpressionParameter iterable = getIterable();
+		if (iterable == null || iterable.getExpressionContent() == null || iterable.getExpressionContent().isEmpty()) {
 			return null;
 		}
+		Parts parts = (Parts) iterable.getExpressionContent().get(0);
 		Template template = getOwnerTemplate();
 		// Try to find the class name from parameter declaration
-		JavaTypeInfoProvider javaTypeInfoProvider = template.findInInitialDataModel(iterable);
-		return javaTypeInfoProvider != null ? javaTypeInfoProvider.getClassName() : null;
+		JavaTypeInfoProvider javaTypeInfoProvider = template.findInInitialDataModel(parts);
+		return javaTypeInfoProvider != null ? javaTypeInfoProvider.getClassName() : null;*/
+		return null;
+	}
+	
+	@Override
+	public Part getPartToResolve() {
+		ExpressionParameter iterable = getIterable();
+		if (iterable == null || iterable.getExpressionContent() == null || iterable.getExpressionContent().isEmpty()) {
+			return null;
+		}
+		Parts parts = (Parts) iterable.getExpressionContent().get(0);
+		return (Part) parts.getLastChild();
 	}
 
 	@Override

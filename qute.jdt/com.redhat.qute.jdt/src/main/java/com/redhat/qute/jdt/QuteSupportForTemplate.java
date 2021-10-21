@@ -25,6 +25,8 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -62,9 +64,11 @@ import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
+import com.redhat.qute.jdt.internal.resolver.ClassFileTypeResolver;
+import com.redhat.qute.jdt.internal.resolver.CompilationUnitTypeResolver;
+import com.redhat.qute.jdt.internal.resolver.ITypeResolver;
 import com.redhat.qute.jdt.internal.template.QuarkusIntegrationForQute;
 import com.redhat.qute.jdt.utils.IJDTUtils;
-import com.redhat.qute.jdt.utils.JDTMethodUtils;
 import com.redhat.qute.jdt.utils.JDTQuteUtils;
 import com.redhat.qute.jdt.utils.JDTTypeUtils;
 
@@ -255,6 +259,10 @@ public class QuteSupportForTemplate {
 			return null;
 		}
 
+		ITypeResolver typeResolver = !type.isBinary()
+				? new CompilationUnitTypeResolver((ICompilationUnit) type.getAncestor(IJavaElement.COMPILATION_UNIT))
+				: new ClassFileTypeResolver((IClassFile) type.getAncestor(IJavaElement.CLASS_FILE));
+
 		// Collect fields
 		List<JavaFieldInfo> fieldsInfo = new ArrayList<>();
 		IField[] fields = type.getFields();
@@ -263,7 +271,7 @@ public class QuteSupportForTemplate {
 				// Only public fields are available
 				JavaFieldInfo info = new JavaFieldInfo();
 				info.setName(JDTTypeUtils.getSourceField(field));
-				info.setType(JDTTypeUtils.getResolvedTypeName(field));
+				info.setType(typeResolver.resolveFieldType(field));
 				fieldsInfo.add(info);
 			}
 		}
@@ -275,7 +283,7 @@ public class QuteSupportForTemplate {
 			if (isMethodValid(method)) {
 				try {
 					JavaMethodInfo info = new JavaMethodInfo();
-					info.setSignature(JDTMethodUtils.getMethodSignature(method));
+					info.setSignature(typeResolver.resolveMethodSignature(method));
 					methodsInfo.add(info);
 				} catch (Exception e) {
 					LOGGER.log(Level.SEVERE,
@@ -320,7 +328,7 @@ public class QuteSupportForTemplate {
 
 	private static boolean isMethodValid(IMethod method) {
 		try {
-			if (method.isConstructor()) {
+			if (method.isConstructor() || !method.exists()) {
 				return false;
 			}
 			if (!Flags.isPublic(method.getFlags())) {

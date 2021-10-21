@@ -281,6 +281,17 @@ class QuteDiagnostics {
 		}
 
 		String javaTypeToResolve = javaTypeInfo.getClassName();
+		if (javaTypeToResolve == null) {
+			// case of (#for item as data.items) where data.items expression must be
+			// evaluated
+			Part part = javaTypeInfo.getPartToResolve();
+			if (part != null) {
+				ResolvedJavaClassInfo alias = javaCache.resolveJavaType(part, projectUri).getNow(null);
+				if (alias != null) {
+					javaTypeToResolve = alias.getClassName();
+				}
+			}
+		}
 		return validateJavaTypePart(objectPart, ownerSection, projectUri, diagnostics, resolvingJavaTypeFutures,
 				javaTypeToResolve);
 	}
@@ -310,13 +321,15 @@ class QuteDiagnostics {
 			diagnostics.add(diagnostic);
 			return null;
 		}
-		Parts parts = part.getParent();
-		boolean last = parts.getPartIndex(part) == parts.getChildCount() - 1;
-		if (last) {
-			return null;
+		if (!part.isLast() || ownerSection != null && ownerSection.isIterable()) {
+			// Last part doesnt require to validate the type except if the part expression
+			// is inside loop section
+			// to check if the type is an iterable type (ex : {#for item in
+			// part.to.validate}
+			return validateJavaTypePart(part, ownerSection, projectUri, diagnostics, resolvingJavaTypeFutures,
+					javaMember.getMemberType());
 		}
-		return validateJavaTypePart(part, ownerSection, projectUri, diagnostics, resolvingJavaTypeFutures,
-				javaMember.getMemberType());
+		return null;
 	}
 
 	private ResolvedJavaClassInfo validateJavaTypePart(Part part, Section ownerSection, String projectUri,
@@ -335,8 +348,18 @@ class QuteDiagnostics {
 			return null;
 		}
 
-		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(part, projectUri,
-				false);
+		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = null;
+		if (part.getPartKind() == PartKind.Object) {
+			// Object part case.
+			// - if expression is included inside a loop section (#for, etc), we need to get
+			// the iterable of. If javaTypeToResolve= 'java.util.List<org.acme.Item>',we
+			// must get 'org.acme.Item'.
+			// - otherwise resolve the given java type to resolve
+			resolvingJavaTypeFuture = javaCache.resolveJavaType(part, projectUri, false);
+		} else {
+			// Other part kind (property, method), resolve the given java type to resolve
+			resolvingJavaTypeFuture = javaCache.resolveJavaType(javaTypeToResolve, projectUri);
+		}
 		ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
 		if (NOW.equals(resolvedJavaClass)) {
 			// Java type must be loaded.
@@ -358,7 +381,12 @@ class QuteDiagnostics {
 			return null;
 		}
 
-		if (ownerSection != null && ownerSection.isIterable()) {
+		return validateIterable(part, ownerSection, resolvedJavaClass, javaTypeToResolve, diagnostics);
+	}
+
+	private ResolvedJavaClassInfo validateIterable(Part part, Section ownerSection,
+			ResolvedJavaClassInfo resolvedJavaClass, String javaTypeToResolve, List<Diagnostic> diagnostics) {
+		if (part.isLast() && ownerSection != null && ownerSection.isIterable()) {
 			// The expression is declared inside an iterable section like #for, #each.
 			// Ex: {#for item in items}
 			if (!resolvedJavaClass.isIterable()) {

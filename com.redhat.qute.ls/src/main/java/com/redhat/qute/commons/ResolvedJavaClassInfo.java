@@ -6,7 +6,7 @@ import java.util.List;
 public class ResolvedJavaClassInfo extends JavaClassInfo {
 
 	private List<String> extendedTypes;
-
+	
 	private List<JavaFieldInfo> fields;
 
 	private List<JavaMethodInfo> methods;

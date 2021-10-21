@@ -12,8 +12,8 @@
 		{class.key} : {class.sourceType}
 
 		<ul>
-			{#for item in class.resolvedJavaType.}
-				<li></li>
+			{#for field in class.resolvedJavaType.fields}
+				<li>{field.name}</li>
 			{/for}
 		</ul>
 	</p>

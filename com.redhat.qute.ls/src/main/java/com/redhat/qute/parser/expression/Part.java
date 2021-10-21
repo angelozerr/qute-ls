@@ -40,4 +40,14 @@ public abstract class Part extends Node {
 		return textContent = getOwnerTemplate().getText(getStart(), getEnd());
 	}
 
+	@Override
+	public String toString() {
+		return getPartName();
+	}
+
+	public boolean isLast() {
+		Parts parts = getParent();
+		return parts.getPartIndex(this) == parts.getChildCount() - 1;
+	}
+
 }

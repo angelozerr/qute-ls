@@ -2,7 +2,7 @@ package com.redhat.qute.commons;
 
 public class JavaMethodInfo extends JavaMemberInfo {
 
-	private String NO_VALUE = "~";
+	private static final String NO_VALUE = "~";
 
 	private String signature;
 

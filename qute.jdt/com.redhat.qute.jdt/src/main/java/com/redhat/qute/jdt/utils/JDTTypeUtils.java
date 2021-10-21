@@ -115,7 +115,7 @@ public class JDTTypeUtils {
 		try {
 			String signature = method.getReturnType();
 			IType primaryType = method.getTypeRoot().findPrimaryType();
-			return JavaModelUtil.getResolvedTypeName(signature, primaryType);
+			return O.getResolvedTypeName(signature, primaryType);
 		} catch (JavaModelException e) {
 			return null;
 		}

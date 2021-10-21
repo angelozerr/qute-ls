@@ -44,4 +44,32 @@ public class QuteDiagnosticsInExpressionWithForSectionTest {
 				d(3, 2, 3, 6, QuteErrorCode.UnkwownType, "`org.acme.Item` cannot be resolved to a type.",
 						DiagnosticSeverity.Error));
 	}
+
+	@Test
+	public void iterableWith2Parts() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				" \r\n" + //
+				"{#for item in items}\r\n" + //
+				"	{#for review in item.reviews}\r\n" + // <- here 2 part in expression
+				"		{review.average}    \r\n" + //
+				"	{/for}\r\n" + //
+				"{/for}";
+		testDiagnosticsFor(template);
+	}
+
+	@Test
+	public void noIterableWith2Parts() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				" \r\n" + //
+				"{#for item in items}\r\n" + //
+				"	{#for review in item.name}\r\n" + // <- here 2 part in expression
+				"		{review.average}    \r\n" + //
+				"	{/for}\r\n" + //
+				"{/for}";
+		testDiagnosticsFor(template, //
+				d(3, 22, 3, 26, QuteErrorCode.NotInstanceOfIterable,
+						"`java.lang.String` is not an instance of `java.lang.Iterable`.", DiagnosticSeverity.Error),
+				d(4, 3, 4, 9, QuteErrorCode.UnkwownType, "`java.lang.String` cannot be resolved to a type.",
+						DiagnosticSeverity.Error));
+	}
 }

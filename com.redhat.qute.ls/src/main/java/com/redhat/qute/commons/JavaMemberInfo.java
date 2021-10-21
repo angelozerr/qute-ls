@@ -9,7 +9,7 @@ public abstract class JavaMemberInfo {
 	private String name;
 
 	private transient ResolvedJavaClassInfo resolvedClass;
-	
+
 	public String getName() {
 		return name;
 	}
@@ -21,12 +21,33 @@ public abstract class JavaMemberInfo {
 	public ResolvedJavaClassInfo getResolvedClass() {
 		return resolvedClass;
 	}
-	
+
 	public void setResolvedClass(ResolvedJavaClassInfo resolvedClass) {
 		this.resolvedClass = resolvedClass;
 	}
-	
+
 	public abstract JavaMemberKind getKind();
 
 	public abstract String getMemberType();
+
+	public String getMemberSimpleType() {
+		String type = getMemberType();
+		if (type == null) {
+			return null;
+		}
+
+		int startBracketIndex = type.indexOf('<');
+		if (startBracketIndex != -1) {
+			int endBracketIndex = type.indexOf('>', startBracketIndex);
+			String generic = getSimpleType(type.substring(startBracketIndex + 1, endBracketIndex));
+			String mainType = getSimpleType(type.substring(0, startBracketIndex));
+			return mainType + '<' + generic + '>';
+		}
+		return getSimpleType(type);
+	}
+
+	private static String getSimpleType(String type) {
+		int index = type.lastIndexOf('.');
+		return index != -1 ? type.substring(index + 1, type.length()) : type;
+	}
 }

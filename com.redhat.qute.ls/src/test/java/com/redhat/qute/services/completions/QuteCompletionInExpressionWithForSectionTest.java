@@ -20,7 +20,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{|}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("items", "items", r(3, 2, 3, 2)), //
 				c("item", "item", r(3, 2, 3, 2)), //
@@ -30,7 +30,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{i|}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("items", "items", r(3, 2, 3, 3)), //
 				c("item", "item", r(3, 2, 3, 3)), //
@@ -40,7 +40,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{|i}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("items", "items", r(3, 2, 3, 2)), //
 				c("item", "item", r(3, 2, 3, 2)), //
@@ -50,7 +50,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{i|t}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("items", "items", r(3, 2, 3, 4)), //
 				c("item", "item", r(3, 2, 3, 4)), //
@@ -63,7 +63,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{item.|}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("name : java.lang.String", "name", r(3, 7, 3, 7)), //
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 7)), //
@@ -75,7 +75,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{item.n|}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("name : java.lang.String", "name", r(3, 7, 3, 8)), //
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 8)), //
@@ -87,7 +87,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{item.|n}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("name : java.lang.String", "name", r(3, 7, 3, 8)), //
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 8)), //
@@ -99,7 +99,7 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{item.n|a}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, //
 				c("name : java.lang.String", "name", r(3, 7, 3, 9)), //
 				c("price : java.math.BigInteger", "price", r(3, 7, 3, 9)), //
@@ -144,7 +144,37 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				" \r\n" + //
 				"{#for item in items}\r\n" + //
 				"	{item.|}    \r\n" + //
-				"{/for}}";
+				"{/for}";
 		testCompletionFor(template, 0);
+	}
+
+	@Test
+	public void objectPartWith2partInExpression() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				" \r\n" + //
+				"{#for item in items}\r\n" + //
+				"	{#for review in item.reviews}\r\n" + // <- here 2 part in expression
+				"		{|}    \r\n" + //
+				"	{/for}\r\n" + //
+				"{/for}";
+		testCompletionFor(template, //
+				c("items", "items", r(3, 2, 3, 2)), //
+				c("item", "item", r(3, 2, 3, 2)), //
+				c("review", "review", r(3, 2, 3, 2)), //
+				c("count", "count", r(3, 2, 3, 2)));
+	}
+
+	@Test
+	public void propertyPartWith2partInExpression() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				" \r\n" + //
+				"{#for item in items}\r\n" + //
+				"	{#for review in item.reviews}\r\n" + // <- here 2 part in expression
+				"		{review.|}    \r\n" + //
+				"	{/for}\r\n" + //
+				"{/for}";
+		testCompletionFor(template, //
+				c("name : java.lang.String", "name", r(4, 10, 4, 10)), //
+				c("average : java.lang.Integer", "average", r(4, 10, 4, 10)));
 	}
 }

@@ -38,7 +38,10 @@ public class Section extends Node implements ParametersContainer {
 	}
 
 	public int getAfterStartTagOpenOffset() {
-		return getStartTagOpenOffset() + getTag().length();
+		if (tag == null) {
+			return getStartTagOpenOffset() ;
+		}
+		return getStartTagOpenOffset() + tag.length();
 	}
 
 	void setStartTagOpenOffset(int startTagOpenOffset) {

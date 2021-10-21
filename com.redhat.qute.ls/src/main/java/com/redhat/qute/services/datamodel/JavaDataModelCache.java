@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.eclipse.lsp4j.Location;
 
@@ -41,7 +42,11 @@ import com.redhat.qute.utils.StringUtils;
 
 public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateDataModelProvider {
 
-	private static final CompletableFuture<ResolvedJavaClassInfo> NULL_FUTURE = CompletableFuture.completedFuture(null);
+	private static final CompletableFuture<ResolvedJavaClassInfo> RESOLVED_JAVA_CLASSINFO_NULL_FUTURE = CompletableFuture
+			.completedFuture(null);
+
+	private static final CompletableFuture<ExtendedTemplateDataModel> EXTENDED_TEMPLATE_DATAMODEL_NULL_FUTURE = CompletableFuture
+			.completedFuture(null);
 
 	private static final Map<String, CompletableFuture<ResolvedJavaClassInfo>> javaPrimitiveTypes;
 
@@ -142,7 +147,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 			return primitiveType;
 		}
 		if (StringUtils.isEmpty(className) || StringUtils.isEmpty(projectUri)) {
-			return NULL_FUTURE;
+			return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 		}
 		ProjectContainer container = getProjectContainer(projectUri);
 		CompletableFuture<ResolvedJavaClassInfo> future = container.getResolvedJavaClass(className);
@@ -150,28 +155,31 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 			QuteResolvedJavaClassParams params = new QuteResolvedJavaClassParams(className, projectUri);
 			future = getResolvedJavaClass(params) //
 					.thenCompose(c -> {
-						// Update members with the resolved class
-						c.getFields().forEach(f -> {
-							f.setResolvedClass(c);
-						});
-						c.getMethods().forEach(m -> {
-							m.setResolvedClass(c);
-						});
-						if (c != null && c.getExtendedTypes() != null) {
-							// Load extended types
-							List<CompletableFuture<ResolvedJavaClassInfo>> resolvingExtendedFutures = new ArrayList<>();
-							for (String extendedType : c.getExtendedTypes()) {
-								CompletableFuture<ResolvedJavaClassInfo> extendedFuture = resolveJavaType(extendedType,
-										projectUri);
-								if (!extendedFuture.isDone()) {
-									resolvingExtendedFutures.add(extendedFuture);
+						if (c != null) {
+							// Update members with the resolved class
+							c.getFields().forEach(f -> {
+								f.setResolvedClass(c);
+							});
+							c.getMethods().forEach(m -> {
+								m.setResolvedClass(c);
+							});
+							// Load extended Java types
+							if (c.getExtendedTypes() != null) {
+								List<CompletableFuture<ResolvedJavaClassInfo>> resolvingExtendedFutures = new ArrayList<>();
+								for (String extendedType : c.getExtendedTypes()) {
+									CompletableFuture<ResolvedJavaClassInfo> extendedFuture = resolveJavaType(
+											extendedType, projectUri);
+									if (!extendedFuture.isDone()) {
+										resolvingExtendedFutures.add(extendedFuture);
+									}
 								}
-							}
-							if (!resolvingExtendedFutures.isEmpty()) {
-								CompletableFuture<Void> allFutures = CompletableFuture.allOf(resolvingExtendedFutures
-										.toArray(new CompletableFuture[resolvingExtendedFutures.size()]));
-								return allFutures //
-										.thenApply(a -> c);
+								if (!resolvingExtendedFutures.isEmpty()) {
+									CompletableFuture<Void> allFutures = CompletableFuture
+											.allOf(resolvingExtendedFutures
+													.toArray(new CompletableFuture[resolvingExtendedFutures.size()]));
+									return allFutures //
+											.thenApply(a -> c);
+								}
 							}
 						}
 						return CompletableFuture.completedFuture(c);
@@ -206,22 +214,33 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 					future = future //
 							.thenCompose(resolvedClass -> {
 								if (resolvedClass == null) {
-									return NULL_FUTURE;
+									return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 								}
-								String property = current.getPartName();
-								JavaMemberInfo member = findMember(property, resolvedClass, projectUri);
-								if (member == null) {
-									return NULL_FUTURE;
-								}
-								String memberType = member.getMemberType();
-								return resolveJavaType(memberType, projectUri);
+								/*
+								 * if (resolvedClass.isIterable()) { String iterClassName =
+								 * resolvedClass.getIterableType(); return resolveJavaType(iterClassName,
+								 * projectUri) // .thenCompose(iterableType -> { return resolveJavaType(current,
+								 * projectUri, iterableType); }); }
+								 */
+								return resolveJavaType(current, projectUri, resolvedClass);
 							});
 				}
 				break;
 			default:
 			}
 		}
-		return future != null ? future : NULL_FUTURE;
+		return future != null ? future : RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
+	}
+
+	private CompletionStage<ResolvedJavaClassInfo> resolveJavaType(Part current, String projectUri,
+			ResolvedJavaClassInfo resolvedClass) {
+		String property = current.getPartName();
+		JavaMemberInfo member = findMember(property, resolvedClass, projectUri);
+		if (member == null) {
+			return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
+		}
+		String memberType = member.getMemberType();
+		return resolveJavaType(memberType, projectUri);
 	}
 
 	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Part part, String projectUri) {
@@ -237,18 +256,23 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 
 	private CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(ObjectPart objectPart, String projectUri,
 			boolean nullIfDontMatchWithIterable) {
-		CompletableFuture<ResolvedJavaClassInfo> future;
+		CompletableFuture<ResolvedJavaClassInfo> future = null;
 		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
 		if (javaTypeInfo == null) {
-			return NULL_FUTURE;
+			return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 		}
 		String className = javaTypeInfo.getClassName();
 		if (StringUtils.isEmpty(className)) {
-			return NULL_FUTURE;
+			Part part = javaTypeInfo.getPartToResolve();
+			if (part == null) {
+				return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
+			}
+			future = resolveJavaType(part, projectUri);
 		}
 
-		future = resolveJavaType(className, projectUri);
-
+		if (future == null) {
+			future = resolveJavaType(className, projectUri);
+		}
 		Node node = javaTypeInfo.getNode();
 		if (node != null && node.getKind() == NodeKind.Section) {
 			Section section = (Section) node;
@@ -256,7 +280,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 				future = future //
 						.thenCompose(resolvedClass -> {
 							if (resolvedClass == null) {
-								return NULL_FUTURE;
+								return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 							}
 							if (!resolvedClass.isIterable() && nullIfDontMatchWithIterable) {
 								// case when iterable section is associated with a Java class which is not
@@ -265,7 +289,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 								// {@org.acme.Item items}
 								// {#for item in items}
 								// {item.|}
-								return NULL_FUTURE;
+								return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 							}
 							// valid case
 							// Ex:
@@ -301,6 +325,9 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 	@Override
 	public CompletableFuture<ExtendedTemplateDataModel> getTemplateDataModel(Template template) {
 		String projectUri = template.getProjectUri();
+		if (StringUtils.isEmpty(projectUri)) {
+			return EXTENDED_TEMPLATE_DATAMODEL_NULL_FUTURE;
+		}
 		return getProjectContainer(projectUri).getDataModel() //
 				.thenApply(dataModel -> {
 					if (dataModel == null || dataModel.getTemplates() == null) {

@@ -4,8 +4,6 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 
 import com.redhat.qute.commons.JavaMemberInfo;
-import com.redhat.qute.commons.JavaMemberInfo.JavaMemberKind;
-import com.redhat.qute.commons.JavaMethodInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 
 /**
@@ -24,19 +22,15 @@ public class DocumentationUtils {
 
 		// Title
 		if (markdown) {
-			documentation.append("**");
+			documentation.append("```java");
+			documentation.append(System.lineSeparator());
 		}
 		documentation.append(resolvedType.getClassName());
 		if (markdown) {
-			documentation.append("**");
+			documentation.append(System.lineSeparator());
+			documentation.append("```");
 		}
 		documentation.append(System.lineSeparator());
-
-		// Class
-		addParameter("Class", resolvedType.getClassName(), documentation, markdown);
-		if (resolvedType.isIterable()) {
-			addParameter("Iterable of", resolvedType.getIterableOf(), documentation, markdown);
-		}
 		return createMarkupContent(documentation, markdown);
 	}
 
@@ -49,44 +43,20 @@ public class DocumentationUtils {
 
 		// Title
 		if (markdown) {
-			documentation.append("**");
-		}
-		documentation.append(member.getName());
-		if (markdown) {
-			documentation.append("**");
-		}
-		documentation.append(System.lineSeparator());
-
-		// Class
-		addParameter("Class", member.getResolvedClass().getClassName(), documentation, markdown);
-		if (member.getKind() == JavaMemberKind.FIELD) {
-			// Field
-			addParameter("Field name", member.getName(), documentation, markdown);
-			addParameter("Field type", member.getMemberType(), documentation, markdown);
-		} else {
-			// Method/ Field
-			addParameter("Method name", member.getName(), documentation, markdown);
-			addParameter("Method signature", ((JavaMethodInfo) member).getSignature(), documentation, markdown);
-		}
-
-		return createMarkupContent(documentation, markdown);
-	}
-
-	private static void addParameter(String name, String value, StringBuilder documentation, boolean markdown) {
-		if (value != null) {
+			documentation.append("```java");
 			documentation.append(System.lineSeparator());
-			if (markdown) {
-				documentation.append(" * ");
-			}
-			documentation.append(name);
-			documentation.append(": ");
-			if (markdown) {
-				documentation.append("`");
-			}
-			documentation.append(value);
-			if (markdown) {
-				documentation.append("`");
-			}
 		}
+		documentation.append(member.getMemberSimpleType());
+		documentation.append(" ");
+		documentation.append(member.getResolvedClass().getClassName());
+		documentation.append(".");
+		documentation.append(member.getName());
+		documentation.append('(');
+		documentation.append(')');
+		if (markdown) {
+			documentation.append(System.lineSeparator());
+			documentation.append("```");
+		}
+		return createMarkupContent(documentation, markdown);
 	}
 }

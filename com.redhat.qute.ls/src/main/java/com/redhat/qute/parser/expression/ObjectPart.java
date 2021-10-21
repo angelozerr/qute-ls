@@ -46,7 +46,7 @@ public class ObjectPart extends Part {
 		// Try to find the class name 
 		// - from parameter declaration
 		// - from @CheckedTemplate
-		return template.findInInitialDataModel(partName);
+		return template.findInInitialDataModel(this);
 	}
 
 }

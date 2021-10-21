@@ -8,6 +8,9 @@ import org.eclipse.lsp4j.Position;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.CancelChecker;
+import com.redhat.qute.parser.expression.Part;
+import com.redhat.qute.parser.expression.Parts;
+import com.redhat.qute.parser.expression.Parts.PartKind;
 import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
 import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
 
@@ -114,14 +117,18 @@ public class Template extends Node {
 	 * @param partName
 	 * @return
 	 */
-	public JavaTypeInfoProvider findInInitialDataModel(String partName) {
-		// Try to find the class name from parameter declaration
-		JavaTypeInfoProvider parameter = findParameterByAlias(partName);
-		if (parameter != null) {
-			return parameter;
+	public JavaTypeInfoProvider findInInitialDataModel(Part part) {
+		if (part.getPartKind() == PartKind.Object) {
+			String partName = part.getPartName();
+			// Try to find the class name from parameter declaration
+			JavaTypeInfoProvider parameter = findParameterByAlias(partName);
+			if (parameter != null) {
+				return parameter;
+			}
+			// Try to find the class name from @CheckedTemplate
+			return getParameterDataModel(partName).getNow(null);
 		}
-		// Try to find the class name from @CheckedTemplate
-		return getParameterDataModel(partName).getNow(null);
+		return null;
 	}
 
 	private ParameterDeclaration findParameterByAlias(String alias) {
@@ -135,8 +142,8 @@ public class Template extends Node {
 		}
 		return null;
 	}
-	
-	private CompletableFuture<ExtendedParameterDataModel> getParameterDataModel(String parameterName) {		
+
+	private CompletableFuture<ExtendedParameterDataModel> getParameterDataModel(String parameterName) {
 		return getTemplateDataModel(). //
 				thenApply(dataModel -> {
 					return dataModel != null ? dataModel.getParameter(parameterName) : null;

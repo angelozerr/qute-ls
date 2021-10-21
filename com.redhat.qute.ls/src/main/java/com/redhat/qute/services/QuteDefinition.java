@@ -296,7 +296,9 @@ class QuteDefinition {
 		// property
 		String property = part.getPartName();
 		JavaMemberInfo member = javaCache.findMember(property, previousResolvedType, projectUri);
-
+		if (member == null) {
+			return NO_DEFINITION;
+		}
 		QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(member.getResolvedClass().getClassName(),
 				projectUri);
 		if (member != null && member.getKind() == JavaMemberKind.METHOD) {

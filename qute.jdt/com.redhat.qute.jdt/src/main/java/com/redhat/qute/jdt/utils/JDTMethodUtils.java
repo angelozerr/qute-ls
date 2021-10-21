@@ -1,9 +1,11 @@
 package com.redhat.qute.jdt.utils;
 
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.corext.template.java.SignatureUtil;
@@ -18,30 +20,34 @@ public class JDTMethodUtils {
 
 	}
 
-	public static String getMethodSignature(IMethod method) throws JavaModelException {
+	public static String getMethodSignature(IMethod method, Map<String, String> packages) throws JavaModelException {
 		StringBuilder description = new StringBuilder();
-
-		// method name
+		// String s = method name
 		description.append(method.getElementName());
 
+		// Ljava.util.List<TE;>;
+		
 		// parameters
 		description.append('(');
 		appendUnboundedParameterList(description, method);
 		description.append(')');
-
+		
 		// return type
 		if (!method.isConstructor()) {
 			// TODO remove SignatureUtil.fix83600 call when bugs are fixed
-			String returnType = String
-					.valueOf(Signature.getReturnType(SignatureUtil.fix83600(method.getSignature().toCharArray())));
+			//String
+			//		.valueOf(Signature.getReturnType(SignatureUtil.fix83600(method.getSignature().toCharArray())));
 			try {
-				returnType = createTypeDisplayName(SignatureUtil.getUpperBound(
-						Signature.getReturnType(SignatureUtil.fix83600(method.getSignature().toCharArray()))));
+				//returnType = createTypeDisplayName(SignatureUtil.getUpperBound(
+				//		Signature.getReturnType(SignatureUtil.fix83600(method.getSignature().toCharArray()))));
+				String returnType = method.getReturnType(); 
+				returnType = O.getResolvedTypeName(returnType, packages);
+			
+			description.append(RETURN_TYPE_SEPARATOR);
+			description.append(returnType);
 			} catch (Exception e) {
 				LOGGER.log(Level.WARNING, "Error while getting return type of '" + method.getElementName() + "'.");
 			}
-			description.append(RETURN_TYPE_SEPARATOR);
-			description.append(returnType);
 		}
 		return description.toString(); // dummy
 	}

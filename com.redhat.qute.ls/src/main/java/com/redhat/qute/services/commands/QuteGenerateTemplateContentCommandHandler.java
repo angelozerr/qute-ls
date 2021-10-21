@@ -16,6 +16,7 @@ import com.redhat.qute.settings.SharedSettings;
 import com.redhat.qute.utils.IOUtils;
 
 import io.quarkus.qute.Engine;
+import io.quarkus.qute.ReflectionValueResolver;
 import io.quarkus.qute.Template;
 
 public class QuteGenerateTemplateContentCommandHandler implements IDelegateCommandHandler {
@@ -24,8 +25,11 @@ public class QuteGenerateTemplateContentCommandHandler implements IDelegateComma
 
 	private final JavaDataModelCache cache;
 
+	private Engine engine;
+
 	public QuteGenerateTemplateContentCommandHandler(JavaDataModelCache cache) {
 		this.cache = cache;
+		this.engine = createQuteEngine();
 	}
 
 	@Override
@@ -48,26 +52,33 @@ public class QuteGenerateTemplateContentCommandHandler implements IDelegateComma
 				.allOf(resolvingJavaTypeFutures.toArray(new CompletableFuture[resolvingJavaTypeFutures.size()]));
 		return allFutures.thenApply(Void -> {
 
-			InputStream in= QuteGenerateTemplateContentCommandHandler.class.getResourceAsStream("generate.qute.html");
+			InputStream in = QuteGenerateTemplateContentCommandHandler.class.getResourceAsStream("generate.qute.html");
 			String templateContent = IOUtils.convertStreamToString(in);
-			
-			Engine engine = Engine.builder().addDefaults().build();
-			Template template = engine.parse(templateContent);
-			Object result = template.data(resolvedParameters).render();
-			return result;			
-			
-		}).exceptionally(e -> {
-			return e.getMessage();
-		});
+			Template template = getEngine().parse(templateContent);
+			Object result = template.data("classes", resolvedParameters).render();
+			return result;
 
+		});
 		/*
-		 * List<ResolvedJavaClassInfo> resolvedClasses = new ArrayList<>(); JsonArray
-		 * array = ArgumentsUtils.getArgAt(params, 0, JsonArray.class); if (array !=
-		 * null) { for (JsonElement element : array) { JsonObject object = (JsonObject)
-		 * element; ParameterDataModel parameter = JSONUtility.toModel(object,
-		 * ParameterDataModel.class); cache.resolveJavaType(parameter.getSourceType(),
-		 * projectUri); } } return "<html></html>";
+		 * .exceptionally(e -> { return e.getMessage(); });
 		 */
+	}
+
+	private Engine getEngine() {
+		if (engine == null) {
+			engine = createQuteEngine();
+		}
+		return engine;
+	}
+
+	private synchronized Engine createQuteEngine() {
+		if (engine != null) {
+			return engine;
+		}
+		return Engine.builder() //
+				.addDefaults()//
+				.addValueResolver(new ReflectionValueResolver())//
+				.build();
 	}
 
 }
