@@ -30,6 +30,12 @@ import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.utils.QutePositionUtility;
 
+/**
+ * Qute highlighting support.
+ *
+ * @author Angelo ZERR
+ *
+ */
 class QuteHighlighting {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteHighlighting.class.getName());

@@ -30,6 +30,8 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticRelatedInformation;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.DocumentHighlight;
+import org.eclipse.lsp4j.DocumentHighlightKind;
 import org.eclipse.lsp4j.DocumentLink;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverCapabilities;
@@ -43,6 +45,7 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.ProjectInfo;
+import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
 import com.redhat.qute.services.QuteLanguageService;
@@ -419,6 +422,41 @@ public class QuteAssert {
 			assertEquals(Paths.get(expected[i].getTarget()).toUri().toString().replace("file:///", "file:/"),
 					actual.get(i).getTarget().replace("file:///", "file:/"), " Target test '" + i + "' link");
 		}
+	}
+
+	// ------------------- Highlights assert
+
+	public static void testHighlightsFor(String xml, DocumentHighlight... expected) throws BadLocationException {
+		testHighlightsFor(xml, FILE_URI, PROJECT_URI, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
+	}
+
+	public static void testHighlightsFor(String value, String fileUri, String projectUri, JavaDataModelCache javaCache,
+			DocumentHighlight... expected) throws BadLocationException {
+		int offset = value.indexOf('|');
+		value = value.substring(0, offset) + value.substring(offset + 1);
+
+		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
+		Position position = template.positionAt(offset);
+
+		QuteLanguageService languageService = new QuteLanguageService(javaCache);
+
+		List<? extends DocumentHighlight> actual = languageService.findDocumentHighlights(template, position, () -> {
+		});
+		assertDocumentHighlight(actual, expected);
+	}
+
+	public static void assertDocumentHighlight(List<? extends DocumentHighlight> actual,
+			DocumentHighlight... expected) {
+		assertEquals(expected.length, actual.size());
+		assertArrayEquals(expected, actual.toArray());
+	}
+
+	public static DocumentHighlight hl(Range range) {
+		return hl(range, DocumentHighlightKind.Read);
+	}
+
+	public static DocumentHighlight hl(Range range, DocumentHighlightKind kind) {
+		return new DocumentHighlight(range, kind);
 	}
 
 }

@@ -91,11 +91,11 @@ public class Section extends Node implements ParametersContainer {
 
 	public boolean isInStartTagName(int offset) {
 		if (startTagOpenOffset == NULL_VALUE || startTagCloseOffset == NULL_VALUE) {
-			// case <|
+			// case {#|
 			return true;
 		}
-		if (offset > startTagOpenOffset && offset <= startTagCloseOffset - (hasStartTag() ? getTag().length() : 0)) {
-			// case <bean | >
+		if (offset >= startTagOpenOffset && offset <= startTagCloseOffset - (hasStartTag() ? getTag().length() : 0)) {
+			// case {#each | }
 			return true;
 		}
 		return false;
