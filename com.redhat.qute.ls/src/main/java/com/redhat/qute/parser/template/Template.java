@@ -119,9 +119,13 @@ public class Template extends Node {
 		if (baseDir == null) {
 			return null;
 		}
-		String convertedUri = baseDir.replace("file:///", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
-		convertedUri = baseDir.replace("file://", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
-		templateBaseDir = new File(URI.create(convertedUri));
+		if (baseDir.startsWith("file:/")) {
+			String convertedUri = baseDir.replace("file:///", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
+			convertedUri = baseDir.replace("file://", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
+			templateBaseDir = new File(URI.create(convertedUri));
+		} else {
+			templateBaseDir = new File(baseDir);
+		}
 		return templateBaseDir;
 	}
 

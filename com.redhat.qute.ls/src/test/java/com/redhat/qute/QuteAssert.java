@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020 Red Hat Inc. and others.
+* Copyright (c) 2021 Red Hat Inc. and others.
 * All rights reserved. This program and the accompanying materials
 * which accompanies this distribution, and is available at
 * http://www.eclipse.org/legal/epl-v20.html
@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticRelatedInformation;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.lsp4j.DocumentLink;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverCapabilities;
 import org.eclipse.lsp4j.LocationLink;
@@ -63,6 +65,9 @@ public class QuteAssert {
 	private static final String QUTE_SOURCE = "qute";
 
 	private static final String PROJECT_URI = "project-qute";
+
+	private static final String TEMPLATE_BASE_DIR = "src/test/resources/templates";
+
 	private static final String FILE_URI = "test.qute";
 
 	private static final JavaDataModelCache DEFAULT_JAVA_DATA_MODEL_CACHE = new MockJavaDataModelCache();
@@ -385,6 +390,35 @@ public class QuteAssert {
 			expected[i].setTargetUri(expected[i].getTargetUri().replace("file:///", "file:/"));
 		}
 		assertArrayEquals(expected, actual.toArray());
+	}
+
+	// ------------------- Links assert
+
+	public static void testDocumentLinkFor(String value, String fileUri, DocumentLink... expected) throws Exception {
+		testDocumentLinkFor(value, fileUri, PROJECT_URI, TEMPLATE_BASE_DIR, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
+	}
+
+	public static void testDocumentLinkFor(String value, String fileUri, String projectUri, String templateBaseDir,
+			JavaDataModelCache javaCache, DocumentLink... expected) {
+		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
+		template.setProjectInfo(new ProjectInfo(projectUri, templateBaseDir));
+
+		QuteLanguageService languageService = new QuteLanguageService(javaCache);
+		List<DocumentLink> actual = languageService.findDocumentLinks(template);
+		assertDocumentLinks(actual, expected);
+	}
+
+	public static DocumentLink dl(Range range, String target) {
+		return new DocumentLink(range, target);
+	}
+
+	public static void assertDocumentLinks(List<DocumentLink> actual, DocumentLink... expected) {
+		assertEquals(expected.length, actual.size());
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals(expected[i].getRange(), actual.get(i).getRange(), " Range test '" + i + "' link");
+			assertEquals(Paths.get(expected[i].getTarget()).toUri().toString().replace("file:///", "file:/"),
+					actual.get(i).getTarget().replace("file:///", "file:/"), " Target test '" + i + "' link");
+		}
 	}
 
 }
