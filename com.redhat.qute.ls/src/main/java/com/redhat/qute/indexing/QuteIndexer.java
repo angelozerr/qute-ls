@@ -11,11 +11,11 @@
 *******************************************************************************/
 package com.redhat.qute.indexing;
 
-import java.nio.file.DirectoryStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A Qute indexer is used to scan Qute templates for a Qute project which
@@ -37,31 +37,54 @@ import java.util.Set;
  * templates.
  * </p>
  * 
- * @author azerr
+ * @author Angelo ZERR
  *
  */
 public class QuteIndexer {
 
 	private final Path templateBaseDir;
 
+	private final Map<String, QuteTemplateIndex> indexes;
+
 	public QuteIndexer(Path templateBaseDir) {
 		this.templateBaseDir = templateBaseDir;
+		this.indexes = new HashMap<>();
 	}
 
 	public void scan() {
-		Set<String> fileList = new HashSet<>();
+		this.indexes.clear();
 		try {
-			try (DirectoryStream<Path> stream = Files.newDirectoryStream(templateBaseDir)) {
-				for (Path path : stream) {
-					if (!Files.isDirectory(path)) {
-						fileList.add(path.getFileName().toString());
-					} else {
-						System.err.println(path.getFileName().toString());
+			Files.walk(templateBaseDir).forEach(path -> {
+				if (!Files.isDirectory(path)) {
+					try {
+						System.err.println("---> " + path);
+						
+						QuteTemplateIndex templateIndex = new QuteTemplateIndex(path);
+						templateIndex.collect();
+						
+						if (!templateIndex.getIndexes().isEmpty()) {
+							String key = templateBaseDir.relativize(path).toString().replace('\\', '/');
+							indexes.put(key, templateIndex);
+							System.err.println("[" + key + "] ---> " + templateIndex.getIndexes());
+						}
+						
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
+
+					System.err.println(path.getFileName().toString());
 				}
-			}
+			});
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public QuteIndex findDeclaration(String templateId, String parameter) {
+		QuteTemplateIndex templateIndex = indexes.get(templateId);
+		if (templateIndex == null) {
+			return null;
+		}
+		return null;
 	}
 }

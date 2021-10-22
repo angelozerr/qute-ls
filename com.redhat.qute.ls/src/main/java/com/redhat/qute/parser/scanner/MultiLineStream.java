@@ -16,11 +16,7 @@ import static com.redhat.qute.parser.scanner.Constants._NWL;
 import static com.redhat.qute.parser.scanner.Constants._TAB;
 import static com.redhat.qute.parser.scanner.Constants._WSP;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Multi line stream.
@@ -35,13 +31,11 @@ public class MultiLineStream {
 	private final String source;
 	private final int len;
 	private int position;
-	private final Map<Pattern, Matcher> regexpCache;
 
 	public MultiLineStream(String source, int position, int len) {
 		this.source = source;
 		this.len = Math.min(len, source.length());
 		this.position = position;
-		this.regexpCache = new HashMap<>();
 	}
 
 	public boolean eos() {
@@ -138,34 +132,6 @@ public class MultiLineStream {
 		return false;
 	}
 
-	public String advanceIfRegExp(Pattern regex) {
-		Matcher match = getCachedMatcher(regex);
-		// Initialize start region where search must be started.
-		match.region(this.position, this.len);
-		if (match.find()) {
-			this.position = match.end();
-			return match.group(0);
-		}
-		return "";
-	}
-
-	/**
-	 * Advances stream on regex, but will grab the first group
-	 * 
-	 * @param regex
-	 * @return
-	 */
-	public String advanceIfRegExpGroup1(Pattern regex) {
-		Matcher match = getCachedMatcher(regex);
-		// Initialize start region where search must be started.
-		match.region(this.position, this.len);
-		if (match.find()) {
-			this.position = match.end(1);
-			return match.group(1);
-		}
-		return "";
-	}
-
 	/**
 	 * Advances stream.position no matter what until it hits ch or eof(this.len)
 	 * 
@@ -227,23 +193,6 @@ public class MultiLineStream {
 			this.position++;
 		}
 		return this.position - posNow;
-	}
-
-	/**
-	 * Returns the cached matcher from the given regex.
-	 * 
-	 * @param regex the regex pattern.
-	 * @return the cached matcher from the given regex.
-	 */
-	private Matcher getCachedMatcher(Pattern regex) {
-		Matcher matcher = regexpCache.get(regex);
-		if (matcher == null) {
-			matcher = regex.matcher(source);
-			regexpCache.put(regex, matcher);
-		} else {
-			matcher.reset(); // Cached regex caused issues, needed to reset it.
-		}
-		return matcher;
 	}
 
 	public int getLastNonWhitespaceOffset() {

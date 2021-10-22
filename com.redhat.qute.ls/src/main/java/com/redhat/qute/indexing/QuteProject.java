@@ -12,22 +12,25 @@ public class QuteProject {
 	private final String uri;
 
 	private final Path templateBaseDir;
+	
+	private final QuteIndexer indexer;
 
 	public QuteProject(ProjectInfo projectInfo) {
 		this.uri = projectInfo.getUri();
 		this.templateBaseDir = createPath(projectInfo.getTemplateBaseDir());
+		this.indexer = new QuteIndexer(templateBaseDir);
 	}
 
-	private Path createPath(String baseDir) {
-		if (StringUtils.isEmpty(baseDir)) {
+	private static Path createPath(String fileUri) {
+		if (StringUtils.isEmpty(fileUri)) {
 			return null;
 		}
-		if (baseDir.startsWith("file:/")) {
-			String convertedUri = baseDir.replace("file:///", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
-			convertedUri = baseDir.replace("file://", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
+		if (fileUri.startsWith("file:/")) {
+			String convertedUri = fileUri.replace("file:///", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
+			convertedUri = fileUri.replace("file://", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
 			return new File(URI.create(convertedUri)).toPath();
 		}
-		return new File(baseDir).toPath();
+		return new File(fileUri).toPath();
 	}
 
 	public Path getTemplateBaseDir() {
