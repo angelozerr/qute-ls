@@ -21,8 +21,12 @@ public class QuteHoverInExpressionWithForSectionTest {
 				"{#for item in ite|ms}\r\n" + //
 				"		{item.name}\r\n" + //
 				"{/for}";
-		assertHover(template, //
-				"java.util.List<org.acme.Item>", r(1, 14, 1, 19));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.util.List<org.acme.Item>" + //
+				System.lineSeparator() + //
+				"```", //
+				r(1, 14, 1, 19));
 	}
 
 	@Test
@@ -31,8 +35,12 @@ public class QuteHoverInExpressionWithForSectionTest {
 				"{#for item in items}\r\n" + //
 				"		{ite|m.name}\r\n" + //
 				"{/for}";
-		assertHover(template, //
-				"org.acme.Item", r(2, 3, 2, 7));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"org.acme.Item" + //
+				System.lineSeparator() + //
+				"```", //
+				r(2, 3, 2, 7));
 	}
 
 	@Test
@@ -41,18 +49,26 @@ public class QuteHoverInExpressionWithForSectionTest {
 				"{#for item in items}\r\n" + //
 				"		{item.na|me}\r\n" + //
 				"{/for}";
-		assertHover(template, //
-				"java.lang.String", r(2, 8, 2, 12));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"String org.acme.Item.name()" + //
+				System.lineSeparator() + //
+				"```", //
+				r(2, 8, 2, 12));
 	}
-	
+
 	@Test
 	public void definedItemMethod() throws Exception {
 		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
 				"{#for item in items}\r\n" + //
 				"		{item.get|Review2()}\r\n" + //
 				"{/for}";
-		assertHover(template, //
-				"org.acme.Review", r(2, 8, 2, 18));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"Review org.acme.Item.getReview2()" + //
+				System.lineSeparator() + //
+				"```", //
+				r(2, 8, 2, 18));
 	}
 
 	@Test
@@ -61,7 +77,11 @@ public class QuteHoverInExpressionWithForSectionTest {
 				"{#for item in items}\r\n" + //
 				"		{cou|nt}\r\n" + //
 				"{/for}";
-		assertHover(template, //
-				"java.lang.Integer", r(2, 3, 2, 8));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.lang.Integer" + //
+				System.lineSeparator() + //
+				"```", //
+				r(2, 3, 2, 8));
 	}
 }

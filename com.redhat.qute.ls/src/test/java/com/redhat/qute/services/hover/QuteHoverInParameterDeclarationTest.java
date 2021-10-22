@@ -22,12 +22,20 @@ public class QuteHoverInParameterDeclarationTest {
 	@Test
 	public void hoverInKwonwClass() throws Exception {
 		String template = "{@org.acme.It|em item}";
-		assertHover(template, //
-				"org.acme.Item", r(0, 2, 0, 15));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"org.acme.Item" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 2, 0, 15));
 
 		template = "{@org.acme.Item| item}";
-		assertHover(template, //
-				"org.acme.Item", r(0, 2, 0, 15));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"org.acme.Item" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 2, 0, 15));
 	}
 
 	@Test
@@ -39,19 +47,36 @@ public class QuteHoverInParameterDeclarationTest {
 	@Test
 	public void hoverInKwonwList() throws Exception {
 		String template = "{@java.util.L|ist<org.acme.Item> item}";
-		assertHover(template, //
-				"java.util.List", r(0, 2, 0, 16));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.util.List" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 2, 0, 16));
 
 		template = "{@java.util.List|<org.acme.Item> item}";
-		assertHover(template, //
-				"java.util.List", r(0, 2, 0, 16));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.util.List" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 2, 0, 16));
 
 		template = "{@|java.util.List<org.acme.Item> item}";
-		assertHover(template, //
-				"java.util.List", r(0, 2, 0, 16));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.util.List" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 2, 0, 16));
+
 		template = "{@java.util.List<org.acme.Item|> item}";
-		assertHover(template, //
-				"org.acme.Item", r(0, 17, 0, 30));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"org.acme.Item" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 17, 0, 30));
 	}
 
 	@Test
@@ -63,15 +88,27 @@ public class QuteHoverInParameterDeclarationTest {
 	@Test
 	public void hoverInKwonwClassInsideList() throws Exception {
 		String template = "{@java.util.List<org.acme.It|em> item}";
-		assertHover(template, //
-				"org.acme.Item", r(0, 17, 0, 30));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"org.acme.Item" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 17, 0, 30));
 
 		template = "{@java.util.List<|org.acme.Item> item}";
-		assertHover(template, //
-				"org.acme.Item", r(0, 17, 0, 30));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"org.acme.Item" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 17, 0, 30));
 
 		template = "{@java.util.List<org.acme.Item|> item}";
-		assertHover(template, //
-				"org.acme.Item", r(0, 17, 0, 30));
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"org.acme.Item" + //
+				System.lineSeparator() + //
+				"```", //
+				r(0, 17, 0, 30));
 	}
 }
