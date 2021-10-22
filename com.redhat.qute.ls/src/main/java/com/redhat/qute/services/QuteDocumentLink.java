@@ -11,7 +11,7 @@
 *******************************************************************************/
 package com.redhat.qute.services;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,9 +56,9 @@ public class QuteDocumentLink {
 						Range range = QutePositionUtility.createRange(includedTemplateId.getStart(),
 								includedTemplateId.getEnd(), template);
 						if (range != null) {
-							File templateFile = includeSection.getLinkedTemplateFile();
+							Path templateFile = includeSection.getLinkedTemplateFile();
 							if (templateFile != null) {
-								String target = templateFile.toURI().toString();
+								String target = templateFile.toUri().toString();
 								links.add(new DocumentLink(range, target != null ? target : ""));
 							}
 						}

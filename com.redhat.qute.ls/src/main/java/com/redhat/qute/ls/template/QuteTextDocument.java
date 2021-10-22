@@ -8,7 +8,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.commons.QuteProjectParams;
-import com.redhat.qute.ls.api.QuteProjectDataModelProvider;
+import com.redhat.qute.indexing.QuteProjectRegistry;
 import com.redhat.qute.ls.api.QuteProjectInfoProvider;
 import com.redhat.qute.ls.commons.ModelTextDocument;
 import com.redhat.qute.ls.commons.TextDocument;
@@ -22,21 +22,16 @@ public class QuteTextDocument extends ModelTextDocument<Template> {
 	private final QuteProjectInfoProvider projectInfoProvider;
 
 	private final TemplateDataModelProvider dataModelProvider;
-	
+
+	private QuteProjectRegistry projectRegistry;
+
 	public QuteTextDocument(TextDocumentItem document, BiFunction<TextDocument, CancelChecker, Template> parse,
-			QuteProjectInfoProvider projectInfoProvider, TemplateDataModelProvider dataModelProvider) {
+			QuteProjectInfoProvider projectInfoProvider, QuteProjectRegistry projectRegistry,
+			TemplateDataModelProvider dataModelProvider) {
 		super(document, parse);
 		this.projectInfoProvider = projectInfoProvider;
 		this.dataModelProvider = dataModelProvider;
-	}
-
-	public CompletableFuture<ProjectInfo> getProjectInfoFuture() {
-		if (projectInfoFuture == null || projectInfoFuture.isCompletedExceptionally()
-				|| projectInfoFuture.isCancelled()) {
-			QuteProjectParams params = new QuteProjectParams(super.getUri());
-			projectInfoFuture = projectInfoProvider.getProjectInfo(params);
-		}
-		return projectInfoFuture;
+		this.projectRegistry = projectRegistry;
 	}
 
 	@Override
@@ -44,14 +39,26 @@ public class QuteTextDocument extends ModelTextDocument<Template> {
 		return super.getModel() //
 				.thenApply(template -> {
 					if (template != null) {
-						template.setProjectInfo(getProjectInfo());
+						ProjectInfo projectInfo = getProjectInfoFuture().getNow(null);
+						template.setProjectUri(projectInfo != null ? projectInfo.getUri() : null);
+						template.setProjectRegistry(projectRegistry);
 						template.setDataModelProvider(dataModelProvider);
 					}
 					return template;
 				});
 	}
-	
-	private ProjectInfo getProjectInfo() {
-		return getProjectInfoFuture().getNow(null);
+
+	public CompletableFuture<ProjectInfo> getProjectInfoFuture() {
+		if (projectInfoFuture == null || projectInfoFuture.isCompletedExceptionally()
+				|| projectInfoFuture.isCancelled()) {
+			QuteProjectParams params = new QuteProjectParams(super.getUri());
+			projectInfoFuture = projectInfoProvider.getProjectInfo(params) //
+					.thenApply(projectInfo -> {
+						projectRegistry.registerProject(projectInfo);
+						return projectInfo;
+					});
+		}
+		return projectInfoFuture;
 	}
+
 }

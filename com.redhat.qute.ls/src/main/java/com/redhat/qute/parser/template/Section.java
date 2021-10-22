@@ -38,10 +38,14 @@ public class Section extends Node implements ParametersContainer {
 	}
 
 	public int getAfterStartTagOpenOffset() {
-		if (tag == null) {
+		if (hasTag()) {
 			return getStartTagOpenOffset() ;
 		}
 		return getStartTagOpenOffset() + tag.length();
+	}
+
+	private boolean hasTag() {
+		return tag == null;
 	}
 
 	void setStartTagOpenOffset(int startTagOpenOffset) {
@@ -94,7 +98,7 @@ public class Section extends Node implements ParametersContainer {
 			// case {#|
 			return true;
 		}
-		if (offset >= startTagOpenOffset && offset <= startTagCloseOffset - (hasStartTag() ? getTag().length() : 0)) {
+		if (offset >= startTagOpenOffset && offset <= getAfterStartTagOpenOffset()) {
 			// case {#each | }
 			return true;
 		}

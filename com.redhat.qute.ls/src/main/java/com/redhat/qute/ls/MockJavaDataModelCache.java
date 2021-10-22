@@ -146,7 +146,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				//Thread.sleep(5000);
+				// Thread.sleep(5000);
 			} catch (Exception e) {
 
 			}

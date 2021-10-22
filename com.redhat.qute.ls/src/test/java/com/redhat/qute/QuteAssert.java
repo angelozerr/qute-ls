@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.eclipse.lsp4j.CodeLens;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionCapabilities;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemCapabilities;
@@ -45,6 +47,7 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.ProjectInfo;
+import com.redhat.qute.indexing.QuteProjectRegistry;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
@@ -52,6 +55,7 @@ import com.redhat.qute.services.QuteLanguageService;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.services.datamodel.MockJavaDataModelCache;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
+import com.redhat.qute.settings.QuteCodeLensSettings;
 import com.redhat.qute.settings.QuteCompletionSettings;
 import com.redhat.qute.settings.QuteFormattingSettings;
 import com.redhat.qute.settings.SharedSettings;
@@ -103,7 +107,7 @@ public class QuteAssert {
 		value = value.substring(0, offset) + value.substring(offset + 1);
 
 		Template template = TemplateParser.parse(value, fileUri);
-		template.setProjectInfo(new ProjectInfo(projectUri, null));
+		template.setProjectUri(projectUri);
 		Position position = template.positionAt(offset);
 
 		// Add snippet support for completion
@@ -231,7 +235,7 @@ public class QuteAssert {
 			JavaDataModelCache javaCache, Diagnostic... expected) {
 
 		Template template = TemplateParser.parse(value, fileUri);
-		template.setProjectInfo(new ProjectInfo(projectUri, null));
+		template.setProjectUri(projectUri);
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);
 		List<Diagnostic> actual = languageService.doDiagnostics(template, null, null, () -> {
@@ -330,7 +334,7 @@ public class QuteAssert {
 		value = value.substring(0, offset) + value.substring(offset + 1);
 
 		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
-		template.setProjectInfo(new ProjectInfo(projectUri, null));
+		template.setProjectUri(projectUri);
 		Position position = template.positionAt(offset);
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);
@@ -371,7 +375,7 @@ public class QuteAssert {
 		value = value.substring(0, offset) + value.substring(offset + 1);
 
 		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
-		template.setProjectInfo(new ProjectInfo(projectUri, null));
+		template.setProjectUri(projectUri);
 		Position position = template.positionAt(offset);
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);
@@ -404,7 +408,10 @@ public class QuteAssert {
 	public static void testDocumentLinkFor(String value, String fileUri, String projectUri, String templateBaseDir,
 			JavaDataModelCache javaCache, DocumentLink... expected) {
 		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
-		template.setProjectInfo(new ProjectInfo(projectUri, templateBaseDir));
+		template.setProjectUri(projectUri);
+		QuteProjectRegistry projectRegistry = new QuteProjectRegistry();
+		projectRegistry.registerProject(new ProjectInfo(projectUri, templateBaseDir));
+		template.setProjectRegistry(projectRegistry);
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);
 		List<DocumentLink> actual = languageService.findDocumentLinks(template);
@@ -426,8 +433,8 @@ public class QuteAssert {
 
 	// ------------------- Highlights assert
 
-	public static void testHighlightsFor(String xml, DocumentHighlight... expected) throws BadLocationException {
-		testHighlightsFor(xml, FILE_URI, PROJECT_URI, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
+	public static void testHighlightsFor(String value, DocumentHighlight... expected) throws BadLocationException {
+		testHighlightsFor(value, FILE_URI, PROJECT_URI, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
 	}
 
 	public static void testHighlightsFor(String value, String fileUri, String projectUri, JavaDataModelCache javaCache,
@@ -457,6 +464,41 @@ public class QuteAssert {
 
 	public static DocumentHighlight hl(Range range, DocumentHighlightKind kind) {
 		return new DocumentHighlight(range, kind);
+	}
+
+	// ------------------- CodeLens assert
+
+	public static void testCodeLensFor(String value, CodeLens... expected) throws Exception {
+		testCodeLensFor(value, FILE_URI, PROJECT_URI, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
+	}
+
+	public static void testCodeLensFor(String value, String fileUri, String projectUri, JavaDataModelCache javaCache,
+			CodeLens... expected) throws Exception {
+		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
+		QuteLanguageService languageService = new QuteLanguageService(javaCache);
+
+		QuteCodeLensSettings codeLensSettings = new QuteCodeLensSettings();
+		List<? extends CodeLens> actual = languageService.getCodeLens(template, codeLensSettings, () -> {
+		}).get();
+		assertCodeLens(actual, expected);
+	}
+
+	public static CodeLens cl(Range range, String title, String command) {
+		return new CodeLens(range, new Command(title, command), null);
+	}
+
+	public static void assertCodeLens(List<? extends CodeLens> actual, CodeLens... expected) {
+		assertEquals(expected.length, actual.size());
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals(expected[i].getRange(), actual.get(i).getRange());
+			Command expectedCommand = expected[i].getCommand();
+			Command actualCommand = actual.get(i).getCommand();
+			if (expectedCommand != null && actualCommand != null) {
+				assertEquals(expectedCommand.getTitle(), actualCommand.getTitle());
+				assertEquals(expectedCommand.getCommand(), actualCommand.getCommand());
+			}
+			assertEquals(expected[i].getData(), actual.get(i).getData());
+		}
 	}
 
 }

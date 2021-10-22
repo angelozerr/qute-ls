@@ -11,7 +11,8 @@
 *******************************************************************************/
 package com.redhat.qute.parser.template.sections;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.Section;
@@ -46,27 +47,27 @@ public class IncludeSection extends Section {
 	 * @return the template file defined in the first parameter of the section and
 	 *         null otherwise.
 	 */
-	public File getLinkedTemplateFile() {
+	public Path getLinkedTemplateFile() {
 		Parameter includedTemplateId = super.getParameterAt(0);
 		if (includedTemplateId == null) {
 			return null;
 		}
 
-		File templateBaseDir = getOwnerTemplate().getTemplateBaseDir();
+		Path templateBaseDir = getOwnerTemplate().getTemplateBaseDir();
 		if (templateBaseDir == null) {
 			return null;
 		}
 		String id = includedTemplateId.getValue();
 		for (String suffix : suffixes) {
-			File includedTemplateFile = new File(templateBaseDir, id + suffix);
-			if (includedTemplateFile.exists()) {
+			Path includedTemplateFile = templateBaseDir.resolve(id + suffix);
+			if (Files.exists(includedTemplateFile)) {
 				// The template file exists
 				return includedTemplateFile;
 			}
 		}
 		// The template file doesn't exists, we return a file to create it if user wants
 		// to do that (only available on vscode when Ctrl+Click is processed).
-		return new File(templateBaseDir, id + ".qute.html");
+		return templateBaseDir.resolve(id + ".qute.html");
 	}
 
 }

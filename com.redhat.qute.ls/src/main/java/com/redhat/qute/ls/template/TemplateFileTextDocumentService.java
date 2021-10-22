@@ -66,7 +66,8 @@ public class TemplateFileTextDocumentService extends AbstractTextDocumentService
 		super(quteLanguageServer, sharedSettings);
 		this.documents = new QuteTextDocuments((document, cancelChecker) -> {
 			return TemplateParser.parse(document.getText(), document.getUri(), () -> cancelChecker.checkCanceled());
-		}, quteLanguageServer.getDataModelCache(), quteLanguageServer.getDataModelCache());
+		}, quteLanguageServer.getDataModelCache(), quteLanguageServer.getProjectRegistry(),
+				quteLanguageServer.getDataModelCache());
 	}
 
 	@Override

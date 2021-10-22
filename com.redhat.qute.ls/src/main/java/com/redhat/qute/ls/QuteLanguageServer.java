@@ -37,6 +37,7 @@ import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
+import com.redhat.qute.indexing.QuteProjectRegistry;
 import com.redhat.qute.ls.api.QuteJavaClassesProvider;
 import com.redhat.qute.ls.api.QuteJavaDefinitionProvider;
 import com.redhat.qute.ls.api.QuteLanguageClientAPI;
@@ -65,6 +66,8 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 
 	private final JavaDataModelCache dataModelCache;
 
+	private final QuteProjectRegistry projectRegistry;
+
 	private final QuteLanguageService quteLanguageService;
 	private final QuteTextDocumentService textDocumentService;
 	private final QuteWorkspaceService workspaceService;
@@ -74,14 +77,15 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 	private QuteCapabilityManager capabilityManager;
 
 	public QuteLanguageServer() {
-		dataModelCache = createDataModelCache();
-		quteLanguageService = new QuteLanguageService(dataModelCache);
-		textDocumentService = new QuteTextDocumentService(this, new SharedSettings());
-		workspaceService = new QuteWorkspaceService(this);
+		this.projectRegistry = new QuteProjectRegistry();
+		this.dataModelCache = createDataModelCache();
+		this.quteLanguageService = new QuteLanguageService(dataModelCache);
+		this.textDocumentService = new QuteTextDocumentService(this, new SharedSettings());
+		this.workspaceService = new QuteWorkspaceService(this);
 	}
 
 	private JavaDataModelCache createDataModelCache() {
-		//return new MockJavaDataModelCache();
+		// return new MockJavaDataModelCache();
 		return new JavaDataModelCache(this, this, this, this, this);
 	}
 
@@ -195,6 +199,10 @@ public class QuteLanguageServer implements LanguageServer, ProcessLanguageServer
 
 	public JavaDataModelCache getDataModelCache() {
 		return dataModelCache;
+	}
+
+	public QuteProjectRegistry getProjectRegistry() {
+		return projectRegistry;
 	}
 
 	@Override

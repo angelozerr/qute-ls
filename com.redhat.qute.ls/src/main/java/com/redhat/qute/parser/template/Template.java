@@ -1,13 +1,13 @@
 package com.redhat.qute.parser.template;
 
-import java.io.File;
-import java.net.URI;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.Position;
 
-import com.redhat.qute.commons.ProjectInfo;
+import com.redhat.qute.indexing.QuteProject;
+import com.redhat.qute.indexing.QuteProjectRegistry;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.CancelChecker;
@@ -18,7 +18,7 @@ import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
 
 public class Template extends Node {
 
-	private ProjectInfo projectInfo;
+	private String projectUri;
 
 	private final TextDocument textDocument;
 
@@ -26,7 +26,7 @@ public class Template extends Node {
 
 	private TemplateDataModelProvider dataModelProvider;
 
-	private File templateBaseDir;
+	private QuteProjectRegistry projectRegistry;
 
 	Template(TextDocument textDocument) {
 		super(0, textDocument.getText().length());
@@ -99,38 +99,28 @@ public class Template extends Node {
 		return text.substring(start, end);
 	}
 
-	public void setProjectInfo(ProjectInfo projectInfo) {
-		this.projectInfo = projectInfo;
-		this.templateBaseDir = null;
+	public void setProjectUri(String projectUri) {
+		this.projectUri = projectUri;
 	}
 
 	public String getProjectUri() {
-		return projectInfo != null ? projectInfo.getUri() : null;
+		return projectUri;
 	}
 
-	public File getTemplateBaseDir() {
-		if (templateBaseDir != null) {
-			return templateBaseDir;
-		}
-		if (projectInfo == null) {
+	public Path getTemplateBaseDir() {
+		QuteProject project = projectRegistry != null ? projectRegistry.getProject(projectUri) : null;
+		if (project == null) {
 			return null;
 		}
-		String baseDir = projectInfo.getTemplateBaseDir();
-		if (baseDir == null) {
-			return null;
-		}
-		if (baseDir.startsWith("file:/")) {
-			String convertedUri = baseDir.replace("file:///", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
-			convertedUri = baseDir.replace("file://", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
-			templateBaseDir = new File(URI.create(convertedUri));
-		} else {
-			templateBaseDir = new File(baseDir);
-		}
-		return templateBaseDir;
+		return project.getTemplateBaseDir();
 	}
 
 	public void setDataModelProvider(TemplateDataModelProvider dataModelProvider) {
 		this.dataModelProvider = dataModelProvider;
+	}
+
+	public void setProjectRegistry(QuteProjectRegistry projectRegistry) {
+		this.projectRegistry = projectRegistry;
 	}
 
 	/**

@@ -11,7 +11,8 @@
 *******************************************************************************/
 package com.redhat.qute.services;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -221,8 +222,8 @@ class QuteDiagnostics {
 		if (includedTemplateId != null) {
 			// include defines a template to include
 			// ex : {#include base}
-			File templateFile = includeSection.getLinkedTemplateFile();
-			if (templateFile == null || !templateFile.exists()) {
+			Path templateFile = includeSection.getLinkedTemplateFile();
+			if (templateFile == null || Files.notExists(templateFile)) {
 				// It doesn't exists a file named base, base.qute.html, base.html, etc
 				Range range = QutePositionUtility.createRange(includedTemplateId);
 				String message = MessageFormat.format(TEMPLATE_NOT_FOUND_MESSAGE, includedTemplateId.getValue());

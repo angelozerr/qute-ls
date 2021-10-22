@@ -1,3 +1,14 @@
+/*******************************************************************************
+* Copyright (c) 2021 Red Hat Inc. and others.
+* All rights reserved. This program and the accompanying materials
+* which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v20.html
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     Red Hat Inc. - initial API and implementation
+*******************************************************************************/
 package com.redhat.qute.services;
 
 import java.util.ArrayList;
@@ -18,6 +29,12 @@ import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.settings.QuteCodeLensSettings;
 
+/**
+ * Qute code lens support.
+ * 
+ * @author Angelo ZERR
+ *
+ */
 class QuteCodeLens {
 
 	private final JavaDataModelCache javaCache;
@@ -57,7 +74,7 @@ class QuteCodeLens {
 				});
 	}
 
-	private String createCheckedTemplateTitle(TemplateDataModel dataModel) {
+	private String createCheckedTemplateTitle(TemplateDataModel<?> dataModel) {
 		String className = dataModel.getSourceType();
 		int index = className.lastIndexOf('.');
 		className = className.substring(index + 1, className.length());
