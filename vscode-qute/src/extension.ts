@@ -15,20 +15,11 @@
  */
 import * as requirements from './languageServer/requirements';
 
-import { VSCodeCommands } from './definitions/constants';
-
-import { CodeLensParams, DidChangeConfigurationNotification, LanguageClientOptions, TextDocumentIdentifier } from 'vscode-languageclient';
+import {  DidChangeConfigurationNotification, LanguageClientOptions } from 'vscode-languageclient';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { ExtensionContext, commands, window, workspace, CodeLensProvider, CancellationToken, CodeLens, Event, ProviderResult, TextDocument, languages, Uri } from 'vscode';
-import { QuarkusContext } from './QuarkusContext';
-import { addExtensionsWizard } from './addExtensions/addExtensionsWizard';
-import { createTerminateDebugListener } from './debugging/terminateProcess';
-import { generateProjectWizard } from './generateProject/generationWizard';
-import { prepareMicroProfileExecutable, prepareQuteExecutable } from './languageServer/javaServerStarter';
-import { tryStartDebugging } from './debugging/startDebugging';
-import { WelcomeWebview } from './webviews/WelcomeWebview';
-import { QuarkusConfig } from './QuarkusConfig';
-import { registerConfigurationUpdateCommand, registerOpenURICommand, CommandKind } from './lsp-commands';
+import { ExtensionContext, commands, window, workspace, Uri } from 'vscode';
+import { prepareQuteExecutable } from './languageServer/javaServerStarter';
+import { registerConfigurationUpdateCommand, registerOpenURICommand } from './lsp-commands';
 import { QBookSerializer } from './quteNotebook/qBookSerializer';
 import { QBookController } from './quteNotebook/qBookController';
 import { TextEncoder } from 'util';
@@ -37,13 +28,6 @@ let languageClient: LanguageClient;
 let quteLanguageClient: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-  QuarkusContext.setContext(context);
-  displayWelcomePageIfNeeded(context);
-
-  context.subscriptions.push(createTerminateDebugListener());
-
-  //context.subscriptions.push(
-  //  languages.registerCodeLensProvider([{ scheme: 'file', language: 'java' }], new QuteCodeLensProviderForJavaFile()));
 
   connectToQuteLS(context).then(() => {
     bindQuteRequest('qute/template/project');
@@ -92,41 +76,7 @@ export function activate(context: ExtensionContext) {
 export function deactivate() {
 }
 
-function displayWelcomePageIfNeeded(context: ExtensionContext): void {
-  if (QuarkusConfig.getAlwaysShowWelcomePage()) {
-    WelcomeWebview.createOrShow(context);
-  }
-}
-
 function registerVSCodeCommands(context: ExtensionContext) {
-
-  /**
-   * Command for creating a Quarkus Maven project
-   */
-  context.subscriptions.push(commands.registerCommand(VSCodeCommands.CREATE_PROJECT, () => {
-    generateProjectWizard();
-  }));
-
-  /**
-   * Command for adding Quarkus extensions to current Quarkus Maven project
-   */
-  context.subscriptions.push(commands.registerCommand(VSCodeCommands.ADD_EXTENSIONS, () => {
-    addExtensionsWizard();
-  }));
-
-  /**
-   * Command for debugging current Quarkus Maven project
-   */
-  context.subscriptions.push(commands.registerCommand(VSCodeCommands.DEBUG_QUARKUS_PROJECT, () => {
-    tryStartDebugging();
-  }));
-
-  /**
-   * Command for displaying welcome page
-   */
-  context.subscriptions.push(commands.registerCommand(VSCodeCommands.QUARKUS_WELCOME, () => {
-    WelcomeWebview.createOrShow(context);
-  }));
 
   /**
    * Register standard LSP commands
