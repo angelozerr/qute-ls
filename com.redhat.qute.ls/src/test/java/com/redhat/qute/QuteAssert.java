@@ -40,6 +40,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
 import com.redhat.qute.services.QuteLanguageService;
@@ -71,15 +72,15 @@ public class QuteAssert {
 	public static void testCompletionFor(String value, CompletionItem... expectedItems) throws Exception {
 		testCompletionFor(value, false, expectedItems);
 	}
-	
+
 	public static void testCompletionFor(String value, Integer expectedCount, CompletionItem... expectedItems)
 			throws Exception {
 		testCompletionFor(value, true, expectedCount, expectedItems);
 	}
-	
+
 	public static void testCompletionFor(String value, boolean snippetSupport, CompletionItem... expectedItems)
 			throws Exception {
-		testCompletionFor(value, snippetSupport,  null, expectedItems);
+		testCompletionFor(value, snippetSupport, null, expectedItems);
 	}
 
 	public static void testCompletionFor(String value, boolean snippetSupport, Integer expectedCount,
@@ -94,7 +95,7 @@ public class QuteAssert {
 		value = value.substring(0, offset) + value.substring(offset + 1);
 
 		Template template = TemplateParser.parse(value, fileUri);
-		template.setProjectUri(projectUri);
+		template.setProjectInfo(new ProjectInfo(projectUri, null));
 		Position position = template.positionAt(offset);
 
 		// Add snippet support for completion
@@ -222,7 +223,7 @@ public class QuteAssert {
 			JavaDataModelCache javaCache, Diagnostic... expected) {
 
 		Template template = TemplateParser.parse(value, fileUri);
-		template.setProjectUri(projectUri);
+		template.setProjectInfo(new ProjectInfo(projectUri, null));
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);
 		List<Diagnostic> actual = languageService.doDiagnostics(template, null, null, () -> {
@@ -321,7 +322,7 @@ public class QuteAssert {
 		value = value.substring(0, offset) + value.substring(offset + 1);
 
 		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
-		template.setProjectUri(projectUri);
+		template.setProjectInfo(new ProjectInfo(projectUri, null));
 		Position position = template.positionAt(offset);
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);
@@ -362,7 +363,7 @@ public class QuteAssert {
 		value = value.substring(0, offset) + value.substring(offset + 1);
 
 		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
-		template.setProjectUri(projectUri);
+		template.setProjectInfo(new ProjectInfo(projectUri, null));
 		Position position = template.positionAt(offset);
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);

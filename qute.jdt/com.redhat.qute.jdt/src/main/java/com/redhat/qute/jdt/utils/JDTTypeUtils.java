@@ -103,24 +103,6 @@ public class JDTTypeUtils {
 		}
 	}
 
-	/**
-	 * Returns the resolved return type name of the given <code>method</code> and
-	 * null otherwise
-	 *
-	 * @param method the method
-	 * @return the resolved return type name of the given <code>method</code> and
-	 *         null otherwise
-	 */
-	public static String getResolvedResultTypeName(IMethod method) {
-		try {
-			String signature = method.getReturnType();
-			IType primaryType = method.getTypeRoot().findPrimaryType();
-			return O.getResolvedTypeName(signature, primaryType);
-		} catch (JavaModelException e) {
-			return null;
-		}
-	}
-
 	public static String getDefaultValue(IMethod method) {
 		try {
 			IMemberValuePair defaultValue = method.getDefaultValue();

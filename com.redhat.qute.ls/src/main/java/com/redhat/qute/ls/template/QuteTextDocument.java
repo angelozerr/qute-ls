@@ -30,11 +30,6 @@ public class QuteTextDocument extends ModelTextDocument<Template> {
 		this.dataModelProvider = dataModelProvider;
 	}
 
-	private String getProjectUri() {
-		ProjectInfo projectInfo = getProjectInfoFuture().getNow(null);
-		return projectInfo != null ? projectInfo.getUri() : null;
-	}
-
 	public CompletableFuture<ProjectInfo> getProjectInfoFuture() {
 		if (projectInfoFuture == null || projectInfoFuture.isCompletedExceptionally()
 				|| projectInfoFuture.isCancelled()) {
@@ -49,10 +44,14 @@ public class QuteTextDocument extends ModelTextDocument<Template> {
 		return super.getModel() //
 				.thenApply(template -> {
 					if (template != null) {
-						template.setProjectUri(getProjectUri());
+						template.setProjectInfo(getProjectInfo());
 						template.setDataModelProvider(dataModelProvider);
 					}
 					return template;
 				});
+	}
+	
+	private ProjectInfo getProjectInfo() {
+		return getProjectInfoFuture().getNow(null);
 	}
 }

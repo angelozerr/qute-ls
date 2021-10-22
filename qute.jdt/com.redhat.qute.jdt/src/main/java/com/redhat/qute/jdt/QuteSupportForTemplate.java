@@ -69,7 +69,7 @@ import com.redhat.qute.jdt.internal.resolver.CompilationUnitTypeResolver;
 import com.redhat.qute.jdt.internal.resolver.ITypeResolver;
 import com.redhat.qute.jdt.internal.template.QuarkusIntegrationForQute;
 import com.redhat.qute.jdt.utils.IJDTUtils;
-import com.redhat.qute.jdt.utils.JDTQuteUtils;
+import com.redhat.qute.jdt.utils.JDTQuteProjectUtils;
 import com.redhat.qute.jdt.utils.JDTTypeUtils;
 
 /**
@@ -93,7 +93,7 @@ public class QuteSupportForTemplate {
 		if (javaProject == null) {
 			return null;
 		}
-		return new ProjectInfo(JDTQuteUtils.getProjectUri(javaProject));
+		return JDTQuteProjectUtils.getProjectInfo(javaProject);
 	}
 
 	public ProjectDataModel<TemplateDataModel<ParameterDataModel>> getProjectDataModel(

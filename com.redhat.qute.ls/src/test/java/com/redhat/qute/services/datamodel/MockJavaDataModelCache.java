@@ -154,7 +154,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 	@Override
 	public CompletableFuture<ProjectInfo> getProjectInfo(QuteProjectParams params) {
-		return CompletableFuture.completedFuture(new ProjectInfo("test-qute"));
+		return CompletableFuture.completedFuture(new ProjectInfo("test-qute", "templates"));
 	}
 
 	@Override

@@ -36,7 +36,7 @@ import org.eclipse.jdt.core.JavaCore;
 
 import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
 import com.redhat.qute.jdt.IJavaDataModelChangedListener;
-import com.redhat.qute.jdt.utils.JDTQuteUtils;
+import com.redhat.qute.jdt.utils.JDTQuteProjectUtils;
 
 /**
  * This class tracks :
@@ -102,7 +102,7 @@ public class JavaDataModelListenerManager {
 						event.setProjectURIs(new HashSet<String>());
 					}
 					IJavaProject project = (IJavaProject) element;
-					event.getProjectURIs().add(JDTQuteUtils.getProjectUri(project));
+					event.getProjectURIs().add(JDTQuteProjectUtils.getProjectUri(project));
 				}
 				break;
 			default:
@@ -156,7 +156,7 @@ public class JavaDataModelListenerManager {
 					// A Java file has been saved
 					JavaDataModelChangeEvent event = new JavaDataModelChangeEvent();
 					event.setProjectURIs(new HashSet<String>());
-					event.getProjectURIs().add(JDTQuteUtils.getProjectURI(file.getProject()));
+					event.getProjectURIs().add(JDTQuteProjectUtils.getProjectURI(file.getProject()));
 					fireAsyncEvent(event);
 				}
 			}

@@ -150,7 +150,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 			} catch (Exception e) {
 
 			}
-			return new ProjectInfo("test-qute");
+			return new ProjectInfo("test-qute", "templates");
 		});
 	}
 

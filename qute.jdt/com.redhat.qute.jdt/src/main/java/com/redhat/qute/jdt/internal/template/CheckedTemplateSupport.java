@@ -1,6 +1,6 @@
 package com.redhat.qute.jdt.internal.template;
 
-import static com.redhat.qute.jdt.utils.JDTQuteUtils.getTemplatePath;
+import static com.redhat.qute.jdt.utils.JDTQuteProjectUtils.getTemplatePath;
 import static com.redhat.qute.jdt.internal.template.QuarkusIntegrationForQute.resolveSignature;
 
 import java.util.ArrayList;

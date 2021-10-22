@@ -1,7 +1,7 @@
 package com.redhat.qute.jdt.internal.java;
 
-import static com.redhat.qute.jdt.utils.JDTQuteUtils.getASTRoot;
-import static com.redhat.qute.jdt.utils.JDTQuteUtils.hasQuteSupport;
+import static com.redhat.qute.jdt.utils.JDTQuteProjectUtils.getASTRoot;
+import static com.redhat.qute.jdt.utils.JDTQuteProjectUtils.hasQuteSupport;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -21,11 +21,14 @@ public class ProjectInfo {
 
 	private String uri;
 
+	private String templateBaseDir;
+
 	public ProjectInfo() {
 	}
 
-	public ProjectInfo(String uri) {
+	public ProjectInfo(String uri, String templateBaseDir) {
 		setUri(uri);
+		setTemplateBaseDir(templateBaseDir);
 	}
 
 	public String getUri() {
@@ -36,4 +39,11 @@ public class ProjectInfo {
 		this.uri = uri;
 	}
 
+	public String getTemplateBaseDir() {
+		return templateBaseDir;
+	}
+
+	public void setTemplateBaseDir(String templateBaseDir) {
+		this.templateBaseDir = templateBaseDir;
+	}
 }

@@ -39,7 +39,7 @@ import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.jdt.QuteCommandConstants;
 import com.redhat.qute.jdt.utils.AnnotationUtils;
 import com.redhat.qute.jdt.utils.IJDTUtils;
-import com.redhat.qute.jdt.utils.JDTQuteUtils;
+import com.redhat.qute.jdt.utils.JDTQuteProjectUtils;
 
 public class QuteJavaCodeLensCollector extends ASTVisitor {
 
@@ -108,7 +108,7 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 						if (expression != null && expression instanceof StringLiteral) {
 							String location = ((StringLiteral) expression).getLiteralValue();
 							if (StringUtils.isNotBlank(location)) {
-								String templateFilePathWithExtension = JDTQuteUtils.getTemplatePath(null, location);
+								String templateFilePathWithExtension = JDTQuteProjectUtils.getTemplatePath(null, location);
 								addTemplatePathCodeLens(node, (TypeDeclaration) node.getParent(),
 										templateFilePathWithExtension, false);
 							}
@@ -123,7 +123,7 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 		if (fragments != null && !fragments.isEmpty()) {
 			VariableDeclaration variable = (VariableDeclaration) fragments.get(0);
 			String fieldName = variable.getName().toString();
-			String templateFilePathWithoutExtension = JDTQuteUtils.getTemplatePath(null, fieldName);
+			String templateFilePathWithoutExtension = JDTQuteProjectUtils.getTemplatePath(null, fieldName);
 			addTemplatePathCodeLens(node, (TypeDeclaration) node.getParent(), templateFilePathWithoutExtension, true);
 		}
 	}
@@ -134,7 +134,7 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 			className = className.substring(0, className.length() - ".java".length());
 		}
 		String methodName = methodDeclaration.getName().getIdentifier();
-		String templateFilePathWithoutExtension = JDTQuteUtils.getTemplatePath(className, methodName);
+		String templateFilePathWithoutExtension = JDTQuteProjectUtils.getTemplatePath(className, methodName);
 		addTemplatePathCodeLens(methodDeclaration, type, templateFilePathWithoutExtension, true);
 	}
 
@@ -167,7 +167,7 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 				List<ParameterDataModel> parameters = createParameters(node);
 				GenerateTemplateInfo info = new GenerateTemplateInfo();
 				info.setParameters(parameters);
-				info.setProjectUri(JDTQuteUtils.getProjectUri(typeRoot.getJavaProject()));
+				info.setProjectUri(JDTQuteProjectUtils.getProjectUri(typeRoot.getJavaProject()));
 				info.setTemplateFileUri(templateFile.getLocationURI().toString());
 				info.setTemplateFilePath(templateFilePath);
 				command = new Command(MessageFormat.format(QUTE_COMMAND_GENERATE_TEMPLATE_MESSAGE, templateFilePath), //

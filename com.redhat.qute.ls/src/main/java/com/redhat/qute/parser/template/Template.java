@@ -1,28 +1,32 @@
 package com.redhat.qute.parser.template;
 
+import java.io.File;
+import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.Position;
 
+import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.CancelChecker;
 import com.redhat.qute.parser.expression.Part;
-import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.expression.Parts.PartKind;
 import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
 import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
 
 public class Template extends Node {
 
-	private String projectUri;
+	private ProjectInfo projectInfo;
 
 	private final TextDocument textDocument;
 
 	private CancelChecker cancelChecker;
 
 	private TemplateDataModelProvider dataModelProvider;
+
+	private File templateBaseDir;
 
 	Template(TextDocument textDocument) {
 		super(0, textDocument.getText().length());
@@ -95,12 +99,30 @@ public class Template extends Node {
 		return text.substring(start, end);
 	}
 
-	public void setProjectUri(String projectUri) {
-		this.projectUri = projectUri;
+	public void setProjectInfo(ProjectInfo projectInfo) {
+		this.projectInfo = projectInfo;
+		this.templateBaseDir = null;
 	}
 
 	public String getProjectUri() {
-		return projectUri;
+		return projectInfo != null ? projectInfo.getUri() : null;
+	}
+
+	public File getTemplateBaseDir() {
+		if (templateBaseDir != null) {
+			return templateBaseDir;
+		}
+		if (projectInfo == null) {
+			return null;
+		}
+		String baseDir = projectInfo.getTemplateBaseDir();
+		if (baseDir == null) {
+			return null;
+		}
+		String convertedUri = baseDir.replace("file:///", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
+		convertedUri = baseDir.replace("file://", "file:/"); //$NON-NLS-1$//$NON-NLS-2$
+		templateBaseDir = new File(URI.create(convertedUri));
+		return templateBaseDir;
 	}
 
 	public void setDataModelProvider(TemplateDataModelProvider dataModelProvider) {

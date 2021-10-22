@@ -1,5 +1,6 @@
 package com.redhat.qute.services;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionKind;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.sections.IncludeSection;
 import com.redhat.qute.utils.QutePositionUtility;
 
 public class QuteDocumentLink {
@@ -29,20 +31,24 @@ public class QuteDocumentLink {
 				Section section = (Section) child;
 				if (section.getSectionKind() == SectionKind.INCLUDE) {
 					// #include section case:
-
+					IncludeSection includeSection = (IncludeSection) section;
 					// {#include base.qute.html}
 					// In this case 'base.qute.html' is a document link
-					Parameter includedTemplateId = section.getParameterAt(0);
+					Parameter includedTemplateId = includeSection.getParameterAt(0);
 					if (includedTemplateId != null) {
 						Range range = QutePositionUtility.createRange(includedTemplateId.getStart(),
 								includedTemplateId.getEnd(), template);
 						if (range != null) {
-							String target = includedTemplateId.getValue();
-							links.add(new DocumentLink(range, target));
+							File templateFile = includeSection.getLinkedTemplateFile();
+							if (templateFile != null) {
+								String target = templateFile.toURI().toString();
+								links.add(new DocumentLink(range, target != null ? target : ""));
+							}
 						}
 					}
 				}
 			}
+			findDocumentLinks(child, template, links);
 		}
 	}
 }

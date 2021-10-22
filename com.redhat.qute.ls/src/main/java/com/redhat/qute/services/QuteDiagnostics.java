@@ -11,6 +11,7 @@
 *******************************************************************************/
 package com.redhat.qute.services;
 
+import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.sections.IncludeSection;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
 import com.redhat.qute.services.diagnostics.QuteErrorCode;
@@ -66,6 +68,10 @@ class QuteDiagnostics {
 	private static final String UNKWOWN_JAVA_TYPE_MESSAGE = "`{0}` cannot be resolved to a type.";
 
 	private static final String ITERABLE_REQUIRED_MESSAGE = "`{0}` is not an instance of `java.lang.Iterable`.";
+
+	private static final String TEMPLATE_NOT_FOUND_MESSAGE = "Template not found: `{0}`.";
+
+	private static final String TEMPLATE_NOT_DEFINED_MESSAGE = "Template id must be defined as parameter.";
 
 	private static final ResolvedJavaClassInfo NOW = new ResolvedJavaClassInfo();
 
@@ -186,6 +192,12 @@ class QuteDiagnostics {
 						validateExpression(expression, section, template, resolvingJavaTypeFutures, diagnostics);
 					}
 				}
+				switch (section.getSectionKind()) {
+				case INCLUDE:
+					validateIncludeSection((IncludeSection) section, diagnostics);
+					break;
+				default:
+				}
 				break;
 			}
 			case Expression: {
@@ -195,6 +207,37 @@ class QuteDiagnostics {
 			default:
 			}
 			validateDataModel(node, template, resolvingJavaTypeFutures, diagnostics);
+		}
+	}
+
+	/**
+	 * Validate #include section.
+	 * 
+	 * @param includeSection the include section
+	 * @param diagnostics    the diagnostics to fill.
+	 */
+	private static void validateIncludeSection(IncludeSection includeSection, List<Diagnostic> diagnostics) {
+		Parameter includedTemplateId = includeSection.getParameterAt(0);
+		if (includedTemplateId != null) {
+			// include defines a template to include
+			// ex : {#include base}
+			File templateFile = includeSection.getLinkedTemplateFile();
+			if (templateFile == null || !templateFile.exists()) {
+				// It doesn't exists a file named base, base.qute.html, base.html, etc
+				Range range = QutePositionUtility.createRange(includedTemplateId);
+				String message = MessageFormat.format(TEMPLATE_NOT_FOUND_MESSAGE, includedTemplateId.getValue());
+				Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
+						QuteErrorCode.TemplateNotFound);
+				diagnostics.add(diagnostic);
+			}
+		} else {
+			// #include doesn't define a template id
+			// ex: {#include}
+			Range range = QutePositionUtility.selectStartTagName(includeSection);
+			String message = TEMPLATE_NOT_DEFINED_MESSAGE;
+			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
+					QuteErrorCode.TemplateNotDefined);
+			diagnostics.add(diagnostic);
 		}
 	}
 

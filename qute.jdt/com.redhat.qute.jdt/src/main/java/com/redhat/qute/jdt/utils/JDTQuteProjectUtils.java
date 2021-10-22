@@ -13,8 +13,6 @@
 *******************************************************************************/
 package com.redhat.qute.jdt.utils;
 
-import java.util.logging.Logger;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -23,6 +21,7 @@ import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.internal.core.manipulation.dom.ASTResolving;
 
+import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.jdt.internal.QuteJavaConstants;
 
 /**
@@ -31,12 +30,19 @@ import com.redhat.qute.jdt.internal.QuteJavaConstants;
  * @author Angelo ZERR
  *
  */
-public class JDTQuteUtils {
+public class JDTQuteProjectUtils {
 
-	private static final Logger LOGGER = Logger.getLogger(JDTQuteUtils.class.getName());
+	private static final String TEMPLATES_BASE_DIR = "src/main/resources/templates/";
 
-	private JDTQuteUtils() {
+	private JDTQuteProjectUtils() {
 
+	}
+
+	public static ProjectInfo getProjectInfo(IJavaProject javaProject) {
+		IProject project = javaProject.getProject();
+		String projectUri = getProjectURI(project);
+		String templateBaseDir = project.getFile(TEMPLATES_BASE_DIR).getLocationURI().toString();
+		return new ProjectInfo(projectUri, templateBaseDir);
 	}
 
 	/**
@@ -82,7 +88,7 @@ public class JDTQuteUtils {
 	}
 
 	public static String getTemplatePath(String className, String methodOrFieldName) {
-		StringBuilder path = new StringBuilder("src/main/resources/templates/");
+		StringBuilder path = new StringBuilder(TEMPLATES_BASE_DIR);
 		if (className != null) {
 			path.append(className);
 			path.append('/');

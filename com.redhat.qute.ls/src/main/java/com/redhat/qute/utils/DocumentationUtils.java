@@ -30,7 +30,6 @@ public class DocumentationUtils {
 			documentation.append(System.lineSeparator());
 			documentation.append("```");
 		}
-		documentation.append(System.lineSeparator());
 		return createMarkupContent(documentation, markdown);
 	}
 

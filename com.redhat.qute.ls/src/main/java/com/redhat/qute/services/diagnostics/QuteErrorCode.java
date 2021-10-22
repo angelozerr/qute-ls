@@ -2,11 +2,18 @@ package com.redhat.qute.services.diagnostics;
 
 public enum QuteErrorCode implements IQuteErrorCode {
 
+	// Error code for object, property,method parts
 	UndefinedVariable, //
 	UnkwownType, //
 	UnkwownMethod, //
 	UnkwownProperty, //
-	NotInstanceOfIterable;
+
+	// Error code for #for / #each section
+	NotInstanceOfIterable,
+
+	// Error code for #include section
+	TemplateNotFound, //
+	TemplateNotDefined;
 
 	private final String code;
 
