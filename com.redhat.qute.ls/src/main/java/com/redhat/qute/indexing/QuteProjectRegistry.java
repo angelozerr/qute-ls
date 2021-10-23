@@ -7,7 +7,7 @@ import com.redhat.qute.commons.ProjectInfo;
 
 public class QuteProjectRegistry {
 
-	private final Map<String /* */, QuteProject> projects;
+	private final Map<String /* project uri */, QuteProject> projects;
 
 	public QuteProjectRegistry() {
 		this.projects = new HashMap<>();

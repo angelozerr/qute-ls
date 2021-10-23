@@ -25,6 +25,10 @@ public class QuteIndex {
 		return tag;
 	}
 
+	public String getParameter() {
+		return parameter;
+	}
+
 	public Position getPosition() {
 		return position;
 	}

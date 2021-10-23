@@ -14,8 +14,11 @@ package com.redhat.qute.indexing;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A Qute indexer is used to scan Qute templates for a Qute project which
@@ -44,7 +47,7 @@ public class QuteIndexer {
 
 	private final Path templateBaseDir;
 
-	private final Map<String, QuteTemplateIndex> indexes;
+	private final Map<String /* template id */, QuteTemplateIndex> indexes;
 
 	public QuteIndexer(Path templateBaseDir) {
 		this.templateBaseDir = templateBaseDir;
@@ -58,16 +61,16 @@ public class QuteIndexer {
 				if (!Files.isDirectory(path)) {
 					try {
 						System.err.println("---> " + path);
-						
+
 						QuteTemplateIndex templateIndex = new QuteTemplateIndex(path);
 						templateIndex.collect();
-						
+
 						if (!templateIndex.getIndexes().isEmpty()) {
 							String key = templateBaseDir.relativize(path).toString().replace('\\', '/');
 							indexes.put(key, templateIndex);
 							System.err.println("[" + key + "] ---> " + templateIndex.getIndexes());
 						}
-						
+
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -80,11 +83,18 @@ public class QuteIndexer {
 		}
 	}
 
-	public QuteIndex findDeclaration(String templateId, String parameter) {
+	public List<QuteIndex> findIndexes(String templateId, String tag, String parameter) {
 		QuteTemplateIndex templateIndex = indexes.get(templateId);
 		if (templateIndex == null) {
 			return null;
 		}
-		return null;
+		List<QuteIndex> indexes = new ArrayList<>();
+		for (QuteIndex index : templateIndex.getIndexes()) {
+			if (Objects.equals(tag, index.getTag())
+					&& (parameter == null || Objects.equals(parameter, index.getParameter()))) {
+				indexes.add(index);
+			}
+		}
+		return indexes;
 	}
 }
