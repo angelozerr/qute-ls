@@ -62,13 +62,13 @@ public class QuteIndexer {
 					try {
 						System.err.println("---> " + path);
 
-						QuteTemplateIndex templateIndex = new QuteTemplateIndex(path);
+						QuteTemplateIndex templateIndex = new QuteTemplateIndex(path, templateBaseDir);
 						templateIndex.collect();
 
 						if (!templateIndex.getIndexes().isEmpty()) {
-							String key = templateBaseDir.relativize(path).toString().replace('\\', '/');
-							indexes.put(key, templateIndex);
-							System.err.println("[" + key + "] ---> " + templateIndex.getIndexes());
+							String templateId = templateIndex.getTemplateId();
+							indexes.put(templateId, templateIndex);
+							System.err.println("[" + templateId + "] ---> " + templateIndex.getIndexes());
 						}
 
 					} catch (IOException e) {
@@ -83,18 +83,34 @@ public class QuteIndexer {
 		}
 	}
 
-	public List<QuteIndex> findIndexes(String templateId, String tag, String parameter) {
+	public List<QuteIndex> find(String templateId, String tag, String parameter) {
+		if (templateId == null) {
+			List<QuteIndex> indexes = new ArrayList<>();
+			for (QuteTemplateIndex templateIndex : this.indexes.values()) {
+				find(templateIndex, tag, parameter, indexes);
+			}
+			return indexes;
+		}
 		QuteTemplateIndex templateIndex = indexes.get(templateId);
 		if (templateIndex == null) {
 			return null;
 		}
 		List<QuteIndex> indexes = new ArrayList<>();
+		find(templateIndex, tag, parameter, indexes);
+		return indexes;
+	}
+
+	private void find(QuteTemplateIndex templateIndex, String tag, String parameter, List<QuteIndex> indexes) {
 		for (QuteIndex index : templateIndex.getIndexes()) {
 			if (Objects.equals(tag, index.getTag())
 					&& (parameter == null || Objects.equals(parameter, index.getParameter()))) {
 				indexes.add(index);
 			}
 		}
-		return indexes;
+	}
+
+	public List<QuteIndex> findReferences(String string, String string2, String string3) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

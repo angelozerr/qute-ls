@@ -14,11 +14,15 @@ public class QuteIndex {
 
 	private final SectionKind kind;
 
-	public QuteIndex(String tag, String parameter, Position position, SectionKind kind) {
+	private final QuteTemplateIndex templateIndex;
+
+	public QuteIndex(String tag, String parameter, Position position, SectionKind kind,
+			QuteTemplateIndex templateIndex) {
 		this.tag = tag;
 		this.parameter = parameter;
 		this.position = position;
 		this.kind = kind;
+		this.templateIndex = templateIndex;
 	}
 
 	public String getTag() {
@@ -35,10 +39,11 @@ public class QuteIndex {
 
 	public String toString() {
 		ToStringBuilder b = new ToStringBuilder(this);
-		b.add("tag", tag);
-		b.add("parameter", parameter);
-		b.add("position", position);
+		b.add("tag", getTag());
+		b.add("parameter", getParameter());
+		b.add("position", getPosition());
 		b.add("kind", kind);
+		b.add("templateId", templateIndex.getTemplateId());
 		return b.toString();
 	}
 

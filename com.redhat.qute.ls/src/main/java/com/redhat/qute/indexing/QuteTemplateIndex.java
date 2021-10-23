@@ -19,12 +19,16 @@ import com.redhat.qute.parser.template.scanner.TokenType;
 public class QuteTemplateIndex {
 
 	private final static List<String> nativeTags = Arrays.asList("each", "for", "if", "else", "set", "let", "elseif");
-	private Path path;
+
+	private final String templateId;
+
+	private final Path path;
 	private List<QuteIndex> indexes;
 	private FilePositionMap filePositionMap;
 
-	public QuteTemplateIndex(Path path) {
+	public QuteTemplateIndex(Path path, Path templateBaseDir) {
 		this.path = path;
+		this.templateId = templateBaseDir.relativize(path).toString().replace('\\', '/');
 		this.indexes = Collections.emptyList();
 	}
 
@@ -79,7 +83,7 @@ public class QuteTemplateIndex {
 					lastTokenOffset = -1;
 					lastSectionKind = null;
 					lastTag = null;
-				}				
+				}
 			}
 
 			token = scanner.scan();
@@ -89,8 +93,12 @@ public class QuteTemplateIndex {
 	private void collectIndex(int tokenOffset, SectionKind sectionKind, String tag, String parameter, String template,
 			List<QuteIndex> indexes) {
 		Position position = getFilePositionMap(template).getLineCharacterPositionForOffset(tokenOffset);
-		QuteIndex index = new QuteIndex(tag, parameter, position, sectionKind);
+		QuteIndex index = new QuteIndex(tag, parameter, position, sectionKind, this);
 		indexes.add(index);
+	}
+
+	public String getTemplateId() {
+		return templateId;
 	}
 
 	public List<QuteIndex> getIndexes() {
