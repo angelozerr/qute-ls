@@ -83,7 +83,7 @@ public class QuteIndexerTest {
 	}
 
 	@Test
-	public void references() {
+	public void referencesOfIncludedFile() {
 		long start = System.currentTimeMillis();
 		QuteIndexer indexer = new QuteIndexer(Paths.get("src/test/resources/templates"));
 		indexer.scan();
@@ -128,4 +128,52 @@ public class QuteIndexerTest {
 				"  templateId = \"BookPage/book.qute.html\"\n" + //
 				"]]", indexes.toString());
 	}
+	
+	@Test
+	public void referencesOfIncludedTag() {
+		long start = System.currentTimeMillis();
+		QuteIndexer indexer = new QuteIndexer(Paths.get("src/test/resources/templates"));
+		indexer.scan();
+		long end = System.currentTimeMillis();
+		System.err.println((end - start) + "ms");
+
+		// base.qute.html -->
+		// <title>{#insert title}Default Title{/}</title>
+		// ...
+		// {#insert body}No body!{/}
+
+		// 1. reference
+		// BookPage/book.qute.html -->
+		// {#include base}
+		// {#title}A Book{/title}
+
+		// 2. reference
+		// BookPage/books.qute.html -->
+		// {#include base}
+		// {#title}Books{/title}
+
+		List<QuteIndex> indexes = indexer.find(null, "body", null);
+		assertNotNull(indexes);
+		assertEquals(2, indexes.size());
+		assertEquals("[QuteIndex [\n" + //
+				"  tag = \"body\"\n" + //
+				"  parameter = null\n" + //
+				"  position = Position [\n" + //
+				"    line = 3\n" + //
+				"    character = 3\n" + //
+				"  ]\n" + //
+				"  kind = CUSTOM\n" + //
+				"  templateId = \"BookPage/books.qute.html\"\n" + //
+				"], QuteIndex [\n" + //
+				"  tag = \"body\"\n" + //
+				"  parameter = null\n" + //
+				"  position = Position [\n" + //
+				"    line = 3\n" + //
+				"    character = 3\n" + //
+				"  ]\n" + //
+				"  kind = CUSTOM\n" + //
+				"  templateId = \"BookPage/book.qute.html\"\n" + //
+				"]]", indexes.toString());
+	}
+	
 }

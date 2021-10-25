@@ -14,6 +14,7 @@
 package com.redhat.qute.jdt;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -81,6 +83,12 @@ import com.redhat.qute.jdt.utils.JDTTypeUtils;
 public class QuteSupportForTemplate {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteSupportForTemplate.class.getName());
+
+	private static final String JAVA_LANG_OBJECT = "java.lang.Object";
+
+	private static final String JAVA_LANG_ITERABLE = "java.lang.Iterable";
+	private static final List<String> COMMONS_ITERABLE_TYPES = Arrays.asList("Iterable", JAVA_LANG_ITERABLE,
+			"java.util.List", "java.util.Set");
 
 	private static final QuteSupportForTemplate INSTANCE = new QuteSupportForTemplate();
 
@@ -159,7 +167,7 @@ public class QuteSupportForTemplate {
 			return null;
 		}
 		String className = params.getClassName();
-		IType type = javaProject.findType(className, monitor);
+		IType type = findType(className, javaProject, monitor);
 		if (type == null) {
 			return null;
 		}
@@ -222,6 +230,9 @@ public class QuteSupportForTemplate {
 
 	public ResolvedJavaClassInfo getResolvedJavaClass(QuteResolvedJavaClassParams params, IJDTUtils utils,
 			IProgressMonitor monitor) throws CoreException {
+		if (monitor.isCanceled()) {
+			throw new OperationCanceledException();
+		}
 		String projectUri = params.getProjectUri();
 		IJavaProject javaProject = getJavaProjectFromProjectUri(projectUri);
 		if (javaProject == null) {
@@ -232,31 +243,31 @@ public class QuteSupportForTemplate {
 		if (index != -1) {
 			// ex : java.util.List<org.acme.Item>
 			String iterableClassName = className.substring(0, index);
-			IType iterableType = javaProject.findType(iterableClassName, monitor);
+			IType iterableType = findType(iterableClassName, javaProject, monitor);
 			if (iterableType == null) {
 				return null;
 			}
 
-			IType[] interfaces = findImplementedInterfaces(iterableType, monitor);
-			boolean iterable = interfaces == null ? false
-					: Stream.of(interfaces).anyMatch(
-							interfaceType -> "java.lang.Iterable".equals(interfaceType.getFullyQualifiedName()));
+			boolean iterable = isIterable(iterableType, monitor);
 			if (!iterable) {
 				return null;
 			}
 
 			String iterableOf = className.substring(index + 1, className.length() - 1);
-
-			ResolvedJavaClassInfo resolvedClass = new ResolvedJavaClassInfo();
-			resolvedClass.setClassName(className);
-			resolvedClass.setIterableType(iterableClassName);
-			resolvedClass.setIterableOf(iterableOf);
-			return resolvedClass;
-
+			return createIterableType(className, iterableClassName, iterableOf);
 		}
-		IType type = javaProject.findType(className, monitor);
+
+		// ex : org.acme.Item
+		IType type = findType(className, javaProject, monitor);
 		if (type == null) {
 			return null;
+		}
+
+		boolean iterable = isIterable(type, monitor);
+		if (iterable) {
+			// ex : java.util.List
+			// in this case iterable of is java.lang.Object
+			return createIterableType(className, className, JAVA_LANG_OBJECT);
 		}
 
 		ITypeResolver typeResolver = !type.isBinary()
@@ -320,6 +331,42 @@ public class QuteSupportForTemplate {
 		resolvedClass.setMethods(methodsInfo);
 		resolvedClass.setExtendedTypes(extendedTypes);
 		return resolvedClass;
+	}
+
+	private IType findType(String className, IJavaProject javaProject, IProgressMonitor monitor)
+			throws JavaModelException {
+		IType type = javaProject.findType(className, monitor);
+		if (type != null) {
+			return type;
+		}
+		if (className.indexOf('.') == -1) {
+			// No package, try with java.lang package
+			// ex : if className = String we should find type of java.lang.String
+			return javaProject.findType("java.lang." + className, monitor);
+		}
+		return null;
+	}
+
+	private ResolvedJavaClassInfo createIterableType(String className, String iterableClassName, String iterableOf) {
+		ResolvedJavaClassInfo resolvedClass = new ResolvedJavaClassInfo();
+		resolvedClass.setClassName(className);
+		resolvedClass.setIterableType(iterableClassName);
+		resolvedClass.setIterableOf(iterableOf);
+		return resolvedClass;
+	}
+
+	private static boolean isIterable(IType iterableType, IProgressMonitor monitor) throws CoreException {
+		String iterableClassName = iterableType.getFullyQualifiedName();
+		// Fast test
+		if (COMMONS_ITERABLE_TYPES.contains(iterableClassName)) {
+			return true;
+		}
+		// Check if type implements "java.lang.Iterable"
+		IType[] interfaces = findImplementedInterfaces(iterableType, monitor);
+		boolean iterable = interfaces == null ? false
+				: Stream.of(interfaces)
+						.anyMatch(interfaceType -> JAVA_LANG_ITERABLE.equals(interfaceType.getFullyQualifiedName()));
+		return iterable;
 	}
 
 	private static boolean isFieldValid(IField field) throws JavaModelException {

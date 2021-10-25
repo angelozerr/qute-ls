@@ -3,6 +3,7 @@ package com.redhat.qute.indexing;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.List;
 
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.utils.StringUtils;
@@ -39,5 +40,11 @@ public class QuteProject {
 
 	public String getUri() {
 		return uri;
+	}
+	
+	public int findNbreferencesOfInsertTag(String templateId, String tag) {
+		List<QuteIndex> indexes = indexer.find(null, "body", null);
+		
+		return 0;
 	}
 }
