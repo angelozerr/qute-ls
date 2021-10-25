@@ -38,7 +38,7 @@ public class QuteSupportForTemplateGetResolvedJavaClassTest {
 				new NullProgressMonitor());
 		Assert.assertEquals("Iterable<String>", result.getClassName());
 		Assert.assertEquals("Iterable", result.getIterableType());
-		Assert.assertEquals("java.lang.String", result.getIterableOf());
+		Assert.assertEquals("String", result.getIterableOf());
 		
 		params = new QuteResolvedJavaClassParams("Iterable<java.lang.String>", QuteMavenProjectName.qute_quickstart);
 		result = QuteSupportForTemplate.getInstance().getResolvedJavaClass(params, getJDTUtils(),
@@ -66,7 +66,7 @@ public class QuteSupportForTemplateGetResolvedJavaClassTest {
 		ResolvedJavaClassInfo result = QuteSupportForTemplate.getInstance().getResolvedJavaClass(params, getJDTUtils(),
 				new NullProgressMonitor());
 		Assert.assertEquals("java.util.List", result.getClassName());
-		Assert.assertEquals("java.lang.Iterable", result.getIterableType());
+		Assert.assertEquals("java.util.List", result.getIterableType());
 		Assert.assertEquals("java.lang.Object", result.getIterableOf());
 
 		params = new QuteResolvedJavaClassParams("List", QuteMavenProjectName.qute_quickstart);
@@ -82,7 +82,7 @@ public class QuteSupportForTemplateGetResolvedJavaClassTest {
 				new NullProgressMonitor());
 		Assert.assertNull(result);
 		
-		params = new QuteResolvedJavaClassParams("java.lang.List<java.lang.String>", QuteMavenProjectName.qute_quickstart);
+		params = new QuteResolvedJavaClassParams("java.util.List<java.lang.String>", QuteMavenProjectName.qute_quickstart);
 		result = QuteSupportForTemplate.getInstance().getResolvedJavaClass(params, getJDTUtils(),
 				new NullProgressMonitor());
 		Assert.assertEquals("java.util.List", result.getClassName());
