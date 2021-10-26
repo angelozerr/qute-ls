@@ -283,7 +283,7 @@ public class QuteSupportForTemplate {
 		List<JavaMethodInfo> methodsInfo = new ArrayList<>();
 		IMethod[] methods = type.getMethods();
 		for (IMethod method : methods) {
-			if (isMethodValid(method)) {
+			if (isMethodValid(method, type.isInterface())) {
 				try {
 					JavaMethodInfo info = new JavaMethodInfo();
 					info.setSignature(typeResolver.resolveMethodSignature(method));
@@ -365,12 +365,12 @@ public class QuteSupportForTemplate {
 		return Flags.isPublic(field.getFlags());
 	}
 
-	private static boolean isMethodValid(IMethod method) {
+	private static boolean isMethodValid(IMethod method, boolean isInterface) {
 		try {
 			if (method.isConstructor() || !method.exists()) {
 				return false;
 			}
-			if (!Flags.isPublic(method.getFlags())) {
+			if (!isInterface && !Flags.isPublic(method.getFlags())) {
 				return false;
 			}
 		} catch (Exception e) {
