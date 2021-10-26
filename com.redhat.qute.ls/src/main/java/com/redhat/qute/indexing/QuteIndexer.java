@@ -13,18 +13,18 @@ package com.redhat.qute.indexing;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A Qute indexer is used to scan Qute templates for a Qute project which
  * defines a template base dir (ex : src/main/resources/templates) to stores
  * information about location and references of #include and #insert sections.
- * 
+ *
  * <p>
  * This indexer can be used to manage
  * <ul>
@@ -34,39 +34,61 @@ import java.util.Objects;
  * <li>display codelens references for #insert</li>
  * <li>manage go to the definition from custom tag to the #insert</li>
  * <p>
- * 
+ *
  * <p>
  * This indexer is able to manage those reference for opened and closed Qute
  * templates.
  * </p>
- * 
+ *
  * @author Angelo ZERR
  *
  */
 public class QuteIndexer {
 
-	private final Path templateBaseDir;
+	private final QuteProject project;
 
 	private final Map<String /* template id */, QuteTemplateIndex> indexes;
 
-	public QuteIndexer(Path templateBaseDir) {
-		this.templateBaseDir = templateBaseDir;
+	private CompletableFuture<Void> scanFuture;
+
+	public QuteIndexer(QuteProject project) {
+		this.project = project;
 		this.indexes = new HashMap<>();
+	}
+
+	public CompletableFuture<Void> scanAsync() {
+		return scanAsync(false);
+	}
+
+	public CompletableFuture<Void> scanAsync(boolean force) {
+		if (force) {
+			if (scanFuture != null) {
+				scanFuture.cancel(true);
+			}
+			scanFuture = null;
+		}
+		if (scanFuture == null || scanFuture.isCompletedExceptionally() || scanFuture.isCancelled()) {
+			scanFuture = CompletableFuture.supplyAsync(() -> {
+				scan();
+				return null;
+			});
+		}
+		return scanFuture;
 	}
 
 	public void scan() {
 		this.indexes.clear();
 		try {
-			Files.walk(templateBaseDir).forEach(path -> {
+			Files.walk(project.getTemplateBaseDir()).forEach(path -> {
 				if (!Files.isDirectory(path)) {
 					try {
 						System.err.println("---> " + path);
 
-						QuteTemplateIndex templateIndex = new QuteTemplateIndex(path, templateBaseDir);
+						String templateId = project.getTemplateId(path);
+						QuteTemplateIndex templateIndex = new QuteTemplateIndex(path, templateId);
 						templateIndex.collect();
 
 						if (!templateIndex.getIndexes().isEmpty()) {
-							String templateId = templateIndex.getTemplateId();
 							indexes.put(templateId, templateIndex);
 							System.err.println("[" + templateId + "] ---> " + templateIndex.getIndexes());
 						}
@@ -112,5 +134,12 @@ public class QuteIndexer {
 	public List<QuteIndex> findReferences(String string, String string2, String string3) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public void evict(String templateId) {
+		QuteTemplateIndex templateIndex = indexes.get(templateId);
+		if (templateIndex != null) {
+			templateIndex.setDirty(true);
+		}
 	}
 }

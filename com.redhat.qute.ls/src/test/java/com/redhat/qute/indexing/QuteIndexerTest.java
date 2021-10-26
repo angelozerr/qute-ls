@@ -3,17 +3,18 @@ package com.redhat.qute.indexing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import com.redhat.qute.commons.ProjectInfo;
 
 public class QuteIndexerTest {
 
 	@Test
 	public void definition() {
 		long start = System.currentTimeMillis();
-		QuteIndexer indexer = new QuteIndexer(Paths.get("src/test/resources/templates"));
+		QuteIndexer indexer = new QuteIndexer(createProject());
 		indexer.scan();
 		long end = System.currentTimeMillis();
 		System.err.println((end - start) + "ms");
@@ -34,18 +35,23 @@ public class QuteIndexerTest {
 				"  tag = \"insert\"\n" + //
 				"  parameter = \"title\"\n" + //
 				"  position = Position [\n" + //
-				"    line = 4\n" + //
-				"    character = 19\n" + //
+				"    line = 3\n" + //
+				"    character = 18\n" + //
 				"  ]\n" + //
 				"  kind = INSERT\n" + //
 				"  templateId = \"base.qute.html\"\n" + //
 				"]", index.toString());
 	}
 
+	private static QuteProject createProject() {
+		ProjectInfo projectInfo = new ProjectInfo("test-qute", "src/test/resources/templates");
+		return new QuteProject(projectInfo);
+	}
+
 	@Test
 	public void completion() {
 		long start = System.currentTimeMillis();
-		QuteIndexer indexer = new QuteIndexer(Paths.get("src/test/resources/templates"));
+		QuteIndexer indexer = new QuteIndexer(createProject());
 		indexer.scan();
 		long end = System.currentTimeMillis();
 		System.err.println((end - start) + "ms");
@@ -65,8 +71,8 @@ public class QuteIndexerTest {
 				"  tag = \"insert\"\n" + //
 				"  parameter = \"title\"\n" + //
 				"  position = Position [\n" + //
-				"    line = 4\n" + //
-				"    character = 19\n" + //
+				"    line = 3\n" + //
+				"    character = 18\n" + //
 				"  ]\n" + //
 				"  kind = INSERT\n" + //
 				"  templateId = \"base.qute.html\"\n" + //
@@ -74,8 +80,8 @@ public class QuteIndexerTest {
 				"  tag = \"insert\"\n" + //
 				"  parameter = \"body\"\n" + //
 				"  position = Position [\n" + //
-				"    line = 9\n" + //
-				"    character = 10\n" + //
+				"    line = 8\n" + //
+				"    character = 9\n" + //
 				"  ]\n" + //
 				"  kind = INSERT\n" + //
 				"  templateId = \"base.qute.html\"\n" + //
@@ -85,7 +91,7 @@ public class QuteIndexerTest {
 	@Test
 	public void referencesOfIncludedFile() {
 		long start = System.currentTimeMillis();
-		QuteIndexer indexer = new QuteIndexer(Paths.get("src/test/resources/templates"));
+		QuteIndexer indexer = new QuteIndexer(createProject());
 		indexer.scan();
 		long end = System.currentTimeMillis();
 		System.err.println((end - start) + "ms");
@@ -112,8 +118,8 @@ public class QuteIndexerTest {
 				"  tag = \"include\"\n" + //
 				"  parameter = \"base\"\n" + //
 				"  position = Position [\n" + //
-				"    line = 1\n" + //
-				"    character = 11\n" + //
+				"    line = 0\n" + //
+				"    character = 10\n" + //
 				"  ]\n" + //
 				"  kind = INCLUDE\n" + //
 				"  templateId = \"BookPage/books.qute.html\"\n" + //
@@ -121,18 +127,18 @@ public class QuteIndexerTest {
 				"  tag = \"include\"\n" + //
 				"  parameter = \"base\"\n" + //
 				"  position = Position [\n" + //
-				"    line = 1\n" + //
-				"    character = 11\n" + //
+				"    line = 0\n" + //
+				"    character = 10\n" + //
 				"  ]\n" + //
 				"  kind = INCLUDE\n" + //
 				"  templateId = \"BookPage/book.qute.html\"\n" + //
 				"]]", indexes.toString());
 	}
-	
+
 	@Test
 	public void referencesOfIncludedTag() {
 		long start = System.currentTimeMillis();
-		QuteIndexer indexer = new QuteIndexer(Paths.get("src/test/resources/templates"));
+		QuteIndexer indexer = new QuteIndexer(createProject());
 		indexer.scan();
 		long end = System.currentTimeMillis();
 		System.err.println((end - start) + "ms");
@@ -159,8 +165,8 @@ public class QuteIndexerTest {
 				"  tag = \"body\"\n" + //
 				"  parameter = null\n" + //
 				"  position = Position [\n" + //
-				"    line = 3\n" + //
-				"    character = 3\n" + //
+				"    line = 2\n" + //
+				"    character = 2\n" + //
 				"  ]\n" + //
 				"  kind = CUSTOM\n" + //
 				"  templateId = \"BookPage/books.qute.html\"\n" + //
@@ -168,12 +174,12 @@ public class QuteIndexerTest {
 				"  tag = \"body\"\n" + //
 				"  parameter = null\n" + //
 				"  position = Position [\n" + //
-				"    line = 3\n" + //
-				"    character = 3\n" + //
+				"    line = 2\n" + //
+				"    character = 2\n" + //
 				"  ]\n" + //
 				"  kind = CUSTOM\n" + //
 				"  templateId = \"BookPage/book.qute.html\"\n" + //
 				"]]", indexes.toString());
 	}
-	
+
 }

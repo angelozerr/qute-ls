@@ -28,6 +28,8 @@ public class Template extends Node {
 
 	private QuteProjectRegistry projectRegistry;
 
+	private String templateId;
+
 	Template(TextDocument textDocument) {
 		super(0, textDocument.getText().length());
 		this.textDocument = textDocument;
@@ -71,6 +73,14 @@ public class Template extends Node {
 		return textDocument.lineText(lineNumber);
 	}
 
+	public String getTemplateId() {
+		return templateId;
+	}
+
+	public void setTemplateId(String templateId) {
+		this.templateId = templateId;
+	}
+
 	public String lineDelimiter(int lineNumber) throws BadLocationException {
 		checkCanceled();
 		return textDocument.lineDelimiter(lineNumber);
@@ -108,11 +118,15 @@ public class Template extends Node {
 	}
 
 	public Path getTemplateBaseDir() {
-		QuteProject project = projectRegistry != null ? projectRegistry.getProject(projectUri) : null;
+		QuteProject project = getProject();
 		if (project == null) {
 			return null;
 		}
 		return project.getTemplateBaseDir();
+	}
+
+	public QuteProject getProject() {
+		return projectRegistry != null ? projectRegistry.getProject(projectUri) : null;
 	}
 
 	public void setDataModelProvider(TemplateDataModelProvider dataModelProvider) {

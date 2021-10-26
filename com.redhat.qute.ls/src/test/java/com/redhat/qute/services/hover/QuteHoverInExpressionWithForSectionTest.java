@@ -51,7 +51,7 @@ public class QuteHoverInExpressionWithForSectionTest {
 				"{/for}";
 		assertHover(template, "```java" + //
 				System.lineSeparator() + //
-				"String org.acme.Item.name()" + //
+				"String org.acme.Item.name" + //
 				System.lineSeparator() + //
 				"```", //
 				r(2, 8, 2, 12));

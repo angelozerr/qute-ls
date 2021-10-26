@@ -84,9 +84,8 @@ public class QuteSupportForTemplate {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteSupportForTemplate.class.getName());
 
-	private static final String JAVA_LANG_OBJECT = "java.lang.Object";
-
 	private static final String JAVA_LANG_ITERABLE = "java.lang.Iterable";
+
 	private static final List<String> COMMONS_ITERABLE_TYPES = Arrays.asList("Iterable", JAVA_LANG_ITERABLE,
 			"java.util.List", "java.util.Set");
 
@@ -261,13 +260,6 @@ public class QuteSupportForTemplate {
 		IType type = findType(className, javaProject, monitor);
 		if (type == null) {
 			return null;
-		}
-
-		boolean iterable = isIterable(type, monitor);
-		if (iterable) {
-			// ex : java.util.List
-			// in this case iterable of is java.lang.Object
-			return createIterableType(className, className, JAVA_LANG_OBJECT);
 		}
 
 		ITypeResolver typeResolver = !type.isBinary()

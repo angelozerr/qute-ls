@@ -4,6 +4,7 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 
 import com.redhat.qute.commons.JavaMemberInfo;
+import com.redhat.qute.commons.JavaMemberInfo.JavaMemberKind;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 
 /**
@@ -50,8 +51,12 @@ public class DocumentationUtils {
 		documentation.append(member.getResolvedClass().getClassName());
 		documentation.append(".");
 		documentation.append(member.getName());
-		documentation.append('(');
-		documentation.append(')');
+
+		if (member.getKind() == JavaMemberKind.METHOD) {
+			documentation.append('(');
+			documentation.append(')');
+		}
+
 		if (markdown) {
 			documentation.append(System.lineSeparator());
 			documentation.append("```");

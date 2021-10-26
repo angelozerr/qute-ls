@@ -15,6 +15,8 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 
 	private String iterableOf;
 
+	private Boolean isIterable;
+
 	public void setExtendedTypes(List<String> extendedTypes) {
 		this.extendedTypes = extendedTypes;
 	}
@@ -56,7 +58,29 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 	}
 
 	public boolean isIterable() {
-		return iterableOf != null;
+		if (isIterable != null) {
+			return isIterable.booleanValue();
+		}
+		isIterable = computeIsIterable();
+		return isIterable.booleanValue();
+	}
+
+	private synchronized boolean computeIsIterable() {
+		if (isIterable != null) {
+			return isIterable.booleanValue();
+		}
+		if (iterableOf != null) {
+			return true;
+		}
+		if (extendedTypes != null) {
+			for (String extendedType : extendedTypes) {
+				if ("Iterable".equals(extendedType) || extendedType.equals("java.lang.Iterable")) {
+					this.iterableOf = "java.lang.Object";
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public JavaMemberInfo findMember(String property) {

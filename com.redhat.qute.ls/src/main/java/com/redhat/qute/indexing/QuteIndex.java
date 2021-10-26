@@ -1,6 +1,9 @@
 package com.redhat.qute.indexing;
 
+import java.nio.file.Path;
+
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.xtext.xbase.lib.util.ToStringBuilder;
 
 import com.redhat.qute.parser.template.SectionKind;
@@ -43,8 +46,23 @@ public class QuteIndex {
 		b.add("parameter", getParameter());
 		b.add("position", getPosition());
 		b.add("kind", kind);
-		b.add("templateId", templateIndex.getTemplateId());
+		b.add("templateId", getTemplateId());
 		return b.toString();
+	}
+
+	public Path getTemplatePath() {
+		return templateIndex.getPath();
+	}
+
+	public String getTemplateId() {
+		return templateIndex.getTemplateId();
+	}
+
+	public Range getRange() {
+		Position start = getPosition();
+		int length = parameter != null ? parameter.length() : tag.length();
+		Position end = new Position(start.getLine(), start.getCharacter() + length);
+		return new Range(start, end);
 	}
 
 }

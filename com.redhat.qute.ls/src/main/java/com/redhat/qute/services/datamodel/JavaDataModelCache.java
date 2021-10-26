@@ -216,12 +216,6 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 								if (resolvedClass == null) {
 									return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 								}
-								/*
-								 * if (resolvedClass.isIterable()) { String iterClassName =
-								 * resolvedClass.getIterableType(); return resolveJavaType(iterClassName,
-								 * projectUri) // .thenCompose(iterableType -> { return resolveJavaType(current,
-								 * projectUri, iterableType); }); }
-								 */
 								return resolveJavaType(current, projectUri, resolvedClass);
 							});
 				}

@@ -11,7 +11,7 @@ public interface FilePositionMap {
 	default Position getLineCharacterPositionForOffset(int offset) {
 		int line = this.getLineNumberForOffset(offset);
 		int character = this.getColumnForOffset(offset);
-		return new Position(line, character);
+		return new Position(line - 1, character - 1);
 	}
 
 	/**

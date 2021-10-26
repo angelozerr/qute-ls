@@ -47,7 +47,7 @@ public class QuteHoverInExpressionTest {
 				"{item.nam|e}";
 		assertHover(template, "```java" + //
 				System.lineSeparator() + //
-				"String org.acme.Item.name()" + //
+				"String org.acme.Item.name" + //
 				System.lineSeparator() + //
 				"```", //
 				r(1, 6, 1, 10));
@@ -56,7 +56,7 @@ public class QuteHoverInExpressionTest {
 				"{item.name|}";
 		assertHover(template, "```java" + //
 				System.lineSeparator() + //
-				"String org.acme.Item.name()" + //
+				"String org.acme.Item.name" + //
 				System.lineSeparator() + //
 				"```", //
 				r(1, 6, 1, 10));

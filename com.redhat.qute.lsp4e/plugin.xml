@@ -16,6 +16,29 @@
             content-type="com.redhat.qute.lsp4e.html"
             file-patterns="*.qute.html">
       </file-association>
+      
+      <content-type
+            base-type="org.eclipse.core.runtime.text"         
+            id="com.redhat.qute.lsp4e.json"
+            name="Qute JSON"
+            priority="high">
+      </content-type>
+      <file-association
+            content-type="com.redhat.qute.lsp4e.json"
+            file-patterns="*.qute.json">
+      </file-association>
+      
+      <content-type
+            base-type="org.eclipse.core.runtime.text"         
+            id="com.redhat.qute.lsp4e.yaml"
+            name="Qute YAML"
+            priority="high">
+      </content-type>
+      <file-association
+            content-type="com.redhat.qute.lsp4e.yaml"
+            file-patterns="*.qute.yaml">
+      </file-association>
+
    </extension>
       
    <extension
@@ -24,13 +47,21 @@
             contentTypeId="com.redhat.qute.lsp4e.html"
             editorId="org.eclipse.ui.genericeditor.GenericEditor">
       </editorContentTypeBinding>
+      <editorContentTypeBinding
+            contentTypeId="com.redhat.qute.lsp4e.json"
+            editorId="org.eclipse.ui.genericeditor.GenericEditor">
+      </editorContentTypeBinding>
+                  <editorContentTypeBinding
+            contentTypeId="com.redhat.qute.lsp4e.yaml"
+            editorId="org.eclipse.ui.genericeditor.GenericEditor">
+      </editorContentTypeBinding>
    </extension>
       
    <extension
          point="org.eclipse.lsp4e.languageServer">
       <server
             class="com.redhat.qute.lsp4e.QuteLanguageServer"
-            id="com.redhat.qute.lsp4e.html"
+            id="com.redhat.qute.lsp4e"
             label="Qute Language Server"
             clientImpl="com.redhat.qute.lsp4e.QuteLanguageClientImpl"
             serverInterface="com.redhat.qute.ls.api.QuteLanguageServerAPI"
@@ -38,11 +69,19 @@
       </server>
       <contentTypeMapping
             contentType="com.redhat.qute.lsp4e.html"
-            id="com.redhat.qute.lsp4e.html">
+            id="com.redhat.qute.lsp4e">
       </contentTypeMapping>
       <contentTypeMapping
+            contentType="com.redhat.qute.lsp4e.json"
+            id="com.redhat.qute.lsp4e">
+      </contentTypeMapping>
+      <contentTypeMapping
+            contentType="com.redhat.qute.lsp4e.yaml"
+            id="com.redhat.qute.lsp4e">
+      </contentTypeMapping>      
+      <contentTypeMapping
             contentType="org.eclipse.jdt.core.javaSource"
-            id="com.redhat.qute.lsp4e.html">            
+            id="com.redhat.qute.lsp4e">            
       </contentTypeMapping>      
    </extension>
    
@@ -56,10 +95,26 @@
             path="./syntaxes/qute-html.tmLanguage.json"
             scopeName="text.html.qute">
       </grammar>
+      <grammar
+            path="./syntaxes/qute-json.tmLanguage.json"
+            scopeName="source.json.qute">
+      </grammar>
+      <grammar
+            path="./syntaxes/qute-yaml.tmLanguage.json"
+            scopeName="source.yaml.qute">
+      </grammar>            
       <scopeNameContentTypeBinding
             contentTypeId="com.redhat.qute.lsp4e.html"
             scopeName="text.html.qute">
       </scopeNameContentTypeBinding>
+      <scopeNameContentTypeBinding
+            contentTypeId="com.redhat.qute.lsp4e.json"
+            scopeName="source.json.qute">
+      </scopeNameContentTypeBinding>
+      <scopeNameContentTypeBinding
+            contentTypeId="com.redhat.qute.lsp4e.yaml"
+            scopeName="source.yaml.qute">
+      </scopeNameContentTypeBinding>            
    </extension>
 
    <extension
@@ -68,6 +123,14 @@
             contentTypeId="com.redhat.qute.lsp4e.html"
             path="language-configurations/language-configuration.json">
       </languageConfiguration>
+      <languageConfiguration
+            contentTypeId="com.redhat.qute.lsp4e.json"
+            path="language-configurations/language-configuration.json">
+      </languageConfiguration>
+      <languageConfiguration
+            contentTypeId="com.redhat.qute.lsp4e.yaml"
+            path="language-configurations/language-configuration.json">
+      </languageConfiguration>      
    </extension>
    
    <extension

@@ -29,6 +29,8 @@ import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.JavaMemberInfo.JavaMemberKind;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.indexing.QuteIndex;
+import com.redhat.qute.indexing.QuteProject;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.expression.MethodPart;
 import com.redhat.qute.parser.expression.ObjectPart;
@@ -45,6 +47,7 @@ import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionKind;
 import com.redhat.qute.parser.template.Template;
+import com.redhat.qute.parser.template.sections.IncludeSection;
 import com.redhat.qute.parser.template.sections.LoopSection;
 import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
 import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
@@ -134,18 +137,50 @@ class QuteDefinition {
 		return CompletableFuture.completedFuture(locations);
 	}
 
-	private static boolean findDefinitionFromStartEndTagSection(int offset, Section sectionTag, Template template,
+	private static boolean findDefinitionFromStartEndTagSection(int offset, Section section, Template template,
 			List<LocationLink> locations) {
 		Range originRange = null;
 		Range targetRange = null;
-		if (sectionTag.isInStartTagName(offset)) {
-			originRange = QutePositionUtility.selectStartTagName(sectionTag);
-			targetRange = QutePositionUtility.selectEndTagName(sectionTag);
+		if (section.isInStartTagName(offset)) {
+			originRange = QutePositionUtility.selectStartTagName(section);
+
+			// 1. Jump to custom tag declared in the the {#insert custom-tag of the included
+			// Qute template (by using {#include base).
+			if (section.getSectionKind() == SectionKind.CUSTOM) {
+				QuteProject project = template.getProject();
+				if (project != null) {
+					Node parent = section.getParent();
+					while (parent != null) {
+						if (parent.getKind() == NodeKind.Section) {
+							Section parentSection = (Section) parent;
+							if (parentSection.getSectionKind() == SectionKind.INCLUDE) {
+								IncludeSection includeSection = (IncludeSection) parentSection;
+								List<QuteIndex> indexes = project
+										.findInsertTagParameter(includeSection.getLinkedTemplateId(), section.getTag());
+								if (indexes != null) {
+									for (QuteIndex index : indexes) {
+										String linkedTemplateUri = index.getTemplatePath().toUri().toString();
+										Range linkedTargetRange = index.getRange();
+										locations.add(new LocationLink(linkedTemplateUri, linkedTargetRange,
+												linkedTargetRange, originRange));
+									}
+								}
+							}
+						}
+						parent = parent.getParent();
+					}
+				}
+			}
+
+			// 2. Jump to end tag section
+			targetRange = QutePositionUtility.selectEndTagName(section);
 			locations.add(new LocationLink(template.getUri(), targetRange, targetRange, originRange));
+
 			return true;
-		} else if (sectionTag.isInEndTag(offset)) {
-			originRange = QutePositionUtility.selectEndTagName(sectionTag);
-			targetRange = QutePositionUtility.selectStartTagName(sectionTag);
+		} else if (section.isInEndTag(offset)) {
+			// Jump to start tag section
+			originRange = QutePositionUtility.selectEndTagName(section);
+			targetRange = QutePositionUtility.selectStartTagName(section);
 			locations.add(new LocationLink(template.getUri(), targetRange, targetRange, originRange));
 			return true;
 		}

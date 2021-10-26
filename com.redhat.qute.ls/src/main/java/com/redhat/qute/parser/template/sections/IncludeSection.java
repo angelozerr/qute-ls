@@ -29,7 +29,7 @@ public class IncludeSection extends Section {
 
 	public static final String TAG = "include";
 
-	private static String[] suffixes = { "", ".html", ".qute.html", ".txt", ".qute.txt" };
+	private static String[] suffixes = { "", ".html", ".qute.html", ".json", ".qute.json", ".txt", ".qute.txt", ".yaml", ".qute.yaml" };
 
 	public IncludeSection(int start, int end) {
 		super(TAG, start, end);
@@ -48,8 +48,8 @@ public class IncludeSection extends Section {
 	 *         null otherwise.
 	 */
 	public Path getLinkedTemplateFile() {
-		Parameter includedTemplateId = super.getParameterAt(0);
-		if (includedTemplateId == null) {
+		String linkedTemplateId = getLinkedTemplateId();
+		if (linkedTemplateId == null) {
 			return null;
 		}
 
@@ -57,9 +57,8 @@ public class IncludeSection extends Section {
 		if (templateBaseDir == null) {
 			return null;
 		}
-		String id = includedTemplateId.getValue();
 		for (String suffix : suffixes) {
-			Path includedTemplateFile = templateBaseDir.resolve(id + suffix);
+			Path includedTemplateFile = templateBaseDir.resolve(linkedTemplateId + suffix);
 			if (Files.exists(includedTemplateFile)) {
 				// The template file exists
 				return includedTemplateFile;
@@ -67,7 +66,15 @@ public class IncludeSection extends Section {
 		}
 		// The template file doesn't exists, we return a file to create it if user wants
 		// to do that (only available on vscode when Ctrl+Click is processed).
-		return templateBaseDir.resolve(id + ".qute.html");
+		return templateBaseDir.resolve(linkedTemplateId + ".qute.html");
+	}
+
+	public String getLinkedTemplateId() {
+		Parameter includedTemplateId = super.getParameterAt(0);
+		if (includedTemplateId == null) {
+			return null;
+		}
+		return includedTemplateId.getValue();
 	}
 
 }

@@ -17,16 +17,16 @@ public class QuteProjectRegistry {
 		return projects.get(projectUri);
 	}
 
-	public String registerProject(ProjectInfo projectInfo) {
+	public QuteProject getProject(ProjectInfo projectInfo) {
 		String projectUri = projectInfo.getUri();
 		QuteProject project = getProject(projectUri);
 		if (project == null) {
-			registerProjectSync(projectInfo);
+			project = registerProjectSync(projectInfo);
 		}
-		return projectUri;
+		return project;
 	}
 
-	public synchronized QuteProject registerProjectSync(ProjectInfo projectInfo) {
+	private synchronized QuteProject registerProjectSync(ProjectInfo projectInfo) {
 		String projectUri = projectInfo.getUri();
 		QuteProject project = getProject(projectUri);
 		if (project != null) {
@@ -35,6 +35,26 @@ public class QuteProjectRegistry {
 		project = new QuteProject(projectInfo);
 		projects.put(projectUri, project);
 		return project;
+	}
+
+	public void onDidOpenTextDocument(TemplateProvider document) {
+		String projectUri = document.getProjectUri();
+		if (projectUri != null) {
+			QuteProject project = getProject(projectUri);
+			if (project != null) {
+				project.addDocument(document);
+			}
+		}
+	}
+
+	public void onDidCloseTextDocument(TemplateProvider document) {
+		String projectUri = document.getProjectUri();
+		if (projectUri != null) {
+			QuteProject project = getProject(projectUri);
+			if (project != null) {
+				project.removeDocument(document);
+			}
+		}
 	}
 
 }

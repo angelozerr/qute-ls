@@ -410,7 +410,7 @@ public class QuteAssert {
 		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
 		template.setProjectUri(projectUri);
 		QuteProjectRegistry projectRegistry = new QuteProjectRegistry();
-		projectRegistry.registerProject(new ProjectInfo(projectUri, templateBaseDir));
+		projectRegistry.getProject(new ProjectInfo(projectUri, templateBaseDir));
 		template.setProjectRegistry(projectRegistry);
 
 		QuteLanguageService languageService = new QuteLanguageService(javaCache);

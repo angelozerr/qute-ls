@@ -26,9 +26,11 @@ public class QuteTemplateIndex {
 	private List<QuteIndex> indexes;
 	private FilePositionMap filePositionMap;
 
-	public QuteTemplateIndex(Path path, Path templateBaseDir) {
+	private boolean dirty;
+
+	public QuteTemplateIndex(Path path, String templateId) {
 		this.path = path;
-		this.templateId = templateBaseDir.relativize(path).toString().replace('\\', '/');
+		this.templateId = templateId;
 		this.indexes = Collections.emptyList();
 	}
 
@@ -105,6 +107,10 @@ public class QuteTemplateIndex {
 		return indexes;
 	}
 
+	public Path getPath() {
+		return path;
+	}
+
 	private FilePositionMap getFilePositionMap(String template) {
 		if (filePositionMap == null) {
 			filePositionMap = new DefaultFilePositionMap(template);
@@ -114,5 +120,13 @@ public class QuteTemplateIndex {
 
 	private static boolean isCustomTag(String tag) {
 		return !nativeTags.contains(tag);
+	}
+
+	public void setDirty(boolean dirty) {
+		this.dirty = dirty;
+	}
+	
+	public boolean isDirty() {
+		return dirty;
 	}
 }

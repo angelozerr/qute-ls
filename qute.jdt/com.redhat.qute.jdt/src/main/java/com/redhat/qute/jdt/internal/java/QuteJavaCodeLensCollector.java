@@ -45,9 +45,14 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 
 	private static final Logger LOGGER = Logger.getLogger(QuteJavaCodeLensCollector.class.getName());
 
+	private static String[] suffixes = { ".qute.html", ".qute.json", ".qute.txt", ".qute.yaml", ".html", ".json",
+			".txt", ".yaml" };
+
 	private static final String QUTE_COMMAND_OPEN_URI_MESSAGE = "Open `{0}`";
 
 	private static final String QUTE_COMMAND_GENERATE_TEMPLATE_MESSAGE = "Create `{0}`";
+
+	private static final String DEFAULT_SUFFIX = ".qute.html";
 
 	private final ITypeRoot typeRoot;
 	private final List<CodeLens> lenses;
@@ -108,7 +113,8 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 						if (expression != null && expression instanceof StringLiteral) {
 							String location = ((StringLiteral) expression).getLiteralValue();
 							if (StringUtils.isNotBlank(location)) {
-								String templateFilePathWithExtension = JDTQuteProjectUtils.getTemplatePath(null, location);
+								String templateFilePathWithExtension = JDTQuteProjectUtils.getTemplatePath(null,
+										location);
 								addTemplatePathCodeLens(node, (TypeDeclaration) node.getParent(),
 										templateFilePathWithExtension, false);
 							}
@@ -145,16 +151,8 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 			String templateFilePath = templateFilePathWithoutExtension;
 			IProject project = typeRoot.getJavaProject().getProject();
 			if (withoutExtension) {
-				templateFilePath = templateFilePathWithoutExtension + ".qute.html";
-				templateFile = project.getFile(templateFilePath);
-				if (!templateFile.exists()) {
-					String htmlTtemplateFilePath = templateFilePathWithoutExtension + ".html";
-					IFile htmlTemplateFile = project.getFile(htmlTtemplateFilePath);
-					if (htmlTemplateFile.exists()) {
-						templateFilePath = htmlTtemplateFilePath;
-						templateFile = htmlTemplateFile;
-					}
-				}
+				templateFile = getTemplateFile(project, templateFilePathWithoutExtension);
+				templateFilePath = templateFile.getLocation().makeRelativeTo(project.getLocation()).toString();
 			} else {
 				templateFile = project.getFile(templateFilePath);
 			}
@@ -179,6 +177,16 @@ public class QuteJavaCodeLensCollector extends ASTVisitor {
 		} catch (JavaModelException e) {
 			LOGGER.log(Level.SEVERE, "Error while creating Qute CodeLens for Java file.", e);
 		}
+	}
+
+	private IFile getTemplateFile(IProject project, String templateFilePathWithoutExtension) {
+		for (String suffix : suffixes) {
+			IFile templateFile = project.getFile(templateFilePathWithoutExtension + suffix);
+			if (templateFile.exists()) {
+				return templateFile;
+			}
+		}
+		return project.getFile(templateFilePathWithoutExtension + DEFAULT_SUFFIX);
 	}
 
 	private List<ParameterDataModel> createParameters(ASTNode node) {

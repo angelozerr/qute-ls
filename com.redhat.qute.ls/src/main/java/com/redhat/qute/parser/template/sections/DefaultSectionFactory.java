@@ -15,6 +15,7 @@ public class DefaultSectionFactory implements SectionFactory {
 		factoryByTag.put(ForSection.TAG, (tag, start, end) -> new ForSection(start, end));
 		factoryByTag.put(IfSection.TAG, (tag, start, end) -> new IfSection(start, end));
 		factoryByTag.put(IncludeSection.TAG, (tag, start, end) -> new IncludeSection(start, end));
+		factoryByTag.put(InsertSection.TAG, (tag, start, end) -> new InsertSection(start, end));
 	}
 
 	@Override

@@ -2,11 +2,14 @@ package com.redhat.qute.ls.template;
 
 import java.util.function.BiFunction;
 
+import org.eclipse.lsp4j.DidCloseTextDocumentParams;
+import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.indexing.QuteProjectRegistry;
 import com.redhat.qute.ls.api.QuteProjectInfoProvider;
+import com.redhat.qute.ls.commons.ModelTextDocument;
 import com.redhat.qute.ls.commons.ModelTextDocuments;
 import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.template.Template;
@@ -35,5 +38,19 @@ public class QuteTextDocuments extends ModelTextDocuments<Template> {
 				dataModelProvider);
 		doc.setIncremental(isIncremental());
 		return doc;
+	}
+	
+	@Override
+	public ModelTextDocument<Template> onDidOpenTextDocument(DidOpenTextDocumentParams params) {		
+		QuteTextDocument document = (QuteTextDocument) super.onDidOpenTextDocument(params);
+		projectRegistry.onDidOpenTextDocument(document);
+		return document;
+	}
+	
+	@Override
+	public ModelTextDocument<Template> onDidCloseTextDocument(DidCloseTextDocumentParams params) {
+		QuteTextDocument document = (QuteTextDocument) super.onDidCloseTextDocument(params);
+		projectRegistry.onDidCloseTextDocument(document);
+		return document;
 	}
 }
