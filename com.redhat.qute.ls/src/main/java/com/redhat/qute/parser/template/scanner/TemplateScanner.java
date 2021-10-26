@@ -40,6 +40,10 @@ public class TemplateScanner extends AbstractScanner<TokenType, ScannerState> {
 
 		case WithinContent: {
 			if (stream.advanceIfChar('{')) {
+				// A valid identifier must start with a digit, alphabet, underscore, comment
+				// delimiter, cdata start delimiter or a tag command (e.g. # for sections)
+				// see
+				// https://github.com/quarkusio/quarkus/blob/7164bfa115d9096a3ba0b2929c98f89ac01c2dce/independent-projects/qute/core/src/main/java/io/quarkus/qute/Parser.java#L332
 				if (!stream.eos() && stream.peekChar() == '!') {
 					// Comment -> {! This is a comment !}
 					state = ScannerState.WithinComment;
@@ -58,9 +62,12 @@ public class TemplateScanner extends AbstractScanner<TokenType, ScannerState> {
 					state = ScannerState.WithinParameterDeclaration;
 					return finishToken(offset, TokenType.StartParameterDeclaration);
 				} else {
-					// Expression
-					state = ScannerState.WithinExpression;
-					return finishToken(offset, TokenType.StartExpression);
+					int ch = stream.peekChar();
+					if (Character.isDigit(ch) || Character.isAlphabetic(ch) || ch == '_') {
+						// Expression
+						state = ScannerState.WithinExpression;
+						return finishToken(offset, TokenType.StartExpression);
+					}
 				}
 			}
 			stream.advanceUntilChar('{');
