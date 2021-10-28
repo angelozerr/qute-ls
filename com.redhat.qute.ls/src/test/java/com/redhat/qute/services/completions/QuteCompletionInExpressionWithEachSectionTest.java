@@ -146,7 +146,7 @@ public class QuteCompletionInExpressionWithEachSectionTest {
 				"{/each}}";
 		testCompletionFor(template, 0);
 	}
-	
+
 	@Test
 	public void objectPartWith2partInExpression() throws Exception {
 		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
@@ -157,10 +157,10 @@ public class QuteCompletionInExpressionWithEachSectionTest {
 				"	{/each}\r\n" + //
 				"{/for}";
 		testCompletionFor(template, //
-				c("items", "items", r(3, 2, 3, 2)), //
-				c("item", "item", r(3, 2, 3, 2)), //
-				c("it", "it", r(3, 2, 3, 2)), //
-				c("count", "count", r(3, 2, 3, 2)));
+				c("items", "items", r(4, 3, 4, 3)), //
+				c("item", "item", r(4, 3, 4, 3)), //
+				c("it", "it", r(4, 3, 4, 3)), //
+				c("count", "count", r(4, 3, 4, 3)));
 	}
 
 	@Test
@@ -175,5 +175,5 @@ public class QuteCompletionInExpressionWithEachSectionTest {
 		testCompletionFor(template, //
 				c("name : java.lang.String", "name", r(4, 6, 4, 6)), //
 				c("average : java.lang.Integer", "average", r(4, 6, 4, 6)));
-	}	
+	}
 }

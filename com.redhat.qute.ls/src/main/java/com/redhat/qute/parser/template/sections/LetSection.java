@@ -11,26 +11,34 @@
 *******************************************************************************/
 package com.redhat.qute.parser.template.sections;
 
-import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionKind;
 
 /**
- * Insert section.
+ * Let section AST node.
+ *
+ * <code>
+ *{#let myParent=order.item.parent isActive=false age=10} 
+    <h1>{myParent.name}</h1>
+    Is active: {isActive}
+    Age: {age}
+  {/let}
+ * </code>
  * 
  * @author Angelo ZERR
  * 
- * @see https://quarkus.io/guides/qute-reference#include_helpers
+ * @see https://quarkus.io/guides/qute-reference#letset-section
+ *
  */
-public class InsertSection extends Section {
+public class LetSection extends AssignSection {
 
-	public static final String TAG = "insert";
+	public static final String TAG = "let";
 
-	public InsertSection(int start, int end) {
+	public LetSection(int start, int end) {
 		super(TAG, start, end);
 	}
 
 	@Override
 	public SectionKind getSectionKind() {
-		return SectionKind.INSERT;
+		return SectionKind.LET;
 	}
 }

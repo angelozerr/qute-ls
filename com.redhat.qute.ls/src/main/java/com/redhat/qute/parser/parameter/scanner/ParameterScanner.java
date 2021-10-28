@@ -50,7 +50,11 @@ public class ParameterScanner extends AbstractScanner<TokenType, ScannerState> {
 
 		case WithinParameter: {			
 			if (stream.advanceIfChar('=')) {
-				state = ScannerState.AfterAssign;	
+				if(!stream.eos() && (stream.peekChar() == ' ' || stream.peekChar() == '=')) {
+					state = ScannerState.WithinParameters;		
+				} else {
+					state = ScannerState.AfterAssign;
+				}
 				return finishToken(offset, TokenType.Assign);
 			}
 			state = ScannerState.WithinParameters;

@@ -158,10 +158,10 @@ public class QuteCompletionInExpressionWithForSectionTest {
 				"	{/for}\r\n" + //
 				"{/for}";
 		testCompletionFor(template, //
-				c("items", "items", r(3, 2, 3, 2)), //
-				c("item", "item", r(3, 2, 3, 2)), //
-				c("review", "review", r(3, 2, 3, 2)), //
-				c("count", "count", r(3, 2, 3, 2)));
+				c("items", "items", r(4, 3, 4, 3)), //
+				c("item", "item", r(4, 3, 4, 3)), //
+				c("review", "review", r(4, 3, 4, 3)), //
+				c("count", "count", r(4, 3, 4, 3)));
 	}
 
 	@Test

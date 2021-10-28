@@ -63,10 +63,9 @@ public class QuteProject {
 	}
 
 	public int findNbreferencesOfInsertTag(String templateId, String tag) {
-		indexer.scan();
-		List<QuteIndex> indexes = indexer.find(null, "body", null);
-
-		return 0;
+		indexer.scanAsync();
+		List<QuteIndex> indexes = indexer.find(null, tag, null);
+		return indexes.size();
 	}
 
 	public List<QuteIndex> findInsertTagParameter(String templateId, String insertParamater) {

@@ -1,9 +1,12 @@
 package com.redhat.qute.parser.expression;
 
+import java.util.List;
+
 import com.redhat.qute.parser.expression.Parts.PartKind;
 import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.sections.LoopSection;
@@ -27,12 +30,26 @@ public class ObjectPart extends Part {
 		while (parent != null) {
 			if (parent.getKind() == NodeKind.Section) {
 				Section section = (Section) parent;
-				if (section.isIterable()) {
+				switch (section.getSectionKind()) {
+				case EACH:
+				case FOR:
 					LoopSection iterableSection = (LoopSection) section;
 					String alias = iterableSection.getAlias();
 					if (partName.equals(alias)) {
-						return iterableSection;
+						return iterableSection.getIterableParameter();
 					}
+
+					break;
+				case LET:
+				case SET:
+					List<Parameter> parameters = section.getParameters();
+					for (Parameter parameter : parameters) {
+						if (partName.equals(parameter.getName())) {
+							return parameter;
+						}
+					}
+					break;
+				default:
 				}
 				// ex : count for #each
 				JavaTypeInfoProvider metadata = section.getMetadata(partName);
@@ -43,7 +60,7 @@ public class ObjectPart extends Part {
 			parent = parent.getParent();
 		}
 
-		// Try to find the class name 
+		// Try to find the class name
 		// - from parameter declaration
 		// - from @CheckedTemplate
 		return template.findInInitialDataModel(this);

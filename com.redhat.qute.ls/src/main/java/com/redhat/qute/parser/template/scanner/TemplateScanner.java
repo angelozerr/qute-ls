@@ -46,6 +46,7 @@ public class TemplateScanner extends AbstractScanner<TokenType, ScannerState> {
 				// https://github.com/quarkusio/quarkus/blob/7164bfa115d9096a3ba0b2929c98f89ac01c2dce/independent-projects/qute/core/src/main/java/io/quarkus/qute/Parser.java#L332
 				if (!stream.eos() && stream.peekChar() == '!') {
 					// Comment -> {! This is a comment !}
+					stream.advance(1);
 					state = ScannerState.WithinComment;
 					return finishToken(offset, TokenType.StartComment);
 
@@ -63,7 +64,7 @@ public class TemplateScanner extends AbstractScanner<TokenType, ScannerState> {
 					return finishToken(offset, TokenType.StartParameterDeclaration);
 				} else {
 					int ch = stream.peekChar();
-					if (Character.isDigit(ch) || Character.isAlphabetic(ch) || ch == '_') {
+					if (Character.isDigit(ch) || Character.isAlphabetic(ch) || ch == '_' || ch == '}') {
 						// Expression
 						state = ScannerState.WithinExpression;
 						return finishToken(offset, TokenType.StartExpression);

@@ -9,5 +9,7 @@ public enum SectionKind {
 	ELSE, //
 	INCLUDE, //
 	INSERT, //
+	SET, //
+	LET, //
 	CUSTOM;
 }

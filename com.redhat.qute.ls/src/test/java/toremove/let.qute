@@ -1,0 +1,7 @@
+{@java.util.List<toremove.Item> items}
+
+{#let var='ABCD' }
+
+{var}
+
+{/let}

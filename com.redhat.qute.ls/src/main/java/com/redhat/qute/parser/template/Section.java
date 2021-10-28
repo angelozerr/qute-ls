@@ -198,6 +198,11 @@ public class Section extends Node implements ParametersContainer {
 			return parameters;
 		}
 		List<Parameter> parameters = ParameterParser.parse(this, getOwnerTemplate().getCancelChecker());
+		initializeParameters(parameters);
+		return parameters;
+	}
+
+	protected void initializeParameters(List<Parameter> parameters) {
 		List<ParameterInfo> infos = getParametersInfo().get(ParametersInfo.MAIN_BLOCK_NAME);
 		if (parameters.size() == infos.size()) {
 			for (int j = 0; j < infos.size(); j++) {
@@ -220,7 +225,6 @@ public class Section extends Node implements ParametersContainer {
 				}
 			}
 		}
-		return parameters;
 	}
 
 	public boolean isIterable() {
@@ -241,7 +245,7 @@ public class Section extends Node implements ParametersContainer {
 		return offset >= getStartParametersOffset() && offset <= getEndParametersOffset();
 	}
 
-	public ExpressionParameter getExpressionParameter(int offset) {
+	public Expression getExpressionParameter(int offset) {
 		if (!isInParameters(offset)) {
 			return null;
 		}

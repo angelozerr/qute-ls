@@ -1,6 +1,6 @@
 package com.redhat.qute.parser.template;
 
-public class Parameter extends Node {
+public class Parameter extends Node implements JavaTypeInfoProvider {
 
 	private String name = null;
 
@@ -90,17 +90,33 @@ public class Parameter extends Node {
 		return name;
 	}
 
-	public ExpressionParameter getExpression() {
+	@Override
+	public Expression getExpression() {
 		if (!isCanHaveExpression()) {
 			return null;
 		}
 		if (expression != null) {
 			return expression;
 		}
-		expression = new ExpressionParameter(getStart() - 1, getEnd() + 1);
+		// Parameter has name only, the expression is the name
+		// ex : items in {#each items}
+		int startExpression = getStartName();
+		int endExpression = getEndName();
+		if (hasValueAssigned()) {
+			// Parameter has value, the expression is the value
+			// ex : myParent=item.name in {#set myParent=item.name}
+			startExpression = getStartValue();
+			endExpression = getEndValue();
+		}
+		expression = new ExpressionParameter(startExpression - 1, endExpression + 1);
 		expression.setParent(this);
 		return expression;
 
+	}
+
+	@Override
+	public Node getNode() {
+		return super.getParent();
 	}
 
 	public void setCanHaveExpression(boolean canHaveExpression) {

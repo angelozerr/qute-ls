@@ -244,6 +244,16 @@ class QuteDefinition {
 	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromObjectPart(Part part, Template template) {
 		JavaTypeInfoProvider resolvedJavaType = ((ObjectPart) part).resolveJavaType();
 		if (resolvedJavaType != null) {
+			// FIXME: resolvedJavaType.getnode should return Parameter
+			if (resolvedJavaType instanceof Parameter) {
+				Parameter parameter = (Parameter) resolvedJavaType;
+				String targetUri = template.getUri();
+				Range targetRange = QutePositionUtility.createRange(parameter);
+				Range originSelectionRange = QutePositionUtility.createRange(part);
+				LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange, originSelectionRange);
+				return CompletableFuture.completedFuture(Arrays.asList(locationLink));
+			}
+
 			Node node = resolvedJavaType.getNode();
 			if (node != null) {
 				switch (node.getKind()) {

@@ -23,6 +23,8 @@ public class ParameterParser {
 		String text = template.getText();
 		int start = expression.getStartParametersOffset();
 		int end = expression.getEndParametersOffset();
+		String s = text.substring(start, end);
+		System.err.println(s);
 		ParameterScanner scanner = ParameterScanner.createScanner(text, start, end);
 		TokenType token = scanner.scan();
 		List<Parameter> parameters = new ArrayList<>();
@@ -42,7 +44,7 @@ public class ParameterParser {
 				break;
 			case ParameterValue:
 				currentParameter.setStartValue(tokenOffset);
-				currentParameter.setEndValue(tokenOffset);
+				currentParameter.setEndValue(tokenEnd);
 				break;
 			default:
 			}

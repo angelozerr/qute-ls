@@ -74,13 +74,31 @@
 		],
 		"description": "Insert section"
 	},
+	"#let": {
+		"prefix": "let",
+		"body": [
+			"{#let ${1:name}=${2:value}}",
+			"\t$0",
+			"{/let}"
+		],
+		"description": "Let section"
+	},
 	"#parameter": {
 		"prefix": "parameter",
 		"body": [
 			"{@${1:class} ${2:alias}}$0"
 		],
 		"description": "Insert parameter declaration"
-	},	
+	},
+	"#set": {
+		"prefix": "set",
+		"body": [
+			"{#set ${1:name}=${2:value}}",
+			"\t$0",
+			"{/set}"
+		],
+		"description": "Let section"
+	},		
 	"#with": {
 		"prefix": "with",
 		"body": [

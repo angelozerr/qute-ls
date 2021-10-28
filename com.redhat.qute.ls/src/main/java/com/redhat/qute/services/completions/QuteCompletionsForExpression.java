@@ -26,6 +26,7 @@ import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionMetadata;
@@ -248,13 +249,14 @@ public class QuteCompletionsForExpression {
 		// Collect parameters from CheckedTemplate method parameters
 		doCompleteExpressionForObjectPartWithCheckedTemplate(template, range, list);
 		// Collect declared model inside section, let, etc
-		doCompleteExpressionForObjectPartWithParentNodes(part, expression, range, list);
+		Set<String> existingVars = new HashSet<>();
+		doCompleteExpressionForObjectPartWithParentNodes(part, expression, range, existingVars, list);
 
 		return CompletableFuture.completedFuture(list);
 	}
 
 	private void doCompleteExpressionForObjectPartWithParentNodes(Node part, Node node, Range range,
-			CompletionList list) {
+			Set<String> existingVars, CompletionList list) {
 		Node parent = node != null ? node.getParent() : null;
 		if (parent == null || parent.getKind() == NodeKind.Template) {
 			return;
@@ -265,29 +267,58 @@ public class QuteCompletionsForExpression {
 			List<SectionMetadata> metadatas = section.getMetadata();
 			for (SectionMetadata metadata : metadatas) {
 				String name = metadata.getName();
-				CompletionItem item = new CompletionItem();
-				item.setLabel(name);
-				item.setKind(CompletionItemKind.Keyword);
-				item.setSortText("Z" + name);
-				TextEdit textEdit = new TextEdit(range, name);
-				item.setTextEdit(Either.forLeft(textEdit));
-				list.getItems().add(item);
-			}
-			if (section.isIterable()) {
-				// Completion for iterable section like #each, #for
-				String alias = ((LoopSection) section).getAlias();
-				if (!StringUtils.isEmpty(alias)) {
+				if (!existingVars.contains(name)) {
+					existingVars.add(name);
 					CompletionItem item = new CompletionItem();
-					item.setLabel(alias);
-					item.setKind(CompletionItemKind.Reference);
-					TextEdit textEdit = new TextEdit(range, alias);
+					item.setLabel(name);
+					item.setKind(CompletionItemKind.Keyword);
+					item.setSortText("Z" + name);
+					TextEdit textEdit = new TextEdit(range, name);
 					item.setTextEdit(Either.forLeft(textEdit));
 					list.getItems().add(item);
 				}
+			}
 
+			switch (section.getSectionKind()) {
+			case EACH:
+			case FOR:
+				// Completion for iterable section like #each, #for
+				String alias = ((LoopSection) section).getAlias();
+				if (!StringUtils.isEmpty(alias)) {
+					if (!existingVars.contains(alias)) {
+						existingVars.add(alias);
+						CompletionItem item = new CompletionItem();
+						item.setLabel(alias);
+						item.setKind(CompletionItemKind.Reference);
+						TextEdit textEdit = new TextEdit(range, alias);
+						item.setTextEdit(Either.forLeft(textEdit));
+						list.getItems().add(item);
+					}
+				}
+				break;
+			case LET:
+			case SET:
+				// completion for parameters coming from #let, #set
+				List<Parameter> parameters = section.getParameters();
+				if (parameters != null) {
+					for (Parameter parameter : parameters) {
+						String parameterName = parameter.getName();
+						if (!existingVars.contains(parameterName)) {
+							existingVars.add(parameterName);
+							CompletionItem item = new CompletionItem();
+							item.setLabel(parameterName);
+							item.setKind(CompletionItemKind.Reference);
+							TextEdit textEdit = new TextEdit(range, parameterName);
+							item.setTextEdit(Either.forLeft(textEdit));
+							list.getItems().add(item);
+						}
+					}
+				}
+				break;
+			default:
 			}
 		}
-		doCompleteExpressionForObjectPartWithParentNodes(part, parent, range, list);
+		doCompleteExpressionForObjectPartWithParentNodes(part, parent, range, existingVars, list);
 	}
 
 	private void doCompleteExpressionForObjectPartWithParameterAlias(Template template, Range range,
