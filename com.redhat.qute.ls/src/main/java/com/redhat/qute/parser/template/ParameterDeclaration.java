@@ -38,7 +38,7 @@ public class ParameterDeclaration extends Node implements ParametersContainer, J
 		return "#parameter-declaration";
 	}
 
-	public String getClassName() {
+	public String getJavaType() {
 		Template template = getOwnerTemplate();
 		int classNameStart = getClassNameStart();
 		int classNameEnd = getClassNameEnd();
@@ -94,7 +94,7 @@ public class ParameterDeclaration extends Node implements ParametersContainer, J
 	}
 
 	@Override
-	public Node getNode() {
+	public Node getJavaTypeOwnerNode() {
 		return this;
 	}
 

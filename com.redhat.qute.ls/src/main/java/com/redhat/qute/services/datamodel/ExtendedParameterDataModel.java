@@ -15,12 +15,12 @@ public class ExtendedParameterDataModel extends ParameterDataModel implements Ja
 	}
 
 	@Override
-	public String getClassName() {
+	public String getJavaType() {
 		return getSourceType();
 	}
 
 	@Override
-	public Node getNode() {
+	public Node getJavaTypeOwnerNode() {
 		return null;
 	}
 

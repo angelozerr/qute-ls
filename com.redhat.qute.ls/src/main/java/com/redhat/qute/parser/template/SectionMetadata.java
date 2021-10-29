@@ -30,12 +30,12 @@ public class SectionMetadata implements JavaTypeInfoProvider{
 	}
 
 	@Override
-	public String getClassName() {
+	public String getJavaType() {
 		return getType();
 	}
 
 	@Override
-	public Node getNode() {
+	public Node getJavaTypeOwnerNode() {
 		return null;
 	}
 

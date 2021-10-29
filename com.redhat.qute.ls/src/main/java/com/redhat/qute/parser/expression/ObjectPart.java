@@ -38,7 +38,6 @@ public class ObjectPart extends Part {
 					if (partName.equals(alias)) {
 						return iterableSection.getIterableParameter();
 					}
-
 					break;
 				case LET:
 				case SET:

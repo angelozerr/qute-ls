@@ -91,7 +91,7 @@ public class Parameter extends Node implements JavaTypeInfoProvider {
 	}
 
 	@Override
-	public Expression getExpression() {
+	public Expression getJavaTypeExpression() {
 		if (!isCanHaveExpression()) {
 			return null;
 		}
@@ -111,12 +111,19 @@ public class Parameter extends Node implements JavaTypeInfoProvider {
 		expression = new ExpressionParameter(startExpression - 1, endExpression + 1);
 		expression.setParent(this);
 		return expression;
+	}
 
+	public Section getOwnerSection() {
+		Node parent = super.getParent();
+		if (parent != null && parent.getKind() == NodeKind.Section) {
+			return (Section) parent;
+		}
+		return null;
 	}
 
 	@Override
-	public Node getNode() {
-		return super.getParent();
+	public Node getJavaTypeOwnerNode() {
+		return this;
 	}
 
 	public void setCanHaveExpression(boolean canHaveExpression) {

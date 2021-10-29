@@ -32,9 +32,11 @@ import com.redhat.qute.ls.api.QuteResolvedJavaClassProvider;
 import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
+import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.JavaTypeInfoProvider;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.NodeKind;
+import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateDataModelProvider;
@@ -255,21 +257,22 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 		if (javaTypeInfo == null) {
 			return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 		}
-		String className = javaTypeInfo.getClassName();
-		if (StringUtils.isEmpty(className)) {
-			Part part = javaTypeInfo.getPartToResolve();
-			if (part == null) {
+		String javaType = javaTypeInfo.getJavaType();
+		if (StringUtils.isEmpty(javaType)) {
+			Expression expression = javaTypeInfo.getJavaTypeExpression();
+			Part lastPart = expression != null ? expression.getLastPart() : null;
+			if (lastPart == null) {
 				return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
 			}
-			future = resolveJavaType(part, projectUri);
+			future = resolveJavaType(lastPart, projectUri);
 		}
 
 		if (future == null) {
-			future = resolveJavaType(className, projectUri);
+			future = resolveJavaType(javaType, projectUri);
 		}
-		Node node = javaTypeInfo.getNode();
-		if (node != null && node.getKind() == NodeKind.Section) {
-			Section section = (Section) node;
+		Node node = javaTypeInfo.getJavaTypeOwnerNode();
+		Section section = getOwnerSection(node);
+		if (section != null) {
 			if (section.isIterable()) {
 				future = future //
 						.thenCompose(resolvedClass -> {
@@ -302,6 +305,16 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 			}
 		}
 		return future;
+	}
+
+	private Section getOwnerSection(Node node) {
+		if (node == null) {
+			return null;
+		}
+		if (node.getKind() == NodeKind.Parameter) {
+			return ((Parameter) node).getOwnerSection();
+		}
+		return null;
 	}
 
 	public void dataModelChanged(JavaDataModelChangeEvent event) {

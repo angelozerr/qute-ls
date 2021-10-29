@@ -146,7 +146,7 @@ class QuteDiagnostics {
 			switch (node.getKind()) {
 			case ParameterDeclaration: {
 				ParameterDeclaration parameter = (ParameterDeclaration) node;
-				String javaTypeToResolve = parameter.getClassName();
+				String javaTypeToResolve = parameter.getJavaType();
 				if (StringUtils.isEmpty(javaTypeToResolve)) {
 					Range range = QutePositionUtility.createRange(parameter);
 					String message = "Class must be defined";
@@ -188,7 +188,7 @@ class QuteDiagnostics {
 				Section section = (Section) node;
 				List<Parameter> parameters = section.getParameters();
 				for (Parameter parameter : parameters) {
-					Expression expression = parameter.getExpression();
+					Expression expression = parameter.getJavaTypeExpression();
 					if (expression != null) {
 						validateExpression(expression, section, template, resolvingJavaTypeFutures, diagnostics);
 					}
@@ -324,15 +324,18 @@ class QuteDiagnostics {
 			return null;
 		}
 
-		String javaTypeToResolve = javaTypeInfo.getClassName();
+		String javaTypeToResolve = javaTypeInfo.getJavaType();
 		if (javaTypeToResolve == null) {
 			// case of (#for item as data.items) where data.items expression must be
 			// evaluated
-			Part part = javaTypeInfo.getPartToResolve();
-			if (part != null) {
-				ResolvedJavaClassInfo alias = javaCache.resolveJavaType(part, projectUri).getNow(null);
-				if (alias != null) {
-					javaTypeToResolve = alias.getClassName();
+			Expression expression = javaTypeInfo.getJavaTypeExpression();
+			if (expression != null) {
+				Part lastPart = expression.getLastPart();
+				if (lastPart != null) {
+					ResolvedJavaClassInfo alias = javaCache.resolveJavaType(lastPart, projectUri).getNow(null);
+					if (alias != null) {
+						javaTypeToResolve = alias.getClassName();
+					}
 				}
 			}
 		}

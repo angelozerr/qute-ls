@@ -251,7 +251,7 @@ public class Section extends Node implements ParametersContainer {
 		}
 		Parameter parameter = getParameterAtOffset(offset);
 		if (parameter != null) {
-			return parameter.getExpression();
+			return parameter.getJavaTypeExpression();
 		}
 		ExpressionParameter expression = new ExpressionParameter(getStartParametersOffset(), getEndParametersOffset());
 		expression.setParent(this);
