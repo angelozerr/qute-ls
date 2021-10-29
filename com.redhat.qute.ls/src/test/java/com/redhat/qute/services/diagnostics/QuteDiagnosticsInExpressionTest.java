@@ -60,6 +60,9 @@ public class QuteDiagnosticsInExpressionTest {
 	public void stringLiteral() throws Exception {
 		String template = "{\"abcd\"}";
 		testDiagnosticsFor(template);
+		
+		template = "{'abcd'}";
+		testDiagnosticsFor(template);
 	}
 
 	@Test

@@ -27,6 +27,7 @@ import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
+import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.RangeOffset;
@@ -116,6 +117,34 @@ public class QuteHover {
 		}
 	}
 
+	private CompletableFuture<Hover> doHoverForObjectPart(Part part, String projectUri, HoverRequest hoverRequest) {
+		// Check if part is a literal (ex: true, null, 123, 'abc', etc)
+		Expression expression = part.getParent().getParent();
+		String literalJavaType = expression.getLiteralJavaType();
+		if (literalJavaType != null) {
+			return javaCache.resolveJavaType(literalJavaType, projectUri) //
+					.thenApply(resolvedJavaType -> {
+						if (resolvedJavaType != null) {
+							boolean hasMarkdown = hoverRequest.canSupportMarkupKind(MarkupKind.MARKDOWN);
+							MarkupContent content = DocumentationUtils.getDocumentation(resolvedJavaType, hasMarkdown);
+							Range range = QutePositionUtility.createRange(part);
+							return new Hover(content, range);
+						}
+						return null;
+					});
+		}
+		return javaCache.resolveJavaType(part, projectUri) //
+				.thenApply(resolvedJavaType -> {
+					if (resolvedJavaType != null) {
+						boolean hasMarkdown = hoverRequest.canSupportMarkupKind(MarkupKind.MARKDOWN);
+						MarkupContent content = DocumentationUtils.getDocumentation(resolvedJavaType, hasMarkdown);
+						Range range = QutePositionUtility.createRange(part);
+						return new Hover(content, range);
+					}
+					return null;
+				});
+	}
+
 	private CompletableFuture<Hover> doHoverForPropertyPart(Part part, String projectUri, HoverRequest hoverRequest) {
 		Parts parts = part.getParent();
 		Part previousPart = parts.getPreviousPart(part);
@@ -140,19 +169,6 @@ public class QuteHover {
 						return CompletableFuture.completedFuture(hover);
 					}
 					return NO_HOVER;
-				});
-	}
-
-	private CompletableFuture<Hover> doHoverForObjectPart(Part part, String projectUri, HoverRequest hoverRequest) {
-		return javaCache.resolveJavaType(part, projectUri) //
-				.thenApply(resolvedJavaType -> {
-					if (resolvedJavaType != null) {
-						boolean hasMarkdown = hoverRequest.canSupportMarkupKind(MarkupKind.MARKDOWN);
-						MarkupContent content = DocumentationUtils.getDocumentation(resolvedJavaType, hasMarkdown);
-						Range range = QutePositionUtility.createRange(part);
-						return new Hover(content, range);
-					}
-					return null;
 				});
 	}
 

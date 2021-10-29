@@ -8,6 +8,75 @@ import org.junit.jupiter.api.Test;
 public class QuteHoverInExpressionTest {
 
 	@Test
+	public void booleanLiteral() throws Exception {
+		String template = "{tr|ue}";
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.lang.Boolean" + //
+				System.lineSeparator() + //
+				"```", // ,
+				r(0, 1, 0, 5));
+
+		template = "{tru|eX}";
+		assertHover(template);
+
+		template = "{fal|se}";
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.lang.Boolean" + //
+				System.lineSeparator() + //
+				"```", // ,
+				r(0, 1, 0, 6));
+
+		template = "{fals|eX}";
+		assertHover(template);
+	}
+
+	@Test
+	public void nullLiteral() throws Exception {
+		String template = "{nu|ll}";
+		assertHover(template);
+	}
+
+	@Test
+	public void stringLiteral() throws Exception {
+		String template = "{\"ab|cd\"}";
+		assertHover(template);
+
+		template = "{'ab|cd'}";
+		assertHover(template);
+
+	}
+
+	@Test
+	public void integerLiteral() throws Exception {
+		String template = "{1|23}";
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.lang.Integer" + //
+				System.lineSeparator() + //
+				"```", // ,
+				r(0, 1, 0, 4));
+
+		template = "{1|23X}";
+		assertHover(template);
+	}
+
+	@Test
+	public void longLiteral() throws Exception {
+		String template = "{1|23L}";
+		assertHover(template, "```java" + //
+				System.lineSeparator() + //
+				"java.lang.Long" + //
+				System.lineSeparator() + //
+				"```", // ,
+				r(0, 1, 0, 5));
+
+		template = "{1|23LX}";
+		assertHover(template);
+	}
+
+	@Test
 	public void undefinedVariable() throws Exception {
 		String template = "{i|tem}";
 		assertHover(template);
