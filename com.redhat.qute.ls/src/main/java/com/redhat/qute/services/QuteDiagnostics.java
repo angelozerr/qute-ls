@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2020 Red Hat Inc. and others.
+* Copyright (c) 2021 Red Hat Inc. and others.
 * All rights reserved. This program and the accompanying materials
 * which accompanies this distribution, and is available at
 * http://www.eclipse.org/legal/epl-v20.html
@@ -244,12 +244,23 @@ class QuteDiagnostics {
 
 	private void validateExpression(Expression expression, Section ownerSection, Template template,
 			List<CompletableFuture<?>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
-		String projectUri = template.getProjectUri();
-		List<Node> expressionChildren = expression.getExpressionContent();
-		for (Node expressionChild : expressionChildren) {
-			if (expressionChild.getKind() == NodeKind.ExpressionParts) {
-				Parts parts = (Parts) expressionChild;
-				validateExpressionParts(parts, ownerSection, projectUri, resolvingJavaTypeFutures, diagnostics);
+		String literalJavaType = expression.getLiteralJavaType();
+		if (literalJavaType != null) {
+			// The expression is a literal:
+			// - {'abcd'} : string literal
+			// - {true} : boolean literal
+			// - {null} : null literal
+			// - {123} : integer literal
+
+		} else {
+			// The expression reference Java data model (ex : {item})
+			String projectUri = template.getProjectUri();
+			List<Node> expressionChildren = expression.getExpressionContent();
+			for (Node expressionChild : expressionChildren) {
+				if (expressionChild.getKind() == NodeKind.ExpressionParts) {
+					Parts parts = (Parts) expressionChild;
+					validateExpressionParts(parts, ownerSection, projectUri, resolvingJavaTypeFutures, diagnostics);
+				}
 			}
 		}
 	}
@@ -330,11 +341,16 @@ class QuteDiagnostics {
 			// evaluated
 			Expression expression = javaTypeInfo.getJavaTypeExpression();
 			if (expression != null) {
-				Part lastPart = expression.getLastPart();
-				if (lastPart != null) {
-					ResolvedJavaClassInfo alias = javaCache.resolveJavaType(lastPart, projectUri).getNow(null);
-					if (alias != null) {
-						javaTypeToResolve = alias.getClassName();
+				String literalJavaType = expression.getLiteralJavaType();
+				if (literalJavaType != null) {
+					javaTypeToResolve = literalJavaType;
+				} else {
+					Part lastPart = expression.getLastPart();
+					if (lastPart != null) {
+						ResolvedJavaClassInfo alias = javaCache.resolveJavaType(lastPart, projectUri).getNow(null);
+						if (alias != null) {
+							javaTypeToResolve = alias.getClassName();
+						}
 					}
 				}
 			}
@@ -369,7 +385,7 @@ class QuteDiagnostics {
 			return null;
 		}
 		if (!part.isLast() || ownerSection != null && ownerSection.isIterable()) {
-			// Last part doesnt require to validate the type except if the part expression
+			// Last part does'nt require to validate the type except if the part expression
 			// is inside loop section
 			// to check if the type is an iterable type (ex : {#for item in
 			// part.to.validate}

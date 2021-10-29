@@ -96,7 +96,11 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 		ResolvedJavaClassInfo string = createResolvedJavaClassInfo("java.lang.String", cache);
 		registerField("UTF16", "byte", string);
+		createResolvedJavaClassInfo("java.lang.Boolean", cache);
 		createResolvedJavaClassInfo("java.lang.Integer", cache);
+		createResolvedJavaClassInfo("java.lang.Double", cache);
+		createResolvedJavaClassInfo("java.lang.Long", cache);
+		createResolvedJavaClassInfo("java.lang.Float", cache);
 		createResolvedJavaClassInfo("java.math.BigInteger", cache);
 
 		ResolvedJavaClassInfo review = createResolvedJavaClassInfo("org.acme.Review", cache);

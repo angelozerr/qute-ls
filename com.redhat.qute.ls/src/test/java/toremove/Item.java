@@ -6,7 +6,7 @@ import java.util.List;
 public class Item {
 
 	private List<Review> reviews = new ArrayList<>();
-	private String name;
+	private final String name;
 
 	public Item(int i) {
 		this.name = "Item: " + i;

@@ -68,6 +68,18 @@ public class Parameter extends Node implements JavaTypeInfoProvider {
 		return getName() + "=" + getValue();
 	}
 
+	/**
+	 * Returns the parameter name.
+	 * 
+	 * @return the parameter name.
+	 */
+	public String getName() {
+		if (name == null) {
+			name = getOwnerTemplate().getText(getStartName(), getEndName());
+		}
+		return name;
+	}
+
 	public String getValue() {
 		if (value == null) {
 			if (hasValueAssigned()) {
@@ -81,13 +93,6 @@ public class Parameter extends Node implements JavaTypeInfoProvider {
 
 	public boolean hasValueAssigned() {
 		return startValue != -1;
-	}
-
-	public String getName() {
-		if (name == null) {
-			name = getOwnerTemplate().getText(getStartName(), getEndName());
-		}
-		return name;
 	}
 
 	@Override

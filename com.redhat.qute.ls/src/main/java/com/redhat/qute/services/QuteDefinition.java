@@ -266,7 +266,7 @@ class QuteDefinition {
 					}
 					if (parameter != null) {
 						String targetUri = template.getUri();
-						Range targetRange = QutePositionUtility.createRange(parameter);
+						Range targetRange = QutePositionUtility.selectParameterName(parameter);
 						Range originSelectionRange = QutePositionUtility.createRange(part);
 						LocationLink locationLink = new LocationLink(targetUri, targetRange, targetRange,
 								originSelectionRange);

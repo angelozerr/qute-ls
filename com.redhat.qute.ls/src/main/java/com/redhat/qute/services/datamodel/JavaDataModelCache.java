@@ -260,11 +260,18 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 		String javaType = javaTypeInfo.getJavaType();
 		if (StringUtils.isEmpty(javaType)) {
 			Expression expression = javaTypeInfo.getJavaTypeExpression();
-			Part lastPart = expression != null ? expression.getLastPart() : null;
-			if (lastPart == null) {
-				return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
+			if (expression != null) {
+				String literalJavaType = expression.getLiteralJavaType();
+				if (literalJavaType != null) {
+					return resolveJavaType(literalJavaType, projectUri);
+				}
+				
+				Part lastPart = expression.getLastPart();
+				if (lastPart == null) {
+					return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
+				}
+				future = resolveJavaType(lastPart, projectUri);
 			}
-			future = resolveJavaType(lastPart, projectUri);
 		}
 
 		if (future == null) {

@@ -1,3 +1,14 @@
+/*******************************************************************************
+* Copyright (c) 2021 Red Hat Inc. and others.
+* All rights reserved. This program and the accompanying materials
+* which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v20.html
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     Red Hat Inc. - initial API and implementation
+*******************************************************************************/
 package com.redhat.qute.services.diagnostics;
 
 import static com.redhat.qute.QuteAssert.d;
@@ -6,7 +17,72 @@ import static com.redhat.qute.QuteAssert.testDiagnosticsFor;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Test with expressions.
+ * 
+ * @author Angelo ZERR
+ *
+ */
 public class QuteDiagnosticsInExpressionTest {
+
+	@Test
+	public void booleanLiteral() throws Exception {
+		String template = "{true}";
+
+		testDiagnosticsFor(template);
+
+		template = "{trueX}";
+		testDiagnosticsFor(template, //
+				d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`trueX` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
+
+		template = "{false}";
+		testDiagnosticsFor(template);
+
+		template = "{falseX}";
+		testDiagnosticsFor(template, //
+				d(0, 1, 0, 7, QuteErrorCode.UndefinedVariable, "`falseX` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
+	}
+
+	@Test
+	public void nullLiteral() throws Exception {
+		String template = "{null}";
+		testDiagnosticsFor(template);
+
+		template = "{nullX}";
+		testDiagnosticsFor(template, //
+				d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`nullX` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
+	}
+
+	@Test
+	public void stringLiteral() throws Exception {
+		String template = "{\"abcd\"}";
+		testDiagnosticsFor(template);
+	}
+
+	@Test
+	public void integerLiteral() throws Exception {
+		String template = "{123}";
+		testDiagnosticsFor(template);
+
+		template = "{123X}";
+		testDiagnosticsFor(template, //
+				d(0, 1, 0, 5, QuteErrorCode.UndefinedVariable, "`123X` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
+	}
+
+	@Test
+	public void longLiteral() throws Exception {
+		String template = "{123L}";
+		testDiagnosticsFor(template);
+
+		template = "{123LX}";
+		testDiagnosticsFor(template, //
+				d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`123LX` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
+	}
 
 	@Test
 	public void undefinedVariable() throws Exception {

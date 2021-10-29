@@ -10,6 +10,10 @@ public class Expression extends Node {
 
 	private List<Node> expressionContent;
 
+	private String literalJavaType;
+
+	private String content;
+
 	Expression(int start, int end) {
 		super(start, end);
 		this.expressionContent = null;
@@ -56,5 +60,27 @@ public class Expression extends Node {
 		}
 		Parts parts = (Parts) nodes.get(0);
 		return (Part) parts.getLastChild();
+	}
+
+	/**
+	 * Returns the Java type of the expression if it's a literal and null otherwise.
+	 * 
+	 * @return the Java type of the expression if it's a literal and null otherwise.
+	 */
+	public String getLiteralJavaType() {
+		if (literalJavaType == null) {
+			literalJavaType = LiteralSupport.getLiteralJavaType(getContent());
+			if (literalJavaType == null) {
+				literalJavaType = "";
+			}
+		}
+		return literalJavaType.isEmpty() ? null : literalJavaType;
+	}
+
+	public String getContent() {
+		if (content == null) {
+			content = getOwnerTemplate().getText(getStart() + 1, getEnd() - 1);
+		}
+		return content;
 	}
 }

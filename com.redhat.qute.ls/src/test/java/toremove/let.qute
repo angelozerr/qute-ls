@@ -1,7 +1,10 @@
-{@java.util.List<toremove.Item> items}
+{@org.acme.Item item}
 
-{#let var='ABCD' }
-
-{var}
-
-{/let}
+{#set name=item.name age=10 long=10L negDouble=-10D isActive=true simpleQuote='abcd' doubleQuote="efgh"}
+  {true}
+  {name}
+  {negDouble}
+  {isActive}
+  {simpleQuote}
+  {doubleQuote}
+{/set}

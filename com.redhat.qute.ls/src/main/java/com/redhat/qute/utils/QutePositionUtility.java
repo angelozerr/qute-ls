@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Range;
 
 import com.redhat.qute.ls.commons.BadLocationException;
 import com.redhat.qute.parser.template.Node;
+import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Section;
@@ -47,6 +48,13 @@ public class QutePositionUtility {
 		Template template = parameter.getOwnerTemplate();
 		int startOffset = parameter.getAliasStart();
 		int endOffset = parameter.getAliasEnd();
+		return createRange(startOffset, endOffset, template);
+	}
+
+	public static Range selectParameterName(Parameter parameter) {
+		Template template = parameter.getOwnerTemplate();
+		int startOffset = parameter.getStartName();
+		int endOffset = parameter.getEndName();
 		return createRange(startOffset, endOffset, template);
 	}
 
