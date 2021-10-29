@@ -48,8 +48,10 @@ public class DocumentationUtils {
 		}
 		documentation.append(member.getMemberSimpleType());
 		documentation.append(" ");
-		documentation.append(member.getResolvedClass().getClassName());
-		documentation.append(".");
+		if (member.getResolvedClass() != null) {
+			documentation.append(member.getResolvedClass().getClassName());
+			documentation.append(".");
+		}
 		documentation.append(member.getName());
 
 		if (member.getKind() == JavaMemberKind.METHOD) {
@@ -61,6 +63,12 @@ public class DocumentationUtils {
 			documentation.append(System.lineSeparator());
 			documentation.append("```");
 		}
+
+		if (member.getDescription() != null) {
+			documentation.append(System.lineSeparator());
+			documentation.append(member.getDescription());
+		}
+
 		return createMarkupContent(documentation, markdown);
 	}
 }

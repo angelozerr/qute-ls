@@ -1,7 +1,7 @@
 package com.redhat.qute.jdt.internal.template;
 
-import static com.redhat.qute.jdt.utils.JDTQuteProjectUtils.getTemplatePath;
 import static com.redhat.qute.jdt.internal.template.QuarkusIntegrationForQute.resolveSignature;
+import static com.redhat.qute.jdt.utils.JDTQuteProjectUtils.getTemplatePath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,21 +93,6 @@ class CheckedTemplateSupport {
 								IMethod element = (IMethod) o;
 								CompilationUnit cu = getASTRoot(element.getCompilationUnit());
 								cu.accept(new TemplateDataCollector(element, template, monitor));
-
-								/*
-								 * ICompilationUnit compilationUnit = (ICompilationUnit)
-								 * element.getAncestor(IJavaElement.COMPILATION_UNIT); if (compilationUnit !=
-								 * null) { Location location = JDTUtils.toLocation(compilationUnit,
-								 * match.getOffset(), match.getLength()); locations.add(location); } else if
-								 * (includeClassFiles) { IClassFile cf = (IClassFile)
-								 * element.getAncestor(IJavaElement.CLASS_FILE); if (cf != null &&
-								 * cf.getSourceRange() != null) { Location location = JDTUtils.toLocation(cf,
-								 * match.getOffset(), match.getLength()); locations.add(location); } else if
-								 * (includeDecompiledSources && cf != null) { List<Location> result =
-								 * JDTUtils.searchDecompiledSources(element, cf, false, false, monitor);
-								 * locations.addAll(result); } }
-								 */
-
 							}
 						}
 					}, monitor);

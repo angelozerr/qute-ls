@@ -19,6 +19,7 @@ import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
 import com.redhat.qute.commons.QuteResolvedJavaClassParams;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.ValueResolver;
 import com.redhat.qute.commons.datamodel.JavaDataModelChangeEvent;
 import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
@@ -119,6 +120,8 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 
 	private final QuteProjectDataModelProvider dataModelProvider;
 
+	private final ValueResolversRegistry valueResolversRegistry;
+
 	public JavaDataModelCache(QuteProjectInfoProvider projectInfoProvider, QuteJavaClassesProvider classProvider,
 			QuteResolvedJavaClassProvider resolvedClassProvider, QuteJavaDefinitionProvider definitionProvider,
 			QuteProjectDataModelProvider dataModelProvider) {
@@ -128,6 +131,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 		this.resolvedClassProvider = resolvedClassProvider;
 		this.definitionProvider = definitionProvider;
 		this.dataModelProvider = dataModelProvider;
+		this.valueResolversRegistry = new ValueResolversRegistry();
 	}
 
 	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassesParams params) {
@@ -140,6 +144,10 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 
 	public CompletableFuture<Location> getJavaDefinition(QuteJavaDefinitionParams params) {
 		return definitionProvider.getJavaDefinition(params);
+	}
+
+	public List<ValueResolver> getResolversFor(ResolvedJavaClassInfo javaType) {
+		return valueResolversRegistry.getResolversFor(javaType);
 	}
 
 	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(String className, String projectUri) {
@@ -265,7 +273,7 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 				if (literalJavaType != null) {
 					return resolveJavaType(literalJavaType, projectUri);
 				}
-				
+
 				Part lastPart = expression.getLastPart();
 				if (lastPart == null) {
 					return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
@@ -369,20 +377,32 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 	}
 
 	public JavaMemberInfo findMember(String property, ResolvedJavaClassInfo resolvedType, String projectUri) {
+		// Search in he java root type
 		JavaMemberInfo memberInfo = resolvedType.findMember(property);
 		if (memberInfo != null) {
 			return memberInfo;
 		}
-		if (resolvedType.getExtendedTypes() == null) {
-			return null;
-		}
-		for (String extendedType : resolvedType.getExtendedTypes()) {
-			ResolvedJavaClassInfo resolvedExtendedType = resolveJavaType(extendedType, projectUri).getNow(null);
-			if (resolvedExtendedType != null) {
-				memberInfo = resolvedExtendedType.findMember(property);
-				if (memberInfo != null) {
-					return memberInfo;
+		if (resolvedType.getExtendedTypes() != null) {
+			// Search in extended types
+			for (String extendedType : resolvedType.getExtendedTypes()) {
+				ResolvedJavaClassInfo resolvedExtendedType = resolveJavaType(extendedType, projectUri).getNow(null);
+				if (resolvedExtendedType != null) {
+					memberInfo = resolvedExtendedType.findMember(property);
+					if (memberInfo != null) {
+						return memberInfo;
+					}
 				}
+			}
+		}
+		return findValueResolver(property, resolvedType, projectUri);
+	}
+
+	public ValueResolver findValueResolver(String property, ResolvedJavaClassInfo resolvedType, String projectUri) {
+		// Search in value resolvers (ex : orEmpty, take, etc)
+		List<ValueResolver> resolvers = valueResolversRegistry.getResolversFor(resolvedType);
+		for (ValueResolver resolver : resolvers) {
+			if (resolver.match(property)) {
+				return resolver;
 			}
 		}
 		return null;

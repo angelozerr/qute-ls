@@ -21,6 +21,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import com.redhat.qute.commons.JavaFieldInfo;
 import com.redhat.qute.commons.JavaMethodInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.commons.ValueResolver;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
@@ -151,6 +152,22 @@ public class QuteCompletionsForExpression {
 		// Completion for Java methods
 		fillCompletionMethod(range, list, resolvedClass, projectUri, completionSettings, formattingSettings,
 				existingProperties);
+		
+		List<ValueResolver> resolvers = javaCache.getResolversFor(resolvedClass);
+		for (ValueResolver method : resolvers) {
+			
+			String methodSignature = method.getSignature();
+			CompletionItem item = new CompletionItem();
+			item.setLabel(methodSignature);
+			item.setFilterText(method.getName());
+			item.setKind(CompletionItemKind.Method);
+			TextEdit textEdit = new TextEdit();
+			textEdit.setRange(range);
+			textEdit.setNewText(createMethodSnippet(method, completionSettings, formattingSettings));
+			item.setTextEdit(Either.forLeft(textEdit));
+			list.getItems().add(item);
+			
+		}
 
 		return list;
 	}

@@ -111,6 +111,13 @@ public class QuteHoverInExpressionTest {
 	}
 
 	@Test
+	public void undefinedPropertyWithIterable() throws Exception {
+		String template = "{@java.util.List items}\r\n" + //
+				"{items.nam|eXXX}";
+		assertHover(template);
+	}
+	
+	@Test
 	public void definedProperty() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{item.nam|e}";

@@ -18,6 +18,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
@@ -107,10 +108,12 @@ public class QuarkusIntegrationForQute {
 						} else if (match.getElement() instanceof IField) {
 							IField field = (IField) match.getElement();
 							collectTemplateDataModelForTemplateField(field, templates, monitor);
+						} else if (match.getElement() instanceof IMethod) {
+							IMethod method = (IMethod) match.getElement();
+							//collect(field, templates, monitor);
 						}
 					}
 
-					
 				}, monitor);
 
 		return templates;

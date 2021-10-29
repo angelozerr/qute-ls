@@ -127,18 +127,6 @@ class QuteDiagnostics {
 		}
 	}
 
-	private static void validate(Node parent, List<Diagnostic> diagnostics) {
-		if (!parent.isClosed()) {
-			Range range = QutePositionUtility.createRange(parent);
-			String message = parent.getKind() + parent.getNodeName() + " is not closed";
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, null);
-			diagnostics.add(diagnostic);
-		}
-		for (Node child : parent.getChildren()) {
-			validate(child, diagnostics);
-		}
-	}
-
 	private void validateDataModel(Node parent, Template template, List<CompletableFuture<?>> resolvingJavaTypeFutures,
 			List<Diagnostic> diagnostics) {
 		List<Node> children = parent.getChildren();
@@ -385,8 +373,8 @@ class QuteDiagnostics {
 			return null;
 		}
 		if (!part.isLast() || ownerSection != null && ownerSection.isIterable()) {
-			// Last part does'nt require to validate the type except if the part expression
-			// is inside loop section
+			// Last part doesn't require to validate the type except if the part expression
+			// is inside a loop section
 			// to check if the type is an iterable type (ex : {#for item in
 			// part.to.validate}
 			return validateJavaTypePart(part, ownerSection, projectUri, diagnostics, resolvingJavaTypeFutures,

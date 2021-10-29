@@ -3,3 +3,7 @@
 {#each i in items}
 	{i}
 {/each}
+
+{#let a=['items']}
+
+{/let}

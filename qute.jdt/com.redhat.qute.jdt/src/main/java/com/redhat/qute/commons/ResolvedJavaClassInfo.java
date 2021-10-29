@@ -76,6 +76,7 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 			for (String extendedType : extendedTypes) {
 				if ("Iterable".equals(extendedType) || extendedType.equals("java.lang.Iterable")) {
 					this.iterableOf = "java.lang.Object";
+					this.iterableType = getClassName();
 					return true;
 				}
 			}
@@ -107,14 +108,23 @@ public class ResolvedJavaClassInfo extends JavaClassInfo {
 		if (methods == null || methods.isEmpty() || isEmpty(propertyOrMethodName)) {
 			return null;
 		}
-		String getterMethodName = "get" + (propertyOrMethodName.charAt(0) + "").toUpperCase()
-				+ propertyOrMethodName.substring(1, propertyOrMethodName.length());
+		String getterMethodName = computeGetterName(propertyOrMethodName);
 		for (JavaMethodInfo method : methods) {
 			if (isMatchMethod(method, propertyOrMethodName, getterMethodName)) {
 				return method;
 			}
 		}
 		return null;
+	}
+
+	private static String computeGetterName(String propertyOrMethodName) {
+		return "get" + (propertyOrMethodName.charAt(0) + "").toUpperCase()
+				+ propertyOrMethodName.substring(1, propertyOrMethodName.length());
+	}
+
+	public static boolean isMatchMethod(JavaMethodInfo method, String propertyOrMethodName) {
+		String getterMethodName = computeGetterName(propertyOrMethodName);
+		return isMatchMethod(method, propertyOrMethodName, getterMethodName);
 	}
 
 	private static boolean isMatchMethod(JavaMethodInfo method, String propertyOrMethodName, String getterMethodName) {

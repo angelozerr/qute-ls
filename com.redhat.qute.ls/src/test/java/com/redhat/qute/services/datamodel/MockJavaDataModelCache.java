@@ -1,6 +1,7 @@
 package com.redhat.qute.services.datamodel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,7 @@ public class MockJavaDataModelCache extends JavaDataModelCache {
 
 		createResolvedJavaClassInfo("java.util.List<org.acme.Item>", "java.util.List", "org.acme.Item", cache);
 		ResolvedJavaClassInfo list = createResolvedJavaClassInfo("java.util.List", cache);
+		list.setExtendedTypes(Arrays.asList("java.lang.Iterable"));
 		registerMethod("size() : int", list);
 
 		return cache;
