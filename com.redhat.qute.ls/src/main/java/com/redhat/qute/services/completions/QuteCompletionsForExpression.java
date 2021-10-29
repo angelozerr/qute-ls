@@ -54,6 +54,9 @@ public class QuteCompletionsForExpression {
 		if (nodeExpression == null) {
 			// ex : { | }
 			return doCompleteExpressionForObjectPart(expression, null, offset, template);
+		} else if (expression == null) {
+			// ex : {|
+			return doCompleteExpressionForObjectPart(null, nodeExpression, offset, template);
 		}
 
 		if (nodeExpression.getKind() == NodeKind.ExpressionPart) {
@@ -239,8 +242,8 @@ public class QuteCompletionsForExpression {
 	private CompletableFuture<CompletionList> doCompleteExpressionForObjectPart(Expression expression, Node part,
 			int offset, Template template) {
 		// Completion for root object
-		int partStart = part != null ? part.getStart() : offset;
-		int partEnd = part != null ? part.getEnd() : offset;
+		int partStart = part != null && part.getKind() != NodeKind.Text ? part.getStart() : offset;
+		int partEnd = part != null && part.getKind() != NodeKind.Text ? part.getEnd() : offset;
 		Range range = QutePositionUtility.createRange(partStart, partEnd, template);
 		CompletionList list = new CompletionList();
 
@@ -250,7 +253,7 @@ public class QuteCompletionsForExpression {
 		doCompleteExpressionForObjectPartWithCheckedTemplate(template, range, list);
 		// Collect declared model inside section, let, etc
 		Set<String> existingVars = new HashSet<>();
-		doCompleteExpressionForObjectPartWithParentNodes(part, expression, range, existingVars, list);
+		doCompleteExpressionForObjectPartWithParentNodes(part, expression != null ? expression : part, range, existingVars, list);
 
 		return CompletableFuture.completedFuture(list);
 	}

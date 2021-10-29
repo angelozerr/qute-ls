@@ -166,4 +166,12 @@ public class QuteCompletionInExpressionTest {
 				c("name : java.lang.String", "name", r(1, 20, 1, 22)), //
 				c("average : java.lang.Integer", "average", r(1, 20, 1, 22)));
 	}
+	
+	@Test
+	public void completionInExpressionWithOnlyStartBracket() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"Item: {|";
+		testCompletionFor(template, //
+				c("item", "item", r(1, 7, 1, 7)));
+	}
 }

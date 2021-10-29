@@ -117,6 +117,9 @@ public class QuteCompletions {
 			}
 			return completionForExpression.doCompleteExpression(expression, nodeExpression, template, offset,
 					completionSettings, formattingSettings, cancelChecker);
+		} else if (node.getKind() == NodeKind.Text && text.charAt(offset - 1) == '{') {
+			return completionForExpression.doCompleteExpression(null, node, template, offset, completionSettings,
+					formattingSettings, cancelChecker);
 		}
 
 		Scanner<TokenType, ScannerState> scanner = TemplateScanner.createScanner(text, node.getStart());
