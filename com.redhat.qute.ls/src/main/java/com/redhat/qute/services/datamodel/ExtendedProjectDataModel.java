@@ -12,6 +12,7 @@ public class ExtendedProjectDataModel extends ProjectDataModel<ExtendedTemplateD
 
 	public ExtendedProjectDataModel(ProjectDataModel<TemplateDataModel<ParameterDataModel>> project) {
 		super.setTemplates(createTemplates(project.getTemplates()));
+		super.setValueResolvers(project.getValueResolvers());
 	}
 
 	private List<ExtendedTemplateDataModel> createTemplates(List<TemplateDataModel<ParameterDataModel>> templates) {

@@ -51,6 +51,9 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 	private static final CompletableFuture<ExtendedTemplateDataModel> EXTENDED_TEMPLATE_DATAMODEL_NULL_FUTURE = CompletableFuture
 			.completedFuture(null);
 
+	private static final CompletableFuture<List<ValueResolver>> VALUE_RESOLVERS_NULL_FUTURE = CompletableFuture
+			.completedFuture(null);
+
 	private static final Map<String, CompletableFuture<ResolvedJavaClassInfo>> javaPrimitiveTypes;
 
 	static {
@@ -405,6 +408,27 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 				return resolver;
 			}
 		}
+		resolvers = getValueResolvers(projectUri).getNow(null);
+		if (resolvers != null) {
+			for (ValueResolver resolver : resolvers) {
+				if (resolver.match(property)) {
+					return resolver;
+				}
+			}
+		}
 		return null;
+	}
+
+	private CompletableFuture<List<ValueResolver>> getValueResolvers(String projectUri) {
+		if (StringUtils.isEmpty(projectUri)) {
+			return VALUE_RESOLVERS_NULL_FUTURE;
+		}
+		return getProjectContainer(projectUri).getDataModel() //
+				.thenApply(dataModel -> {
+					if (dataModel == null) {
+						return null;
+					}
+					return dataModel.getValueResolvers();
+				});
 	}
 }

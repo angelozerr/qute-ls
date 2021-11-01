@@ -1,3 +1,16 @@
+/*******************************************************************************
+* Copyright (c) 2021 Red Hat Inc. and others.
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License v. 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+* which is available at https://www.apache.org/licenses/LICENSE-2.0.
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     Red Hat Inc. - initial API and implementation
+*******************************************************************************/
 package com.redhat.qute.jdt.internal.template;
 
 import static com.redhat.qute.jdt.internal.QuteJavaConstants.CHECKED_TEMPLATE_ANNOTATION;
@@ -5,6 +18,7 @@ import static com.redhat.qute.jdt.internal.QuteJavaConstants.OLD_CHECKED_TEMPLAT
 import static com.redhat.qute.jdt.internal.QuteJavaConstants.TEMPLATE_CLASS;
 import static com.redhat.qute.jdt.internal.QuteJavaConstants.TEMPLATE_EXTENSION_ANNOTATION;
 import static com.redhat.qute.jdt.internal.template.CheckedTemplateSupport.collectTemplateDataModelForCheckedTemplate;
+import static com.redhat.qute.jdt.internal.template.TemplateExtensionSupport.collectTemplateDataModelForTemplateExtension;
 import static com.redhat.qute.jdt.internal.template.TemplateFieldSupport.collectTemplateDataModelForTemplateField;
 
 import java.util.ArrayList;
@@ -30,6 +44,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
+import com.redhat.qute.commons.ValueResolver;
 import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.ProjectDataModel;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
@@ -66,14 +81,16 @@ public class QuarkusIntegrationForQute {
 	public static ProjectDataModel<TemplateDataModel<ParameterDataModel>> getProjectDataModel(IJavaProject javaProject,
 			IProgressMonitor monitor) throws CoreException {
 		ProjectDataModel<TemplateDataModel<ParameterDataModel>> project = new ProjectDataModel<TemplateDataModel<ParameterDataModel>>();
-		List<TemplateDataModel<ParameterDataModel>> templates = collectTemplatesDataModel(javaProject, monitor);
-		project.setTemplates(templates);
+		project.setTemplates(new ArrayList<>());
+		project.setValueResolvers(new ArrayList<>());
+		collectTemplatesDataModel(project, javaProject, monitor);
 		return project;
 	}
 
-	private static List<TemplateDataModel<ParameterDataModel>> collectTemplatesDataModel(IJavaProject javaProject,
-			IProgressMonitor monitor) throws CoreException {
-		List<TemplateDataModel<ParameterDataModel>> templates = new ArrayList<>();
+	private static void collectTemplatesDataModel(ProjectDataModel<TemplateDataModel<ParameterDataModel>> project,
+			IJavaProject javaProject, IProgressMonitor monitor) throws CoreException {
+		List<TemplateDataModel<ParameterDataModel>> templates = project.getTemplates();
+		List<ValueResolver> valueResolvers = project.getValueResolvers();
 
 		// Scan Java sources to get all classed annotated with @CheckedTemplate
 
@@ -103,25 +120,23 @@ public class QuarkusIntegrationForQute {
 								collectTemplateDataModelForCheckedTemplate(type, templates, monitor);
 							} else if (AnnotationUtils.hasAnnotation(type, TEMPLATE_EXTENSION_ANNOTATION)) {
 								// See https://quarkus.io/guides/qute-reference#template_extension_methods
-								// TODO
+								collectTemplateDataModelForTemplateExtension(type, valueResolvers, monitor);
 							}
 						} else if (match.getElement() instanceof IField) {
 							IField field = (IField) match.getElement();
 							collectTemplateDataModelForTemplateField(field, templates, monitor);
 						} else if (match.getElement() instanceof IMethod) {
 							IMethod method = (IMethod) match.getElement();
-							//collect(field, templates, monitor);
+							// collect(field, templates, monitor);
 						}
 					}
 
 				}, monitor);
-
-		return templates;
 	}
 
 	private static IJavaSearchScope createQuteSearchScope(IJavaProject javaProject) throws JavaModelException {
 		IJavaProject[] projects = new IJavaProject[] { javaProject };
-		int scope = IJavaSearchScope.SOURCES;
+		int scope = IJavaSearchScope.SOURCES | IJavaSearchScope.APPLICATION_LIBRARIES;
 		return SearchEngine.createJavaSearchScope(projects, scope);
 	}
 
