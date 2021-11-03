@@ -33,6 +33,7 @@ import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
@@ -262,9 +263,7 @@ public class QuteSupportForTemplate {
 			return null;
 		}
 
-		ITypeResolver typeResolver = !type.isBinary()
-				? new CompilationUnitTypeResolver((ICompilationUnit) type.getAncestor(IJavaElement.COMPILATION_UNIT))
-				: new ClassFileTypeResolver((IClassFile) type.getAncestor(IJavaElement.CLASS_FILE));
+		ITypeResolver typeResolver = createTypeResolver(type);
 
 		// Collect fields
 		List<JavaFieldInfo> fieldsInfo = new ArrayList<>();
@@ -408,6 +407,13 @@ public class QuteSupportForTemplate {
 			throws CoreException {
 		ITypeHierarchy typeHierarchy = type.newSupertypeHierarchy(progressMonitor);
 		return typeHierarchy.getRootInterfaces();
+	}
+
+	public static ITypeResolver createTypeResolver(IMember member) {
+		ITypeResolver typeResolver = !member.isBinary()
+				? new CompilationUnitTypeResolver((ICompilationUnit) member.getAncestor(IJavaElement.COMPILATION_UNIT))
+				: new ClassFileTypeResolver((IClassFile) member.getAncestor(IJavaElement.CLASS_FILE));
+		return typeResolver;
 	}
 
 }

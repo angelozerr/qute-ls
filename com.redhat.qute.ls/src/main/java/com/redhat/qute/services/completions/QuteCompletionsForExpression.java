@@ -54,10 +54,12 @@ public class QuteCompletionsForExpression {
 			QuteFormattingSettings formattingSettings, CancelChecker cancelChecker) {
 		if (nodeExpression == null) {
 			// ex : { | }
-			return doCompleteExpressionForObjectPart(expression, null, offset, template);
+			return doCompleteExpressionForObjectPart(expression, null, offset, template, completionSettings,
+					formattingSettings);
 		} else if (expression == null) {
 			// ex : {|
-			return doCompleteExpressionForObjectPart(null, nodeExpression, offset, template);
+			return doCompleteExpressionForObjectPart(null, nodeExpression, offset, template, completionSettings,
+					formattingSettings);
 		}
 
 		if (nodeExpression.getKind() == NodeKind.ExpressionPart) {
@@ -65,7 +67,8 @@ public class QuteCompletionsForExpression {
 			switch (part.getPartKind()) {
 			case Object:
 				// ex : { ite|m }
-				return doCompleteExpressionForObjectPart(expression, part, offset, template);
+				return doCompleteExpressionForObjectPart(expression, part, offset, template, completionSettings,
+						formattingSettings);
 			case Property:
 			case Method:
 				// ex : { item.n| }
@@ -87,7 +90,8 @@ public class QuteCompletionsForExpression {
 				// ex : { data:|name }
 				Parts parts = (Parts) nodeExpression;
 				Part part = parts.getPartAt(offset + 1);
-				return doCompleteExpressionForObjectPart(expression, part, offset, template);
+				return doCompleteExpressionForObjectPart(expression, part, offset, template, completionSettings,
+						formattingSettings);
 			}
 			case '.': {
 				// ex : { item.| }
@@ -152,10 +156,10 @@ public class QuteCompletionsForExpression {
 		// Completion for Java methods
 		fillCompletionMethod(range, list, resolvedClass, projectUri, completionSettings, formattingSettings,
 				existingProperties);
-		
+
 		List<ValueResolver> resolvers = javaCache.getResolversFor(resolvedClass);
 		for (ValueResolver method : resolvers) {
-			
+
 			String methodSignature = method.getSignature();
 			CompletionItem item = new CompletionItem();
 			item.setLabel(methodSignature);
@@ -166,7 +170,7 @@ public class QuteCompletionsForExpression {
 			textEdit.setNewText(createMethodSnippet(method, completionSettings, formattingSettings));
 			item.setTextEdit(Either.forLeft(textEdit));
 			list.getItems().add(item);
-			
+
 		}
 
 		return list;
@@ -257,7 +261,8 @@ public class QuteCompletionsForExpression {
 	}
 
 	private CompletableFuture<CompletionList> doCompleteExpressionForObjectPart(Expression expression, Node part,
-			int offset, Template template) {
+			int offset, Template template, QuteCompletionSettings completionSettings,
+			QuteFormattingSettings formattingSettings) {
 		// Completion for root object
 		int partStart = part != null && part.getKind() != NodeKind.Text ? part.getStart() : offset;
 		int partEnd = part != null && part.getKind() != NodeKind.Text ? part.getEnd() : offset;
@@ -270,9 +275,29 @@ public class QuteCompletionsForExpression {
 		doCompleteExpressionForObjectPartWithCheckedTemplate(template, range, list);
 		// Collect declared model inside section, let, etc
 		Set<String> existingVars = new HashSet<>();
-		doCompleteExpressionForObjectPartWithParentNodes(part, expression != null ? expression : part, range, existingVars, list);
+		doCompleteExpressionForObjectPartWithParentNodes(part, expression != null ? expression : part, range,
+				existingVars, list);
+		// Namespace parts
+		doCompleteExpressionForNamespacePart(template, completionSettings, formattingSettings, range, list);
 
 		return CompletableFuture.completedFuture(list);
+	}
+
+	private void doCompleteExpressionForNamespacePart(Template template, QuteCompletionSettings completionSettings,
+			QuteFormattingSettings formattingSettings, Range range, CompletionList list) {
+		List<ValueResolver> namespaceResolvers = javaCache.getNamespaceResolvers(template.getProjectUri());
+		for (ValueResolver method : namespaceResolvers) {
+			String methodSignature = method.getSignature();
+			CompletionItem item = new CompletionItem();
+			item.setLabel(methodSignature);
+			item.setFilterText(method.getName());
+			item.setKind(CompletionItemKind.Method);
+			TextEdit textEdit = new TextEdit();
+			textEdit.setRange(range);
+			textEdit.setNewText(createMethodSnippet(method, completionSettings, formattingSettings));
+			item.setTextEdit(Either.forLeft(textEdit));
+			list.getItems().add(item);
+		}
 	}
 
 	private void doCompleteExpressionForObjectPartWithParentNodes(Node part, Node node, Range range,

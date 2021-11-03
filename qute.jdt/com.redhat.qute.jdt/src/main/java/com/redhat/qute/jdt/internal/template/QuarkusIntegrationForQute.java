@@ -18,7 +18,7 @@ import static com.redhat.qute.jdt.internal.QuteJavaConstants.OLD_CHECKED_TEMPLAT
 import static com.redhat.qute.jdt.internal.QuteJavaConstants.TEMPLATE_CLASS;
 import static com.redhat.qute.jdt.internal.QuteJavaConstants.TEMPLATE_EXTENSION_ANNOTATION;
 import static com.redhat.qute.jdt.internal.template.CheckedTemplateSupport.collectTemplateDataModelForCheckedTemplate;
-import static com.redhat.qute.jdt.internal.template.TemplateExtensionSupport.collectTemplateDataModelForTemplateExtension;
+import static com.redhat.qute.jdt.internal.template.TemplateExtensionSupport.collectResolversForTemplateExtension;
 import static com.redhat.qute.jdt.internal.template.TemplateFieldSupport.collectTemplateDataModelForTemplateField;
 
 import java.util.ArrayList;
@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
@@ -118,16 +119,27 @@ public class QuarkusIntegrationForQute {
 
 								// Collect for each methods (book, books) a template data model
 								collectTemplateDataModelForCheckedTemplate(type, templates, monitor);
-							} else if (AnnotationUtils.hasAnnotation(type, TEMPLATE_EXTENSION_ANNOTATION)) {
-								// See https://quarkus.io/guides/qute-reference#template_extension_methods
-								collectTemplateDataModelForTemplateExtension(type, valueResolvers, monitor);
+							} else {
+								IAnnotation templateExtension = AnnotationUtils.getAnnotation(type,
+										TEMPLATE_EXTENSION_ANNOTATION);
+								if (templateExtension != null) {
+									// See https://quarkus.io/guides/qute-reference#template_extension_methods
+									collectResolversForTemplateExtension(type, templateExtension, valueResolvers,
+											monitor);
+								}
 							}
 						} else if (match.getElement() instanceof IField) {
 							IField field = (IField) match.getElement();
 							collectTemplateDataModelForTemplateField(field, templates, monitor);
 						} else if (match.getElement() instanceof IMethod) {
 							IMethod method = (IMethod) match.getElement();
-							// collect(field, templates, monitor);
+							IAnnotation templateExtension = AnnotationUtils.getAnnotation(method,
+									TEMPLATE_EXTENSION_ANNOTATION);
+							if (templateExtension != null) {
+								// See https://quarkus.io/guides/qute-reference#template_extension_methods
+								collectResolversForTemplateExtension(method, templateExtension, valueResolvers,
+										monitor);
+							}
 						}
 					}
 

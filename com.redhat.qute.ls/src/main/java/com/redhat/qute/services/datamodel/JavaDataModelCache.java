@@ -1,6 +1,7 @@
 package com.redhat.qute.services.datamodel;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -430,5 +431,19 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 					}
 					return dataModel.getValueResolvers();
 				});
+	}
+
+	public List<ValueResolver> getNamespaceResolvers(String projectUri) {
+		List<ValueResolver> resolvers = getValueResolvers(projectUri).getNow(null);
+		if (resolvers != null) {
+			List<ValueResolver> namespaceResolvers = new ArrayList<>();
+			for (ValueResolver resolver : resolvers) {
+				if (resolver.getNamespace() != null) {
+					namespaceResolvers.add(resolver);
+				}
+			}
+			return namespaceResolvers;
+		}
+		return Collections.emptyList();
 	}
 }
