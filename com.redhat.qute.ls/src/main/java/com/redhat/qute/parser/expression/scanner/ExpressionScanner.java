@@ -41,6 +41,16 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 			if (stream.skipWhitespace()) {
 				return finishToken(offset, TokenType.Whitespace);
 			}
+			if (stream.advanceIfChar('?')) {
+				if (stream.advanceIfChar(':')) {
+					return finishToken(offset, TokenType.ElvisOperator);
+				}
+				return finishToken(offset, TokenType.TernaryOperator);
+			}
+			if (stream.advanceIfChar('"') || stream.advanceIfChar('\'')) {
+				state = ScannerState.WithinString;
+				return finishToken(stream.pos() - 1, TokenType.StartString);
+			}
 			if (hasNextJavaIdentifierPart()) {
 				return finishTokenPart(offset, false);
 			}

@@ -58,10 +58,10 @@ public class QuteDiagnosticsInExpressionTest {
 
 	@Test
 	public void stringLiteral() throws Exception {
-		String template = "{\"abcd\"}";
+		String template = "{\"abcd\"}"; // it's not an expression
 		testDiagnosticsFor(template);
-		
-		template = "{'abcd'}";
+
+		template = "{'abcd'}"; // it's not an expression
 		testDiagnosticsFor(template);
 	}
 
@@ -218,5 +218,13 @@ public class QuteDiagnosticsInExpressionTest {
 				"{items.size.XXX}";
 		testDiagnosticsFor(template, d(1, 12, 1, 15, QuteErrorCode.UnkwownProperty,
 				"`XXX` cannot be resolved or is not a field for `int` Java type.", DiagnosticSeverity.Error));
+	}
+
+	@Test
+	public void elvisOperator() {
+		String template = "{person.name ?: 'John'}";
+		testDiagnosticsFor(template, //
+				d(0, 1, 0, 7, QuteErrorCode.UndefinedVariable, "`person` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
 	}
 }

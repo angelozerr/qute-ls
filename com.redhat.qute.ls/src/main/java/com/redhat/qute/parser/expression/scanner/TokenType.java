@@ -14,6 +14,9 @@ public enum TokenType {
 	EndString, //
 	String, //
 
+	ElvisOperator, //
+	TernaryOperator, //
+
 	Whitespace, //
 	Unknown, //
 	EOS;

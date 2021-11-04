@@ -94,6 +94,24 @@ public class ExpressionScannerTest {
 		assertOffsetAndToken(18, TokenType.EOS, "");
 	}
 
+	/**
+	 * @see https://quarkus.io/guides/qute-reference#built-in-resolvers
+	 */
+	@Test
+	public void testElvisOperator() {
+		scanner = ExpressionScanner.createScanner("person.name ?: 'John'");
+		assertOffsetAndToken(0, TokenType.ObjectPart, "person");
+		assertOffsetAndToken(6, TokenType.Dot, ".");
+		assertOffsetAndToken(7, TokenType.PropertyPart, "name");
+		assertOffsetAndToken(11, TokenType.Whitespace, " ");
+		assertOffsetAndToken(12, TokenType.ElvisOperator, "?:");
+		assertOffsetAndToken(14, TokenType.Whitespace, " ");
+		assertOffsetAndToken(15, TokenType.StartString, "'");
+		assertOffsetAndToken(16, TokenType.String, "John");
+		assertOffsetAndToken(20, TokenType.EndString, "'");
+		assertOffsetAndToken(21, TokenType.EOS, "");
+	}
+
 	public void assertOffsetAndToken(int tokenOffset, TokenType tokenType) {
 		TokenType token = scanner.scan();
 		assertEquals(tokenOffset, scanner.getTokenOffset());
