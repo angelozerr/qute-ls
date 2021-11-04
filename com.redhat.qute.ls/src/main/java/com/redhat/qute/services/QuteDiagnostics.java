@@ -26,6 +26,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.redhat.qute.commons.JavaMemberInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
+import com.redhat.qute.parser.expression.NamespacePart;
 import com.redhat.qute.parser.expression.ObjectPart;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
@@ -256,9 +257,16 @@ class QuteDiagnostics {
 	private void validateExpressionParts(Parts parts, Section ownerSection, String projectUri,
 			List<CompletableFuture<?>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
 		ResolvedJavaClassInfo resolvedJavaClass = null;
+		String namespace = null;
 		for (int i = 0; i < parts.getChildCount(); i++) {
 			Part current = ((Part) parts.getChild(i));
 			switch (current.getPartKind()) {
+
+			case Namespace: {
+				NamespacePart namespacePart = (NamespacePart) current;
+				namespace = namespacePart.getPartName();
+				break;
+			}
 
 			case Object: {
 				ObjectPart objectPart = (ObjectPart) current;
@@ -304,8 +312,6 @@ class QuteDiagnostics {
 				}
 				break;
 			}
-
-			default:
 			}
 		}
 	}

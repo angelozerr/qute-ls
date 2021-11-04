@@ -26,6 +26,9 @@ public abstract class AbstractTypeResolver implements ITypeResolver {
 		try {
 			ILocalVariable[] parameters = method.getParameters();
 			for (int i = 0; i < parameters.length; i++) {
+				if (i > 0) {
+					signature.append(", ");
+				}
 				ILocalVariable parameter = parameters[i];
 				signature.append(parameter.getElementName());
 				signature.append(" : ");

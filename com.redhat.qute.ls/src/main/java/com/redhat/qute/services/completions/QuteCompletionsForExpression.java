@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
+import org.eclipse.lsp4j.InsertTextFormat;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
@@ -20,8 +21,10 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.JavaFieldInfo;
 import com.redhat.qute.commons.JavaMethodInfo;
+import com.redhat.qute.commons.JavaMethodParameterInfo;
 import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.commons.ValueResolver;
+import com.redhat.qute.ls.commons.SnippetsBuilder;
 import com.redhat.qute.parser.expression.Part;
 import com.redhat.qute.parser.expression.Parts;
 import com.redhat.qute.parser.template.Expression;
@@ -250,12 +253,26 @@ public class QuteCompletionsForExpression {
 
 	private static String createMethodSnippet(JavaMethodInfo method, QuteCompletionSettings completionSettings,
 			QuteFormattingSettings formattingSettings) {
+		boolean snippetsSupported = completionSettings.isCompletionSnippetsSupported();
 		String methodName = method.getName();
 		StringBuilder snippet = new StringBuilder(methodName);
 		if (method.hasParameters()) {
 			snippet.append("(");
-			// TODO : parameters
+			for (int i = 0; i < method.getParameters().size(); i++) {
+				if (i > 0) {
+					snippet.append(", ");
+				}
+				JavaMethodParameterInfo parameter = method.getParameterAt(i);
+				if (snippetsSupported) {
+					SnippetsBuilder.placeholders(i + 1, parameter.getName(), snippet);
+				} else {
+					snippet.append(parameter.getName());
+				}
+			}
 			snippet.append(")");
+			if (snippetsSupported) {
+				SnippetsBuilder.tabstops(0, snippet);
+			}
 		}
 		return snippet.toString();
 	}
@@ -291,7 +308,10 @@ public class QuteCompletionsForExpression {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(methodSignature);
 			item.setFilterText(method.getName());
-			item.setKind(CompletionItemKind.Method);
+			item.setKind(CompletionItemKind.Function);
+			if (completionSettings.isCompletionSnippetsSupported()) {
+				item.setInsertTextFormat(InsertTextFormat.Snippet);
+			}
 			TextEdit textEdit = new TextEdit();
 			textEdit.setRange(range);
 			textEdit.setNewText(createMethodSnippet(method, completionSettings, formattingSettings));

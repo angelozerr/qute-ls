@@ -47,6 +47,9 @@ public class ValueResolver extends JavaMethodInfo {
 
 	@Override
 	public boolean hasParameters() {
+		if (namespace != null) {
+			return !getParameters().isEmpty();
+		}
 		return getParameters().size() - 1 > 0;
 	}
 

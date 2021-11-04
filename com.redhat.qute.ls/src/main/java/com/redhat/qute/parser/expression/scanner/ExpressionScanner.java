@@ -1,6 +1,5 @@
 package com.redhat.qute.parser.expression.scanner;
 
-
 import java.util.function.Predicate;
 
 import com.redhat.qute.parser.scanner.AbstractScanner;
@@ -43,7 +42,7 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 				return finishToken(offset, TokenType.Whitespace);
 			}
 			if (hasNextJavaIdentifierPart()) {
-				return finishTokenPart(offset);
+				return finishTokenPart(offset, false);
 			}
 			return finishToken(offset, TokenType.Unknown);
 		}
@@ -57,7 +56,7 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 				return finishToken(offset, TokenType.ColonSpace);
 			}
 			if (hasNextJavaIdentifierPart()) {
-				return finishTokenPart(offset);
+				return finishTokenPart(offset, true);
 			}
 			if (stream.skipWhitespace()) {
 				state = ScannerState.WithinExpression;
@@ -75,14 +74,14 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 				stream.advance(1);
 				state = ScannerState.WithinString;
 				return finishToken(stream.pos() - 1, TokenType.StartString);
-			} else if (stream.peekChar() == ')' ) {
+			} else if (stream.peekChar() == ')') {
 				stream.advance(1);
 				state = ScannerState.WithinParts;
 				return finishToken(stream.pos() - 1, TokenType.CloseBracket);
 			}
 			return internalScan();
 		}
-		
+
 		case WithinString: {
 			if (stream.advanceIfAnyOfChars('"', '\'')) {
 				state = ScannerState.WithinExpression;
@@ -91,20 +90,20 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 			stream.advanceUntilChar('"', '\'');
 			return finishToken(offset, TokenType.String);
 		}
-		
+
 		default:
 		}
 		stream.advance(1);
 		return finishToken(offset, TokenType.Unknown, errorMessage);
 	}
 
-	private TokenType finishTokenPart(int offset) {
+	private TokenType finishTokenPart(int offset, boolean hasNamespace) {
 		int next = stream.peekChar();
 		if (next == ':') {
 			state = ScannerState.AfterNamespace;
 			return finishToken(offset, TokenType.NamespacePart);
 		}
-		if (state == ScannerState.WithinParts) {
+		if (state == ScannerState.WithinParts || hasNamespace) {
 			if (next == '(') {
 				state = ScannerState.WithingMethod;
 				return finishToken(offset, TokenType.MethodPart);
