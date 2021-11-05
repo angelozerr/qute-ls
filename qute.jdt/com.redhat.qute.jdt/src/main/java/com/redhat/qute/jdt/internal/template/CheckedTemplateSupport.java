@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeRoot;
@@ -89,12 +90,17 @@ class CheckedTemplateSupport {
 			LOGGER.log(Level.SEVERE,
 					"Error while getting method template parameter of '" + method.getElementName() + "'.", e);
 		}
+		collectDataForTemplate(method, template, monitor);
+		return template;
+	}
 
+	public static void collectDataForTemplate(IMember fieldOrMethod, TemplateDataModel<ParameterDataModel> template,
+			IProgressMonitor monitor) {
 		SearchEngine engine = new SearchEngine();
-		SearchPattern pattern = SearchPattern.createPattern(method, IJavaSearchConstants.REFERENCES);
+		SearchPattern pattern = SearchPattern.createPattern(fieldOrMethod, IJavaSearchConstants.REFERENCES);
 		int searchScope = IJavaSearchScope.SOURCES;
 		IJavaSearchScope scope = BasicSearchEngine.createJavaSearchScope(true,
-				new IJavaElement[] { method.getJavaProject() }, searchScope);
+				new IJavaElement[] { fieldOrMethod.getJavaProject() }, searchScope);
 		try {
 			engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope,
 					new SearchRequestor() {
@@ -103,9 +109,9 @@ class CheckedTemplateSupport {
 						public void acceptSearchMatch(SearchMatch match) throws CoreException {
 							Object o = match.getElement();
 							if (o instanceof IMethod) {
-								IMethod element = (IMethod) o;
-								CompilationUnit cu = getASTRoot(element.getCompilationUnit());
-								cu.accept(new TemplateDataCollector(element, template, monitor));
+								IMethod method = (IMethod) o;
+								CompilationUnit cu = getASTRoot(method.getCompilationUnit());
+								cu.accept(new TemplateDataCollector(method, template, monitor));
 							}
 						}
 					}, monitor);
@@ -113,8 +119,6 @@ class CheckedTemplateSupport {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		return template;
 	}
 
 	private static ParameterDataModel createParameterDataModel(ILocalVariable methodParameter, IType type)

@@ -283,10 +283,12 @@ class QuteDefinition {
 						ExtendedParameterDataModel parameter = (ExtendedParameterDataModel) resolvedJavaType;
 						ExtendedTemplateDataModel templateDataModel = parameter.getTemplate();
 						String sourceType = templateDataModel.getSourceType();
+						String sourceField = templateDataModel.getSourceField();
 						String sourceMethod = templateDataModel.getSourceMethod();
 						String sourceParameter = parameter.getKey();
 
 						QuteJavaDefinitionParams params = new QuteJavaDefinitionParams(sourceType, projectUri);
+						params.setField(sourceField);
 						params.setMethod(sourceMethod);
 						params.setMethodParameter(sourceParameter);
 						return findJavaDefinition(params, () -> QutePositionUtility.createRange(part));

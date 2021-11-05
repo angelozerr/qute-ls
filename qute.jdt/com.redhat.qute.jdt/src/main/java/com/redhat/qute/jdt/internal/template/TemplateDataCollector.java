@@ -19,7 +19,6 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
@@ -40,19 +39,40 @@ public class TemplateDataCollector extends ASTVisitor {
 	}
 
 	@Override
-	public boolean visit(MethodDeclaration node) {
-		if (node.getName().isSimpleName() && method.getElementName().equals(node.getName().getIdentifier())) {
-			node.getBody();
+	public boolean visit(MethodInvocation node) {
+		if ("data".equals(node.getName().getIdentifier())) {
+			// .data("book", book)
+			List arguments = node.arguments();
+			if (arguments.size() == 2) {
+
+				String paramName = null;
+				Object name = arguments.get(0);
+				if (name instanceof StringLiteral) {
+					paramName = ((StringLiteral) name).getLiteralValue();
+				}
+
+				String paramType = null;
+				Object second = arguments.get(1);
+				if (second instanceof SimpleName) {
+					paramType = ((SimpleName) second).getIdentifier();
+				}
+				if (template.getParameter(paramName) == null) {
+					ParameterDataModel parameter = new ParameterDataModel();
+					parameter.setKey(paramName);
+					parameter.setSourceType("java.lang.String");
+					template.addParameter(parameter);
+				}
+			}
 		}
+
+		// TO_REMOVE(node);
+
 		return super.visit(node);
 	}
 
-	@Override
-	public boolean visit(MethodInvocation node) {
-		// TODO Auto-generated method stub
-		String className = node.getParent().toString(); // .getName().getIdentifier();
+	private void TO_REMOVE(MethodInvocation node) {
 		String methodName = node.getName().getIdentifier();
-		if (template.getSourceMethod().equals(methodName)) {
+		if (methodName.equals(template.getSourceMethod())) {
 			ASTNode parent = node.getParent();
 			while (parent != null && parent.getNodeType() == ASTNode.METHOD_INVOCATION) {
 				if (parent.getNodeType() == ASTNode.METHOD_INVOCATION) {
@@ -74,17 +94,18 @@ public class TemplateDataCollector extends ASTVisitor {
 								paramType = ((SimpleName) second).getIdentifier();
 							}
 
-							ParameterDataModel parameter = new ParameterDataModel();
-							parameter.setKey(paramName);
-							parameter.setSourceType("java.lang.String");
-							template.getParameters().add(parameter);
+							if (template.getParameter(paramName) == null) {
+								ParameterDataModel parameter = new ParameterDataModel();
+								parameter.setKey(paramName);
+								parameter.setSourceType("java.lang.String");
+								template.addParameter(parameter);
+							}
 						}
 					}
 					parent = parent.getParent();
 				}
 			}
 		}
-		return super.visit(node);
 	}
 
 }

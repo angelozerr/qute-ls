@@ -91,7 +91,7 @@ class QuteCodeLens {
 		className = className.substring(index + 1, className.length());
 		return new StringBuilder(className) //
 				.append("#") //
-				.append(dataModel.getSourceMethod()) //
+				.append(dataModel.getSourceMethod() != null ? dataModel.getSourceMethod() : dataModel.getSourceField()) //
 				.toString();
 	}
 
