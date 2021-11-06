@@ -111,7 +111,7 @@ class CheckedTemplateSupport {
 							if (o instanceof IMethod) {
 								IMethod method = (IMethod) o;
 								CompilationUnit cu = getASTRoot(method.getCompilationUnit());
-								cu.accept(new TemplateDataCollector(method, template, monitor));
+								cu.accept(new TemplateDataCollector(template, monitor));
 							}
 						}
 					}, monitor);

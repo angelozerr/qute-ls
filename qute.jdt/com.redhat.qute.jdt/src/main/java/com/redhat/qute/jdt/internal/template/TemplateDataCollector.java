@@ -16,96 +16,80 @@ package com.redhat.qute.jdt.internal.template;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
 
 import com.redhat.qute.commons.datamodel.ParameterDataModel;
 import com.redhat.qute.commons.datamodel.TemplateDataModel;
 
+/**
+ * AST visitor used to collect {@link ParameterDataModel} parameter for a given
+ * {@link TemplateDataModel} template.
+ * 
+ * This visitor track the invocation of method
+ * io.quarkus.qute.Template#data(String key, Object data) to collect parameters.
+ * 
+ * For instance, with this following code:
+ * 
+ * <code>
+ * private final Template page;
+ * ...
+ * page.data("age", 13);
+   page.data("name", "John");
+ * </code>
+ * 
+ * the AST visitor will collect the following parameters:
+ * 
+ * <ul>
+ * <li>parameter key='age', sourceType='int'</li>
+ * <li>parameter key='name', sourceType='java.lang.String'</li>
+ * </ul>
+ * 
+ * @author Angelo ZERR
+ *
+ */
 public class TemplateDataCollector extends ASTVisitor {
 
-	private final IMethod method;
+	private static final String DATA_METHOD = "data";
 
 	private final TemplateDataModel<ParameterDataModel> template;
 
-	public TemplateDataCollector(IMethod method, TemplateDataModel<ParameterDataModel> template,
-			IProgressMonitor monitor) {
-		this.method = method;
+	public TemplateDataCollector(TemplateDataModel<ParameterDataModel> template, IProgressMonitor monitor) {
 		this.template = template;
 	}
 
 	@Override
 	public boolean visit(MethodInvocation node) {
-		if ("data".equals(node.getName().getIdentifier())) {
+		String methodName = node.getName().getIdentifier();
+		if (DATA_METHOD.equals(methodName)) {
 			// .data("book", book)
+			@SuppressWarnings("rawtypes")
 			List arguments = node.arguments();
 			if (arguments.size() == 2) {
-
 				String paramName = null;
 				Object name = arguments.get(0);
 				if (name instanceof StringLiteral) {
 					paramName = ((StringLiteral) name).getLiteralValue();
 				}
-
-				String paramType = null;
-				Object second = arguments.get(1);
-				if (second instanceof SimpleName) {
-					paramType = ((SimpleName) second).getIdentifier();
+				String paramType = "java.lang.Object";
+				Object type = arguments.get(1);
+				if (type instanceof Expression) {
+					ITypeBinding binding = ((Expression) type).resolveTypeBinding();
+					paramType = binding.getQualifiedName();
 				}
-				if (template.getParameter(paramName) == null) {
+
+				if (paramName != null && template.getParameter(paramName) == null) {
 					ParameterDataModel parameter = new ParameterDataModel();
 					parameter.setKey(paramName);
-					parameter.setSourceType("java.lang.String");
+					parameter.setSourceType(paramType);
 					template.addParameter(parameter);
 				}
 			}
 		}
-
-		// TO_REMOVE(node);
-
 		return super.visit(node);
-	}
-
-	private void TO_REMOVE(MethodInvocation node) {
-		String methodName = node.getName().getIdentifier();
-		if (methodName.equals(template.getSourceMethod())) {
-			ASTNode parent = node.getParent();
-			while (parent != null && parent.getNodeType() == ASTNode.METHOD_INVOCATION) {
-				if (parent.getNodeType() == ASTNode.METHOD_INVOCATION) {
-					MethodInvocation invocation = (MethodInvocation) parent;
-					if ("data".equals(invocation.getName().getIdentifier())) {
-						// .data("book", book)
-						List arguments = invocation.arguments();
-						if (arguments.size() == 2) {
-
-							String paramName = null;
-							Object name = arguments.get(0);
-							if (name instanceof StringLiteral) {
-								paramName = ((StringLiteral) name).getLiteralValue();
-							}
-
-							String paramType = null;
-							Object second = arguments.get(1);
-							if (second instanceof SimpleName) {
-								paramType = ((SimpleName) second).getIdentifier();
-							}
-
-							if (template.getParameter(paramName) == null) {
-								ParameterDataModel parameter = new ParameterDataModel();
-								parameter.setKey(paramName);
-								parameter.setSourceType("java.lang.String");
-								template.addParameter(parameter);
-							}
-						}
-					}
-					parent = parent.getParent();
-				}
-			}
-		}
 	}
 
 }
