@@ -17,11 +17,11 @@ import com.redhat.qute.parser.template.SectionKind;
  * Set section AST node.
  * 
  * <code>
- *{#set myParent=order.item.parent isActive=false age=10} 
-    <h1>{myParent.name}</h1>
-    Is active: {isActive}
-    Age: {age}
-  {/set}
+ 	{#set myParent=order.item.parent isActive=false age=10} 
+    	<h1>{myParent.name}</h1>
+    	Is active: {isActive}
+    	Age: {age}
+  	{/set}
  * </code>
  * 
  * @author Angelo ZERR

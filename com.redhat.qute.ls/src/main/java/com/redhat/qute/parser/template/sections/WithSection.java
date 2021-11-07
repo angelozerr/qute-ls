@@ -1,92 +1,60 @@
+/*******************************************************************************
+* Copyright (c) 2021 Red Hat Inc. and others.
+* All rights reserved. This program and the accompanying materials
+* which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v20.html
+*
+* SPDX-License-Identifier: EPL-2.0
+*
+* Contributors:
+*     Red Hat Inc. - initial API and implementation
+*******************************************************************************/
 package com.redhat.qute.parser.template.sections;
 
-import static com.redhat.qute.parser.template.ParameterInfo.EMPTY;
-
-import java.util.Arrays;
-import java.util.List;
-
 import com.redhat.qute.parser.template.Parameter;
-import com.redhat.qute.parser.template.ParameterInfo;
 import com.redhat.qute.parser.template.ParametersInfo;
 import com.redhat.qute.parser.template.Section;
-import com.redhat.qute.parser.template.SectionMetadata;
+import com.redhat.qute.parser.template.SectionKind;
 
+/**
+ * With section AST node.
+ * 
+ * <code>
+	{#with item.parent}
+	  <h1>{name}</h1>  
+	  <p>{description}</p> 
+	{/with}
+ * </code>
+ * 
+ * @author Angelo ZERR
+ * 
+ * @see https://quarkus.io/guides/qute-reference#with_section
+ *
+ */
 public class WithSection extends Section {
 
 	public static final String TAG = "with";
-	
-	private static final String DEFAULT_ALIAS = "it";
 
-	private static final String ALIAS = "alias";
-
-	private static final String IN = "in";
-
-	private static final String ITERABLE = "iterable";
-
-	private static final int ALIAS_PARAMETER_INDEX = 0;
-
-	private static final int ITERABLE_PARAMETER_INDEX = 2;
-
-	private static final List<SectionMetadata> METADATA = Arrays.asList(//
-			new SectionMetadata("count", Integer.class.getName()), //
-			new SectionMetadata("index", Integer.class.getName()), //
-			new SectionMetadata("indexParity", String.class.getName()), //
-			new SectionMetadata("hasNext", Boolean.class.getName()), //
-			new SectionMetadata("isOdd", Boolean.class.getName()), //
-			new SectionMetadata("odd", Boolean.class.getName()), //
-			new SectionMetadata("isEven", Boolean.class.getName()), //
-			new SectionMetadata("even", Boolean.class.getName()));
+	private static final String OBJECT = "object";
 
 	private static final ParametersInfo PARAMETER_INFOS = ParametersInfo.builder() //
-			.addParameter(ALIAS, EMPTY) //
-			.addParameter(IN, EMPTY) //
-			.addParameter(new ParameterInfo(ITERABLE, null, true)) //
+			.addParameter(OBJECT) //
 			.build();
 
-	public WithSection(String tag, int start, int end) {
-		super(tag, start, end);
+	public WithSection(int start, int end) {
+		super(TAG, start, end);
 	}
 
 	@Override
-	public List<SectionMetadata> getMetadata() {
-		return METADATA;
+	public SectionKind getSectionKind() {
+		return SectionKind.WITH;
 	}
 
-	public String getAlias() {
-		Parameter alias = getAliasParameter();
-		if (alias != null) {
-			return alias.getValue();
+	public Parameter getObjectParameter() {
+		if (getParameters().isEmpty()) {
+			return null;
 		}
-		return DEFAULT_ALIAS;
-	}
-
-	public Parameter getAliasParameter() {
-		int nbParameters = getParameters().size();
-		if (nbParameters >= 3) {
-			return getParameterAt(ALIAS_PARAMETER_INDEX);
-		}
-		return null;
-	}
-
-	public Parameter getIterableParameter() {
-		int nbParameters = getParameters().size();
-		if (nbParameters >= 2) {
-			Parameter iterable = getParameterAt(ITERABLE_PARAMETER_INDEX);
-			if (iterable != null) {
-				return iterable;
-			}
-		} else {
-			Parameter iterable = getParameterAt(0);
-			if (iterable != null) {
-				return iterable;
-			}
-		}
-		return null;
-	}
-
-	@Override
-	public boolean isIterable() {
-		return true;
+		return getParameterAt(0);
 	}
 
 	@Override

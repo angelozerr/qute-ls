@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2019 Red Hat Inc. and others.
+* Copyright (c) 2021 Red Hat Inc. and others.
 * All rights reserved. This program and the accompanying materials
 * which accompanies this distribution, and is available at
 * http://www.eclipse.org/legal/epl-v20.html
@@ -11,6 +11,7 @@ package com.redhat.qute.ls;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -30,14 +31,30 @@ import com.redhat.qute.ls.commons.ParentProcessWatcher;
  */
 public class QuteServerLauncher {
 
+	/**
+	 * Main entry point for the server. System properties may influence the
+	 * behavior:
+	 * <ul>
+	 * <i>watchParentProcess</i>: if defined and value is false then do not watch
+	 * for the parent process otherwise if parent process is dead then stop this
+	 * server.
+	 * </ul>
+	 * <ul>
+	 * <i>runAsync</i>: if defined and value is true then received message are
+	 * processed in a separate thread than the LSP4J thread.
+	 * </ul>
+	 *
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		QuteLanguageServer server = new QuteLanguageServer();
 		Function<MessageConsumer, MessageConsumer> wrapper;
 		wrapper = it -> it;
-		if ("false".equals(System.getProperty("watchParentProcess"))) {
-			wrapper = it -> it;
-		} else {
-			wrapper = new ParentProcessWatcher(server);
+		if ("true".equals(System.getProperty("runAsync"))) {
+			wrapper = it -> msg -> CompletableFuture.runAsync(() -> it.consume(msg));
+		}
+		if (!"false".equals(System.getProperty("watchParentProcess"))) {
+			wrapper = new ParentProcessWatcher(server, wrapper);
 		}
 		Launcher<LanguageClient> launcher = createServerLauncher(server, System.in, System.out,
 				Executors.newCachedThreadPool(), wrapper);

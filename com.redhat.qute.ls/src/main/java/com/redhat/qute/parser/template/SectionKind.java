@@ -11,5 +11,6 @@ public enum SectionKind {
 	INSERT, //
 	SET, //
 	LET, //
+	WITH, //
 	CUSTOM;
 }

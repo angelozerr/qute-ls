@@ -1,15 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2017 Red Hat Inc. and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
- *
- * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     Red Hat Inc. - initial API and implementation
- *******************************************************************************/
+* Copyright (c) 2017 Red Hat Inc. and others.
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License v. 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+* which is available at https://www.apache.org/licenses/LICENSE-2.0.
+*
+* SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+*
+* Contributors:
+*     Red Hat Inc. - initial API and implementation
+*******************************************************************************/
 package com.redhat.qute.ls.commons;
 
 import java.io.IOException;
@@ -46,6 +47,7 @@ public final class ParentProcessWatcher implements Runnable, Function<MessageCon
 	private static final int POLL_DELAY_SECS = 10;
 	private volatile long lastActivityTime;
 	private final ProcessLanguageServer server;
+	private final Function<MessageConsumer, MessageConsumer> wrapper;
 	private ScheduledFuture<?> task;
 	private ScheduledExecutorService service;
 
@@ -56,8 +58,9 @@ public final class ParentProcessWatcher implements Runnable, Function<MessageCon
 		void exit(int exitCode);
 	}
 
-	public ParentProcessWatcher(ProcessLanguageServer server) {
+	public ParentProcessWatcher(ProcessLanguageServer server, Function<MessageConsumer, MessageConsumer> wrapper) {
 		this.server = server;
+		this.wrapper = wrapper;
 		service = Executors.newScheduledThreadPool(1);
 		task = service.scheduleWithFixedDelay(this, POLL_DELAY_SECS, POLL_DELAY_SECS, TimeUnit.SECONDS);
 	}
@@ -142,7 +145,7 @@ public final class ParentProcessWatcher implements Runnable, Function<MessageCon
 		// inject our own consumer to refresh the timestamp
 		return message -> {
 			lastActivityTime = System.currentTimeMillis();
-			consumer.consume(message);
+			wrapper.apply(consumer).consume(message);
 		};
 	}
 }

@@ -36,6 +36,7 @@ import com.redhat.qute.parser.template.Section;
 import com.redhat.qute.parser.template.SectionMetadata;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.sections.LoopSection;
+import com.redhat.qute.parser.template.sections.WithSection;
 import com.redhat.qute.services.datamodel.ExtendedParameterDataModel;
 import com.redhat.qute.services.datamodel.ExtendedTemplateDataModel;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
@@ -139,7 +140,6 @@ public class QuteCompletionsForExpression {
 					CompletionList list = doCompleteForJavaClassMembers(start, end, template, resolvedClass,
 							completionSettings, formattingSettings);
 					return CompletableFuture.completedFuture(list);
-
 				});
 
 	}
@@ -293,7 +293,7 @@ public class QuteCompletionsForExpression {
 		// Collect declared model inside section, let, etc
 		Set<String> existingVars = new HashSet<>();
 		doCompleteExpressionForObjectPartWithParentNodes(part, expression != null ? expression : part, range,
-				existingVars, list);
+				template.getProjectUri(), existingVars, completionSettings, formattingSettings, list);
 		// Namespace parts
 		doCompleteExpressionForNamespacePart(template, completionSettings, formattingSettings, range, list);
 
@@ -320,8 +320,9 @@ public class QuteCompletionsForExpression {
 		}
 	}
 
-	private void doCompleteExpressionForObjectPartWithParentNodes(Node part, Node node, Range range,
-			Set<String> existingVars, CompletionList list) {
+	private void doCompleteExpressionForObjectPartWithParentNodes(Node part, Node node, Range range, String projectUri,
+			Set<String> existingVars, QuteCompletionSettings completionSettings,
+			QuteFormattingSettings formattingSettings, CompletionList list) {
 		Node parent = node != null ? node.getParent() : null;
 		if (parent == null || parent.getKind() == NodeKind.Template) {
 			return;
@@ -380,10 +381,30 @@ public class QuteCompletionsForExpression {
 					}
 				}
 				break;
+			case WITH:
+				// Completion for properties of with object from #with
+				Parameter object = ((WithSection) section).getObjectParameter();
+				if (object != null) {
+					Expression expression = object.getJavaTypeExpression();
+					if (expression != null) {
+						Part lastPart = expression.getLastPart();
+						if (lastPart != null) {
+							ResolvedJavaClassInfo withClassInfo = javaCache.resolveJavaType(lastPart, projectUri)
+									.getNow(null);
+							if (withClassInfo != null) {
+								fillCompletionField(range, list, withClassInfo, projectUri, existingVars);
+								fillCompletionMethod(range, list, withClassInfo, projectUri, completionSettings,
+										formattingSettings, existingVars);
+							}
+						}
+					}
+				}
+				break;
 			default:
 			}
 		}
-		doCompleteExpressionForObjectPartWithParentNodes(part, parent, range, existingVars, list);
+		doCompleteExpressionForObjectPartWithParentNodes(part, parent, range, projectUri, existingVars,
+				completionSettings, formattingSettings, list);
 	}
 
 	private void doCompleteExpressionForObjectPartWithParameterAlias(Template template, Range range,
