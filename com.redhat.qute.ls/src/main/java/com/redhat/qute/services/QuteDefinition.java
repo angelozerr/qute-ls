@@ -331,7 +331,7 @@ class QuteDefinition {
 
 	private CompletableFuture<List<? extends LocationLink>> findDefinitionFromPropertyPart(Part part, String projectUri,
 			ResolvedJavaClassInfo previousResolvedType) {
-		// The Java class type from the previous part had been resolved, resolve the
+		// The Java class type from the previous part has been resolved, resolve the
 		// property
 		String property = part.getPartName();
 		JavaMemberInfo member = javaCache.findMember(property, previousResolvedType, projectUri);

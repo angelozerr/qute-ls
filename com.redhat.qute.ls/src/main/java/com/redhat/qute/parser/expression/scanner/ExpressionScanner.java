@@ -113,10 +113,14 @@ public class ExpressionScanner extends AbstractScanner<TokenType, ScannerState> 
 			state = ScannerState.AfterNamespace;
 			return finishToken(offset, TokenType.NamespacePart);
 		}
-		if (state == ScannerState.WithinParts || hasNamespace) {
+		if (state == ScannerState.WithinParts || state == ScannerState.AfterNamespace) {
 			if (next == '(') {
 				state = ScannerState.WithingMethod;
 				return finishToken(offset, TokenType.MethodPart);
+			}
+			if (state == ScannerState.AfterNamespace) {
+				state = ScannerState.WithinParts;
+				return finishToken(offset, TokenType.ObjectPart);
 			}
 			return finishToken(offset, TokenType.PropertyPart);
 		}

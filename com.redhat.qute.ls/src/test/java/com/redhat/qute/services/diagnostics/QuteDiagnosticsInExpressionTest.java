@@ -227,4 +227,20 @@ public class QuteDiagnosticsInExpressionTest {
 				d(0, 1, 0, 7, QuteErrorCode.UndefinedVariable, "`person` cannot be resolved to a variable.",
 						DiagnosticSeverity.Warning));
 	}
+
+	@Test
+	public void definedNamespace() {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{data:item}";
+		testDiagnosticsFor(template);
+	}
+
+	@Test
+	public void undefineNamespace() {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{dataXXX:item}";
+		testDiagnosticsFor(template, //
+				d(1, 1, 1, 8, QuteErrorCode.UndefinedNamespace, "No namespace resolver found for: `dataXXX`",
+						DiagnosticSeverity.Warning));
+	}
 }

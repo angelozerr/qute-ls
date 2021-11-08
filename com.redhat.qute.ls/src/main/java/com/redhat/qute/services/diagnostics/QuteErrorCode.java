@@ -2,7 +2,11 @@ package com.redhat.qute.services.diagnostics;
 
 public enum QuteErrorCode implements IQuteErrorCode {
 
-	// Error code for object, property,method parts
+	// Error code for namespaces
+	EmptyNamespace, //
+	UndefinedNamespace, //
+	
+	// Error code for object, property, method parts
 	UndefinedVariable, //
 	UnkwownType, //
 	UnkwownMethod, //

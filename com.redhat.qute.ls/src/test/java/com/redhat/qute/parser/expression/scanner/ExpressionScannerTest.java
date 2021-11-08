@@ -47,12 +47,23 @@ public class ExpressionScannerTest {
 	}
 
 	@Test
-	public void testNamespace() {
+	public void testNamespaceStartWithObject() {
 		scanner = ExpressionScanner.createScanner("data:foo");
 		assertOffsetAndToken(0, TokenType.NamespacePart, "data");
 		assertOffsetAndToken(4, TokenType.ColonSpace, ":");
-		assertOffsetAndToken(5, TokenType.PropertyPart, "foo");
+		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
 		assertOffsetAndToken(8, TokenType.EOS, "");
+	}
+
+	@Test
+	public void testNamespaceStartWithMethod() {
+		scanner = ExpressionScanner.createScanner("data:foo()");
+		assertOffsetAndToken(0, TokenType.NamespacePart, "data");
+		assertOffsetAndToken(4, TokenType.ColonSpace, ":");
+		assertOffsetAndToken(5, TokenType.MethodPart, "foo");
+		assertOffsetAndToken(8, TokenType.OpenBracket, "(");
+		assertOffsetAndToken(9, TokenType.CloseBracket, ")");
+		assertOffsetAndToken(10, TokenType.EOS, "");
 	}
 
 	@Test
@@ -60,7 +71,7 @@ public class ExpressionScannerTest {
 		scanner = ExpressionScanner.createScanner("data:foo.bar");
 		assertOffsetAndToken(0, TokenType.NamespacePart, "data");
 		assertOffsetAndToken(4, TokenType.ColonSpace, ":");
-		assertOffsetAndToken(5, TokenType.PropertyPart, "foo");
+		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
 		assertOffsetAndToken(8, TokenType.Dot, ".");
 		assertOffsetAndToken(9, TokenType.PropertyPart, "bar");
 		assertOffsetAndToken(12, TokenType.EOS, "");
@@ -71,7 +82,7 @@ public class ExpressionScannerTest {
 		scanner = ExpressionScanner.createScanner("data:foo.bar()");
 		assertOffsetAndToken(0, TokenType.NamespacePart, "data");
 		assertOffsetAndToken(4, TokenType.ColonSpace, ":");
-		assertOffsetAndToken(5, TokenType.PropertyPart, "foo");
+		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
 		assertOffsetAndToken(8, TokenType.Dot, ".");
 		assertOffsetAndToken(9, TokenType.MethodPart, "bar");
 		assertOffsetAndToken(12, TokenType.OpenBracket, "(");
@@ -84,7 +95,7 @@ public class ExpressionScannerTest {
 		scanner = ExpressionScanner.createScanner("data:foo.bar().baz");
 		assertOffsetAndToken(0, TokenType.NamespacePart, "data");
 		assertOffsetAndToken(4, TokenType.ColonSpace, ":");
-		assertOffsetAndToken(5, TokenType.PropertyPart, "foo");
+		assertOffsetAndToken(5, TokenType.ObjectPart, "foo");
 		assertOffsetAndToken(8, TokenType.Dot, ".");
 		assertOffsetAndToken(9, TokenType.MethodPart, "bar");
 		assertOffsetAndToken(12, TokenType.OpenBracket, "(");

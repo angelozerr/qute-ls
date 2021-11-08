@@ -212,6 +212,17 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 		return container;
 	}
 
+	public CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Parameter object, String projectUri) {
+		Expression expression = object.getJavaTypeExpression();
+		if (expression != null) {
+			Part lastPart = expression.getLastPart();
+			if (lastPart != null) {
+				return resolveJavaType(lastPart, projectUri);
+			}
+		}
+		return RESOLVED_JAVA_CLASSINFO_NULL_FUTURE;
+	}
+
 	private CompletableFuture<ResolvedJavaClassInfo> resolveJavaType(Parts parts, int partIndex, String projectUri,
 			boolean nullIfDontMatchWithIterable) {
 		CompletableFuture<ResolvedJavaClassInfo> future = null;
@@ -446,4 +457,18 @@ public class JavaDataModelCache implements QuteProjectInfoProvider, TemplateData
 		}
 		return Collections.emptyList();
 	}
+
+	public boolean hasNamespace(String namespace, String projectUri) {
+		List<ValueResolver> resolvers = getValueResolvers(projectUri).getNow(null);
+		if (resolvers != null) {
+			for (ValueResolver resolver : resolvers) {
+				if (namespace.equals(resolver.getNamespace())) {
+					return true;
+				}
+			}
+		}
+		return false;
+
+	}
+
 }

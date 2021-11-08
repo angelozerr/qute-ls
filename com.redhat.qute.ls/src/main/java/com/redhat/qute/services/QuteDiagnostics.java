@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -75,9 +76,15 @@ class QuteDiagnostics {
 
 	private static final String TEMPLATE_NOT_DEFINED_MESSAGE = "Template id must be defined as parameter.";
 
+	private static final String UNDEFINED_NAMESPACE_MESSAGE = "No namespace resolver found for: `{0}`";
+
 	private static final ResolvedJavaClassInfo NOW = new ResolvedJavaClassInfo();
 
 	private final JavaDataModelCache javaCache;
+
+	private static class ResolutionContext extends HashMap<String, ResolvedJavaClassInfo> {
+
+	}
 
 	public QuteDiagnostics(JavaDataModelCache javaCache) {
 		this.javaCache = javaCache;
@@ -107,7 +114,7 @@ class QuteDiagnostics {
 		List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
 		if (validationSettings.isEnabled()) {
 			validateWithRealQuteParser(template, diagnostics);
-			validateDataModel(template, template, resolvingJavaTypeFutures, diagnostics);
+			validateDataModel(template, template, resolvingJavaTypeFutures, new ResolutionContext(), diagnostics);
 		}
 		return diagnostics;
 	}
@@ -129,7 +136,7 @@ class QuteDiagnostics {
 	}
 
 	private void validateDataModel(Node parent, Template template, List<CompletableFuture<?>> resolvingJavaTypeFutures,
-			List<Diagnostic> diagnostics) {
+			ResolutionContext currentContext, List<Diagnostic> diagnostics) {
 		List<Node> children = parent.getChildren();
 		for (Node node : children) {
 			switch (node.getKind()) {
@@ -167,6 +174,8 @@ class QuteDiagnostics {
 								Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
 										QuteErrorCode.UnkwownType);
 								diagnostics.add(diagnostic);
+							} else {
+								currentContext.put(javaTypeToResolve, resolvedJavaClass);
 							}
 						}
 					}
@@ -176,6 +185,7 @@ class QuteDiagnostics {
 			case Section: {
 				Section section = (Section) node;
 				List<Parameter> parameters = section.getParameters();
+				// validate expression parameters
 				for (Parameter parameter : parameters) {
 					Expression expression = parameter.getJavaTypeExpression();
 					if (expression != null) {
@@ -196,7 +206,7 @@ class QuteDiagnostics {
 			}
 			default:
 			}
-			validateDataModel(node, template, resolvingJavaTypeFutures, diagnostics);
+			validateDataModel(node, template, resolvingJavaTypeFutures, currentContext, diagnostics);
 		}
 	}
 
@@ -264,7 +274,11 @@ class QuteDiagnostics {
 
 			case Namespace: {
 				NamespacePart namespacePart = (NamespacePart) current;
-				namespace = namespacePart.getPartName();
+				namespace = validateNamespace(namespacePart, projectUri, diagnostics);
+				if (namespace == null) {
+					// Invalid namespace
+					return;
+				}
 				break;
 			}
 
@@ -282,6 +296,10 @@ class QuteDiagnostics {
 
 			case Method:
 			case Property: {
+				if (resolvedJavaClass == null) {
+					// Namepespace case
+				}
+
 				if (resolvedJavaClass.isIterable()) {
 					// Expression uses iterable type
 					// {@java.util.List<org.acme.Item items>
@@ -314,6 +332,33 @@ class QuteDiagnostics {
 			}
 			}
 		}
+	}
+
+	/**
+	 * Validate namespace part.
+	 * 
+	 * @param namespacePart the namespace part to validate.
+	 * @param projectUri    the project Uri.
+	 * @param diagnostics   the diagnostics list to fill.
+	 * @return the namespace of the part if it is an defined namespace and null
+	 *         otherwise.
+	 */
+	private String validateNamespace(NamespacePart namespacePart, String projectUri, List<Diagnostic> diagnostics) {
+		String namespace = namespacePart.getPartName();
+		if ("data".equals(namespace)) {
+			return namespace;
+		}
+		if (projectUri != null) {
+			if (!javaCache.hasNamespace(namespace, projectUri)) {
+				Range range = QutePositionUtility.createRange(namespacePart);
+				String message = MessageFormat.format(UNDEFINED_NAMESPACE_MESSAGE, namespacePart.getPartName());
+				Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Warning,
+						QuteErrorCode.UndefinedNamespace);
+				diagnostics.add(diagnostic);
+				return null;
+			}
+		}
+		return namespace;
 	}
 
 	private ResolvedJavaClassInfo validateObjectPart(ObjectPart objectPart, Section ownerSection, String projectUri,

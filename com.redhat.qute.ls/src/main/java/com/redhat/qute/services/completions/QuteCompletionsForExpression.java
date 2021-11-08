@@ -382,21 +382,14 @@ public class QuteCompletionsForExpression {
 				}
 				break;
 			case WITH:
-				// Completion for properties of with object from #with
+				// Completion for properties/methods of with object from #with
 				Parameter object = ((WithSection) section).getObjectParameter();
 				if (object != null) {
-					Expression expression = object.getJavaTypeExpression();
-					if (expression != null) {
-						Part lastPart = expression.getLastPart();
-						if (lastPart != null) {
-							ResolvedJavaClassInfo withClassInfo = javaCache.resolveJavaType(lastPart, projectUri)
-									.getNow(null);
-							if (withClassInfo != null) {
-								fillCompletionField(range, list, withClassInfo, projectUri, existingVars);
-								fillCompletionMethod(range, list, withClassInfo, projectUri, completionSettings,
-										formattingSettings, existingVars);
-							}
-						}
+					ResolvedJavaClassInfo withClassInfo = javaCache.resolveJavaType(object, projectUri).getNow(null);
+					if (withClassInfo != null) {
+						fillCompletionField(range, list, withClassInfo, projectUri, existingVars);
+						fillCompletionMethod(range, list, withClassInfo, projectUri, completionSettings,
+								formattingSettings, existingVars);
 					}
 				}
 				break;

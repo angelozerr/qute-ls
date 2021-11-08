@@ -1,5 +1,2 @@
 {@org.acme.Item item}
-{#with item}
-  <h1>{name}</h1>  
-  <p>{description}</p>
-{/with}
+<h1>{dan:item.name}</h1>
