@@ -13,11 +13,11 @@ package com.redhat.qute.services;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -40,8 +40,10 @@ import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
 import com.redhat.qute.parser.template.RangeOffset;
 import com.redhat.qute.parser.template.Section;
+import com.redhat.qute.parser.template.SectionKind;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.sections.IncludeSection;
+import com.redhat.qute.parser.template.sections.LoopSection;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
 import com.redhat.qute.services.diagnostics.QuteErrorCode;
@@ -60,29 +62,62 @@ class QuteDiagnostics {
 
 	private static final String QUTE_SOURCE = "qute";
 
-	private static final String UNDEFINED_VARIABLE_MESSAGE = "`{0}` cannot be resolved to a variable.";
-
-	private static final String UNKWOWN_PROPERTY_MESSAGE = "`{0}` cannot be resolved or is not a field for `{1}` Java type.";
-
-	private static final String UNKWOWN_METHOD_MESSAGE = "`{0}` cannot be resolved or is not a method for `{1}` Java type.";
-
-	private static final String RESOLVING_JAVA_TYPE_MESSAGE = "Resolving Java type `{0}`.";
-
-	private static final String UNKWOWN_JAVA_TYPE_MESSAGE = "`{0}` cannot be resolved to a type.";
-
-	private static final String ITERABLE_REQUIRED_MESSAGE = "`{0}` is not an instance of `java.lang.Iterable`.";
-
-	private static final String TEMPLATE_NOT_FOUND_MESSAGE = "Template not found: `{0}`.";
-
-	private static final String TEMPLATE_NOT_DEFINED_MESSAGE = "Template id must be defined as parameter.";
-
-	private static final String UNDEFINED_NAMESPACE_MESSAGE = "No namespace resolver found for: `{0}`";
-
 	private static final ResolvedJavaClassInfo NOW = new ResolvedJavaClassInfo();
 
 	private final JavaDataModelCache javaCache;
 
-	private static class ResolutionContext extends HashMap<String, ResolvedJavaClassInfo> {
+	private class ResolutionContext extends HashMap<String, ResolvedJavaClassInfo> {
+
+		private final ResolutionContext parent;
+
+		private ResolvedJavaClassInfo withObject;
+
+		public ResolutionContext() {
+			this(null);
+		}
+
+		public ResolutionContext(ResolutionContext parent) {
+			this.parent = parent;
+		}
+
+		public ResolutionContext getParent() {
+			return parent;
+		}
+
+		public void setWithObject(ResolvedJavaClassInfo withObject) {
+			this.withObject = withObject;
+		}
+
+		public JavaMemberInfo findMemberWithObject(String property, String projectUri) {
+			if (withObject != null) {
+				if (withObject.isIterable() && projectUri != null) {
+					String iterableType = withObject.getIterableType();
+					ResolvedJavaClassInfo resolvedIterableType = javaCache.resolveJavaType(iterableType, projectUri)
+							.getNow(null);
+					if (resolvedIterableType != null) {
+						JavaMemberInfo member = resolvedIterableType.findMember(property);
+						if (member != null) {
+							return member;
+						}
+					}
+				} else {
+					JavaMemberInfo member = withObject.findMember(property);
+					if (member != null) {
+						return member;
+					}
+				}
+			}
+			// Search in parent context
+			ResolutionContext parent = this.parent;
+			while (parent != null) {
+				JavaMemberInfo member = parent.findMemberWithObject(property, projectUri);
+				if (member != null) {
+					return member;
+				}
+				parent = parent.getParent();
+			}
+			return null;
+		}
 
 	}
 
@@ -130,13 +165,18 @@ class QuteDiagnostics {
 			Position start = new Position(line, e.getOrigin().getLineCharacterStart() - 1);
 			Position end = new Position(line, e.getOrigin().getLineCharacterEnd() - 1);
 			Range range = new Range(start, end);
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, null);
+			Diagnostic diagnostic = createDiagnostic(range, message);
 			diagnostics.add(diagnostic);
 		}
 	}
 
+	private Diagnostic createDiagnostic(Range range, String message) {
+		return new Diagnostic(range, message, DiagnosticSeverity.Error, QUTE_SOURCE, null);
+	}
+
 	private void validateDataModel(Node parent, Template template, List<CompletableFuture<?>> resolvingJavaTypeFutures,
 			ResolutionContext currentContext, List<Diagnostic> diagnostics) {
+		ResolutionContext previousContext = currentContext;
 		List<Node> children = parent.getChildren();
 		for (Node node : children) {
 			switch (node.getKind()) {
@@ -146,7 +186,7 @@ class QuteDiagnostics {
 				if (StringUtils.isEmpty(javaTypeToResolve)) {
 					Range range = QutePositionUtility.createRange(parameter);
 					String message = "Class must be defined";
-					Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, null);
+					Diagnostic diagnostic = createDiagnostic(range, message);
 					diagnostics.add(diagnostic);
 				} else {
 					String projectUri = template.getProjectUri();
@@ -154,25 +194,14 @@ class QuteDiagnostics {
 						List<RangeOffset> classNameRanges = parameter.getClassNameRanges();
 						for (RangeOffset classNameRange : classNameRanges) {
 							String className = template.getText(classNameRange);
-							CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache
-									.resolveJavaType(className, projectUri);
-							ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
-							if (NOW.equals(resolvedJavaClass)) {
-								// Java type must be loaded.
-								Range range = QutePositionUtility.createRange(classNameRange, template);
-								String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, className);
-								Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Information,
-										null);
-								diagnostics.add(diagnostic);
-								resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
-							}
-
+							ResolvedJavaClassInfo resolvedJavaClass = resolveJavaType(className, projectUri,
+									() -> QutePositionUtility.createRange(classNameRange, template), diagnostics,
+									resolvingJavaTypeFutures);
 							if (resolvedJavaClass == null) {
 								// Java type doesn't exist
 								Range range = QutePositionUtility.createRange(classNameRange, template);
-								String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, className);
-								Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-										QuteErrorCode.UnkwownType);
+								Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Error,
+										QuteErrorCode.UnkwownType, className);
 								diagnostics.add(diagnostic);
 							} else {
 								currentContext.put(javaTypeToResolve, resolvedJavaClass);
@@ -184,12 +213,31 @@ class QuteDiagnostics {
 			}
 			case Section: {
 				Section section = (Section) node;
+				if (canChangeContext(section)) {
+					currentContext = new ResolutionContext(currentContext);
+				}
 				List<Parameter> parameters = section.getParameters();
 				// validate expression parameters
 				for (Parameter parameter : parameters) {
 					Expression expression = parameter.getJavaTypeExpression();
 					if (expression != null) {
-						validateExpression(expression, section, template, resolvingJavaTypeFutures, diagnostics);
+						ResolvedJavaClassInfo result = validateExpression(expression, section, template,
+								previousContext, resolvingJavaTypeFutures, diagnostics);
+						switch (section.getSectionKind()) {
+						case FOR:
+						case EACH:
+							String alias = ((LoopSection) section).getAlias();
+							currentContext.put(alias, result);
+							break;
+						case WITH:
+							currentContext.setWithObject(result);
+							break;
+						case LET:
+						case SET:
+							currentContext.put(parameter.getName(), result);
+							break;
+						default:
+						}
 					}
 				}
 				switch (section.getSectionKind()) {
@@ -201,13 +249,20 @@ class QuteDiagnostics {
 				break;
 			}
 			case Expression: {
-				validateExpression((Expression) node, null, template, resolvingJavaTypeFutures, diagnostics);
+				validateExpression((Expression) node, null, template, previousContext, resolvingJavaTypeFutures,
+						diagnostics);
 				break;
 			}
 			default:
 			}
 			validateDataModel(node, template, resolvingJavaTypeFutures, currentContext, diagnostics);
 		}
+	}
+
+	private static boolean canChangeContext(Section section) {
+		SectionKind sectionKind = section.getSectionKind();
+		return sectionKind == SectionKind.EACH || sectionKind == SectionKind.FOR || sectionKind == SectionKind.LET
+				|| sectionKind == SectionKind.SET || sectionKind == SectionKind.WITH;
 	}
 
 	/**
@@ -225,24 +280,22 @@ class QuteDiagnostics {
 			if (templateFile == null || Files.notExists(templateFile)) {
 				// It doesn't exists a file named base, base.qute.html, base.html, etc
 				Range range = QutePositionUtility.createRange(includedTemplateId);
-				String message = MessageFormat.format(TEMPLATE_NOT_FOUND_MESSAGE, includedTemplateId.getValue());
-				Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-						QuteErrorCode.TemplateNotFound);
+				Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Error,
+						QuteErrorCode.TemplateNotFound, includedTemplateId.getValue());
 				diagnostics.add(diagnostic);
 			}
 		} else {
 			// #include doesn't define a template id
 			// ex: {#include}
 			Range range = QutePositionUtility.selectStartTagName(includeSection);
-			String message = TEMPLATE_NOT_DEFINED_MESSAGE;
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-					QuteErrorCode.TemplateNotDefined);
+			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Error, QuteErrorCode.TemplateNotDefined);
 			diagnostics.add(diagnostic);
 		}
 	}
 
-	private void validateExpression(Expression expression, Section ownerSection, Template template,
-			List<CompletableFuture<?>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
+	private ResolvedJavaClassInfo validateExpression(Expression expression, Section ownerSection, Template template,
+			ResolutionContext resolutionContext, List<CompletableFuture<?>> resolvingJavaTypeFutures,
+			List<Diagnostic> diagnostics) {
 		String literalJavaType = expression.getLiteralJavaType();
 		if (literalJavaType != null) {
 			// The expression is a literal:
@@ -250,22 +303,25 @@ class QuteDiagnostics {
 			// - {true} : boolean literal
 			// - {null} : null literal
 			// - {123} : integer literal
-
-		} else {
-			// The expression reference Java data model (ex : {item})
-			String projectUri = template.getProjectUri();
-			List<Node> expressionChildren = expression.getExpressionContent();
-			for (Node expressionChild : expressionChildren) {
-				if (expressionChild.getKind() == NodeKind.ExpressionParts) {
-					Parts parts = (Parts) expressionChild;
-					validateExpressionParts(parts, ownerSection, projectUri, resolvingJavaTypeFutures, diagnostics);
-				}
+			return javaCache.resolveJavaType(literalJavaType, literalJavaType).getNow(null);
+		}
+		// The expression reference Java data model (ex : {item})
+		ResolvedJavaClassInfo resolvedJavaClass = null;
+		String projectUri = template.getProjectUri();
+		List<Node> expressionChildren = expression.getExpressionContent();
+		for (Node expressionChild : expressionChildren) {
+			if (expressionChild.getKind() == NodeKind.ExpressionParts) {
+				Parts parts = (Parts) expressionChild;
+				resolvedJavaClass = validateExpressionParts(parts, ownerSection, projectUri, resolutionContext,
+						resolvingJavaTypeFutures, diagnostics);
 			}
 		}
+		return resolvedJavaClass;
 	}
 
-	private void validateExpressionParts(Parts parts, Section ownerSection, String projectUri,
-			List<CompletableFuture<?>> resolvingJavaTypeFutures, List<Diagnostic> diagnostics) {
+	private ResolvedJavaClassInfo validateExpressionParts(Parts parts, Section ownerSection, String projectUri,
+			ResolutionContext resolutionContext, List<CompletableFuture<?>> resolvingJavaTypeFutures,
+			List<Diagnostic> diagnostics) {
 		ResolvedJavaClassInfo resolvedJavaClass = null;
 		String namespace = null;
 		for (int i = 0; i < parts.getChildCount(); i++) {
@@ -277,47 +333,36 @@ class QuteDiagnostics {
 				namespace = validateNamespace(namespacePart, projectUri, diagnostics);
 				if (namespace == null) {
 					// Invalid namespace
-					return;
+					return null;
 				}
 				break;
 			}
 
 			case Object: {
 				ObjectPart objectPart = (ObjectPart) current;
-				resolvedJavaClass = validateObjectPart(objectPart, ownerSection, projectUri, diagnostics,
-						resolvingJavaTypeFutures);
+				resolvedJavaClass = validateObjectPart(objectPart, ownerSection, projectUri, resolutionContext,
+						diagnostics, resolvingJavaTypeFutures);
 				if (resolvedJavaClass == null) {
 					// The Java type of the object part cannot be resolved, stop the validation of
 					// property, method.
-					return;
+					return null;
 				}
 				break;
 			}
 
 			case Method:
 			case Property: {
-				if (resolvedJavaClass == null) {
-					// Namepespace case
-				}
-
 				if (resolvedJavaClass.isIterable()) {
 					// Expression uses iterable type
 					// {@java.util.List<org.acme.Item items>
 					// {items.size()}
 					// Property, method to validate must be done for iterable type (ex :
-					// java.util.List>
+					// java.util.List
 					String iterableType = resolvedJavaClass.getIterableType();
-					CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache
-							.resolveJavaType(iterableType, projectUri);
-					resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
-					if (NOW.equals(resolvedJavaClass)) {
-						// Java type must be loaded.
-						Range range = QutePositionUtility.createRange(current);
-						String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, iterableType);
-						Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Information, null);
-						diagnostics.add(diagnostic);
-						resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
-						return;
+					resolvedJavaClass = resolveJavaType(iterableType, projectUri,
+							() -> QutePositionUtility.createRange(current), diagnostics, resolvingJavaTypeFutures);
+					if (resolvedJavaClass == null) {
+						return null;
 					}
 				}
 
@@ -326,12 +371,30 @@ class QuteDiagnostics {
 				if (resolvedJavaClass == null) {
 					// The Java type of the previous part cannot be resolved, stop the validation of
 					// followings property, method.
-					return;
+					return null;
 				}
 				break;
 			}
 			}
 		}
+		return resolvedJavaClass;
+	}
+
+	private ResolvedJavaClassInfo resolveJavaType(String javaType, String projectUri, Supplier<Range> rangeProvider,
+			List<Diagnostic> diagnostics, List<CompletableFuture<?>> resolvingJavaTypeFutures) {
+		CompletableFuture<ResolvedJavaClassInfo> resolvingJavaTypeFuture = javaCache.resolveJavaType(javaType,
+				projectUri);
+		ResolvedJavaClassInfo resolvedJavaClass = resolvingJavaTypeFuture.getNow(NOW);
+		if (NOW.equals(resolvedJavaClass)) {
+			// Java type must be loaded.
+			Range range = rangeProvider.get();
+			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Information,
+					QuteErrorCode.ResolvingJavaType, javaType);
+			diagnostics.add(diagnostic);
+			resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
+			return null;
+		}
+		return resolvedJavaClass;
 	}
 
 	/**
@@ -351,9 +414,8 @@ class QuteDiagnostics {
 		if (projectUri != null) {
 			if (!javaCache.hasNamespace(namespace, projectUri)) {
 				Range range = QutePositionUtility.createRange(namespacePart);
-				String message = MessageFormat.format(UNDEFINED_NAMESPACE_MESSAGE, namespacePart.getPartName());
-				Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Warning,
-						QuteErrorCode.UndefinedNamespace);
+				Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Warning,
+						QuteErrorCode.UndefinedNamespace, namespacePart.getPartName());
 				diagnostics.add(diagnostic);
 				return null;
 			}
@@ -362,14 +424,21 @@ class QuteDiagnostics {
 	}
 
 	private ResolvedJavaClassInfo validateObjectPart(ObjectPart objectPart, Section ownerSection, String projectUri,
-			List<Diagnostic> diagnostics, List<CompletableFuture<?>> resolvingJavaTypeFutures) {
+			ResolutionContext resolutionContext, List<Diagnostic> diagnostics,
+			List<CompletableFuture<?>> resolvingJavaTypeFutures) {
+		// Check if object part is a property coming from #with
+		JavaMemberInfo javaMember = resolutionContext.findMemberWithObject(objectPart.getPartName(), projectUri);
+		if (javaMember != null) {
+			return resolveJavaType(javaMember.getMemberType(), projectUri,
+					() -> QutePositionUtility.createRange(objectPart), diagnostics, resolvingJavaTypeFutures);
+		}
+
 		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
 		if (javaTypeInfo == null) {
 			// ex : {item}
 			Range range = QutePositionUtility.createRange(objectPart);
-			String message = MessageFormat.format(UNDEFINED_VARIABLE_MESSAGE, objectPart.getPartName());
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Warning,
-					QuteErrorCode.UndefinedVariable);
+			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Warning, QuteErrorCode.UndefinedVariable,
+					objectPart.getPartName());
 			diagnostics.add(diagnostic);
 			return null;
 		}
@@ -405,21 +474,19 @@ class QuteDiagnostics {
 		JavaMemberInfo javaMember = javaCache.findMember(property, resolvedJavaClass, projectUri);
 		if (javaMember == null) {
 			IQuteErrorCode errorCode = null;
-			String message = null;
 			boolean isMethod = part.getPartKind() == PartKind.Method;
 			if (isMethod) {
 				// ex : {@org.acme.Item item}
 				// "{item.getXXXX()}
-				message = MessageFormat.format(UNKWOWN_METHOD_MESSAGE, property, resolvedJavaClass.getClassName());
 				errorCode = QuteErrorCode.UnkwownMethod;
 			} else {
 				// ex : {@org.acme.Item item}
 				// "{item.XXXX}
-				message = MessageFormat.format(UNKWOWN_PROPERTY_MESSAGE, property, resolvedJavaClass.getClassName());
 				errorCode = QuteErrorCode.UnkwownProperty;
 			}
 			Range range = QutePositionUtility.createRange(part);
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error, errorCode);
+			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Error, errorCode, property,
+					resolvedJavaClass.getClassName());
 			diagnostics.add(diagnostic);
 			return null;
 		}
@@ -439,9 +506,8 @@ class QuteDiagnostics {
 			String javaTypeToResolve) {
 		if (StringUtils.isEmpty(javaTypeToResolve)) {
 			Range range = QutePositionUtility.createRange(part);
-			String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, part.getPartName());
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-					QuteErrorCode.UnkwownType);
+			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Error, QuteErrorCode.UnkwownType,
+					part.getPartName());
 			diagnostics.add(diagnostic);
 			return null;
 		}
@@ -466,8 +532,8 @@ class QuteDiagnostics {
 		if (NOW.equals(resolvedJavaClass)) {
 			// Java type must be loaded.
 			Range range = QutePositionUtility.createRange(part);
-			String message = MessageFormat.format(RESOLVING_JAVA_TYPE_MESSAGE, javaTypeToResolve);
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Information, null);
+			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Information,
+					QuteErrorCode.ResolvingJavaType, javaTypeToResolve);
 			diagnostics.add(diagnostic);
 			resolvingJavaTypeFutures.add(resolvingJavaTypeFuture);
 			return null;
@@ -476,9 +542,8 @@ class QuteDiagnostics {
 		if (resolvedJavaClass == null) {
 			// Java type doesn't exist
 			Range range = QutePositionUtility.createRange(part);
-			String message = MessageFormat.format(UNKWOWN_JAVA_TYPE_MESSAGE, javaTypeToResolve);
-			Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-					QuteErrorCode.UnkwownType);
+			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Error, QuteErrorCode.UnkwownType,
+					javaTypeToResolve);
 			diagnostics.add(diagnostic);
 			return null;
 		}
@@ -494,9 +559,8 @@ class QuteDiagnostics {
 			if (!resolvedJavaClass.isIterable()) {
 				// The Java class is not an iterable class like java.util.List
 				Range range = QutePositionUtility.createRange(part);
-				String message = MessageFormat.format(ITERABLE_REQUIRED_MESSAGE, javaTypeToResolve);
-				Diagnostic diagnostic = createDiagnostic(range, message, DiagnosticSeverity.Error,
-						QuteErrorCode.NotInstanceOfIterable);
+				Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Error,
+						QuteErrorCode.NotInstanceOfIterable, javaTypeToResolve);
 				diagnostics.add(diagnostic);
 				return null;
 			}
@@ -504,9 +568,10 @@ class QuteDiagnostics {
 		return resolvedJavaClass;
 	}
 
-	private static Diagnostic createDiagnostic(Range range, String message, DiagnosticSeverity severity,
-			IQuteErrorCode errorCode) {
-		return new Diagnostic(range, message, severity, QUTE_SOURCE, errorCode != null ? errorCode.getCode() : null);
+	private static Diagnostic createDiagnostic(Range range, DiagnosticSeverity severity, IQuteErrorCode errorCode,
+			Object... arguments) {
+		String message = errorCode.getMessage(arguments);
+		return new Diagnostic(range, message, severity, QUTE_SOURCE, errorCode.getCode());
 	}
 
 }

@@ -12,7 +12,7 @@ public class QuteDefinitionInWithSectionTest {
 	public void definedProperty() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{#with item}\r\n" + //
-				"  <h1>{na|me}</h1>\r\n" + // <-- completion here
+				"  <h1>{na|me}</h1>\r\n" + // <-- definition here
 				"{/with}";
 		testDefinitionFor(template, "test.qute", //
 				ll("test.qute", r(3, 3, 3, 12), r(0, 37, 0, 46)));

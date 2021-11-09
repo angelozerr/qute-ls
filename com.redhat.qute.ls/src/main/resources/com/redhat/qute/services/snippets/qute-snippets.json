@@ -107,14 +107,5 @@
 			"{/with}"
 		],
 		"description": "With section"
-	},
-	"#with-as": {
-		"prefix": "withas",
-		"body": [
-			"{#with ${1:item} as ${2:alias}}",
-			"\t{${2:alias}.${3:name}}$0",
-			"{/with}"
-		],
-		"description": "With section with alias"
 	}
 }

@@ -11,25 +11,54 @@
 *******************************************************************************/
 package com.redhat.qute.services.diagnostics;
 
+import static com.redhat.qute.QuteAssert.d;
 import static com.redhat.qute.QuteAssert.testDiagnosticsFor;
 
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Test;
 
 /**
  * 
- * @author azerr
+ * @author Angelo ZERR
  *
  */
 public class QuteDiagnosticsInExpressionWithWithSectionTest {
+
+	@Test
+	public void undefinedObject() throws Exception {
+		String template = "{#with item}\r\n" + //
+				"{/with}";
+		testDiagnosticsFor(template, //
+				d(0, 7, 0, 11, QuteErrorCode.UndefinedVariable, "`item` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
+	}
 
 	@Test
 	public void noError() throws Exception {
 		String template = "{@org.acme.Item item}\r\n" + //
 				"{#with item}\r\n" + //
 				"  <h1>{name}</h1>  \r\n" + //
-				"  <p>{description}</p> \r\n" + //
+				"  <p>{price}</p> \r\n" + //
 				"{/with}";
 		testDiagnosticsFor(template);
 	}
 
+	@Test
+	public void nested() throws Exception {
+		String template = "{@org.acme.Item item}\r\n" + //
+				"{#with item}\r\n" + //
+				"  <h1>{name}</h1>  \r\n" + //
+				"  <p>{reviews}</p>\r\n" + //
+				"  {#with reviews}\r\n" + //
+				"	<p>{size}</p>\r\n" + //
+				"	<p>{average}</p>\r\n" + // <-- error because reviews is a List
+				"	<h1>{name}</h1>  \r\n" + //
+				"	<h1>{item.name}</h1>\r\n" + //
+				"	<h1>{data:item.name}</h1>\r\n" + //
+				"  {/with}\r\n" + //
+				"{/with}";
+		testDiagnosticsFor(template, //
+				d(6, 5, 6, 12, QuteErrorCode.UndefinedVariable, "`average` cannot be resolved to a variable.",
+						DiagnosticSeverity.Warning));
+	}
 }
