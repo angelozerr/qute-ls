@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Range;
 
 import com.redhat.qute.ls.commons.BadLocationException;
+import com.redhat.qute.parser.template.Expression;
 import com.redhat.qute.parser.template.Node;
 import com.redhat.qute.parser.template.Parameter;
 import com.redhat.qute.parser.template.ParameterDeclaration;
@@ -75,5 +76,34 @@ public class QutePositionUtility {
 	public static Range createRange(RangeOffset range, Template template) {
 		return createRange(range.getStart(), range.getEnd(), template);
 	}
+	
+	public static Node tryToFindExpressionPart(int offset, Node node) {
+		switch (node.getKind()) {
+		case Section: {
+			Section section = (Section) node;
+			Expression expression = section.getExpressionParameter(offset);
+			if (expression != null) {
+				Node expressionNode = expression.findNodeExpressionAt(offset);
+				if (expressionNode != null) {
+					return expressionNode;
+				}
+				return expression;
+			}			
+		}
+		break;
+		case Expression: {
+			Expression expression = (Expression) node;
+			Node expressionNode = expression.findNodeExpressionAt(offset);
+			if (expressionNode != null) {
+				return expressionNode;
+			}			
+		}
+		break;
+		default:
+			return node;
+		}
+		return node;
+	}
+
 
 }

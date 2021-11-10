@@ -17,8 +17,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CodeLensParams;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
@@ -129,6 +132,22 @@ public class TemplateFileTextDocumentService extends AbstractTextDocumentService
 				(cancelChecker, template) -> {
 					return getQuteLanguageService().getCodeLens(template, sharedSettings.getCodeLensSettings(),
 							cancelChecker);
+				});
+	}
+
+	public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
+		return computeModelAsync2(getDocument(params.getTextDocument().getUri()).getModel(),
+				(cancelChecker, template) -> {
+					return getQuteLanguageService()
+							.doCodeActions(template, params.getContext(), params.getRange(), sharedSettings) //
+							.thenApply(codeActions -> {
+								return codeActions.stream() //
+										.map(ca -> {
+											Either<Command, CodeAction> e = Either.forRight(ca);
+											return e;
+										}) //
+										.collect(Collectors.toList());
+							});
 				});
 	}
 

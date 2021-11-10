@@ -11,9 +11,13 @@
 *******************************************************************************/
 package com.redhat.qute.services.diagnostics;
 
+import static com.redhat.qute.QuteAssert.ca;
 import static com.redhat.qute.QuteAssert.d;
+import static com.redhat.qute.QuteAssert.te;
+import static com.redhat.qute.QuteAssert.testCodeActionsFor;
 import static com.redhat.qute.QuteAssert.testDiagnosticsFor;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Test;
 
@@ -32,17 +36,23 @@ public class QuteDiagnosticsInExpressionTest {
 		testDiagnosticsFor(template);
 
 		template = "{trueX}";
-		testDiagnosticsFor(template, //
-				d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`trueX` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+		Diagnostic d = d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`trueX` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("trueX", false));
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String trueX}\r\n")));
 
 		template = "{false}";
 		testDiagnosticsFor(template);
 
 		template = "{falseX}";
-		testDiagnosticsFor(template, //
-				d(0, 1, 0, 7, QuteErrorCode.UndefinedVariable, "`falseX` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+		d = d(0, 1, 0, 7, QuteErrorCode.UndefinedVariable, "`falseX` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("falseX", false));
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String falseX}\r\n")));
 	}
 
 	@Test
@@ -51,9 +61,12 @@ public class QuteDiagnosticsInExpressionTest {
 		testDiagnosticsFor(template);
 
 		template = "{nullX}";
-		testDiagnosticsFor(template, //
-				d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`nullX` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+		Diagnostic d = d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`nullX` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("nullX", false));
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String nullX}\r\n")));
 	}
 
 	@Test
@@ -71,9 +84,12 @@ public class QuteDiagnosticsInExpressionTest {
 		testDiagnosticsFor(template);
 
 		template = "{123X}";
-		testDiagnosticsFor(template, //
-				d(0, 1, 0, 5, QuteErrorCode.UndefinedVariable, "`123X` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+		Diagnostic d = d(0, 1, 0, 5, QuteErrorCode.UndefinedVariable, "`123X` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("123X", false));
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String 123X}\r\n")));
 	}
 
 	@Test
@@ -82,17 +98,27 @@ public class QuteDiagnosticsInExpressionTest {
 		testDiagnosticsFor(template);
 
 		template = "{123LX}";
-		testDiagnosticsFor(template, //
-				d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`123LX` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+		Diagnostic d = d(0, 1, 0, 6, QuteErrorCode.UndefinedVariable, "`123LX` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("123LX", false));
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String 123LX}\r\n")));
 	}
 
 	@Test
 	public void undefinedVariable() throws Exception {
 		String template = "{item}";
-		testDiagnosticsFor(template, //
-				d(0, 1, 0, 5, QuteErrorCode.UndefinedVariable, "`item` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+
+		Diagnostic d = d(0, 1, 0, 5, //
+				QuteErrorCode.UndefinedVariable, //
+				"`item` cannot be resolved to a variable.", //
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("item", false));
+
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String item}\r\n")));
 	}
 
 	@Test
@@ -221,11 +247,16 @@ public class QuteDiagnosticsInExpressionTest {
 	}
 
 	@Test
-	public void elvisOperator() {
+	public void elvisOperator() throws Exception {
 		String template = "{person.name ?: 'John'}";
-		testDiagnosticsFor(template, //
-				d(0, 1, 0, 7, QuteErrorCode.UndefinedVariable, "`person` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+		
+		Diagnostic d = d(0, 1, 0, 7, QuteErrorCode.UndefinedVariable, "`person` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("person", false));
+		
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String person}\r\n")));
 	}
 
 	@Test

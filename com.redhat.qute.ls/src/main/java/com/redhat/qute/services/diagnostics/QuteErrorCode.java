@@ -1,7 +1,11 @@
 package com.redhat.qute.services.diagnostics;
 
-public enum QuteErrorCode implements IQuteErrorCode {
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import com.redhat.qute.ls.commons.CodeActionFactory;
+
+public enum QuteErrorCode implements IQuteErrorCode {
+	
 	// Error code for resolving Java type
 	ResolvingJavaType("Resolving Java type `{0}`."), //
 
@@ -40,5 +44,9 @@ public enum QuteErrorCode implements IQuteErrorCode {
 	@Override
 	public String getUnformatedMessage() {
 		return unformatedMessage;
+	}
+
+	public boolean isQuteErrorCode(Either<String, Integer> code) {
+		return CodeActionFactory.isDiagnosticCode(code, name());
 	}
 }

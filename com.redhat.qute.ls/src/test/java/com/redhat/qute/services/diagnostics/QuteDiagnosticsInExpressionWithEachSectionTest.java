@@ -1,8 +1,12 @@
 package com.redhat.qute.services.diagnostics;
 
+import static com.redhat.qute.QuteAssert.ca;
 import static com.redhat.qute.QuteAssert.d;
+import static com.redhat.qute.QuteAssert.te;
+import static com.redhat.qute.QuteAssert.testCodeActionsFor;
 import static com.redhat.qute.QuteAssert.testDiagnosticsFor;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Test;
 
@@ -25,13 +29,17 @@ public class QuteDiagnosticsInExpressionWithEachSectionTest {
 				"{#each itemsXXX}\r\n" + //
 				"	{it.name}    \r\n" + //
 				"{/each}";
-		testDiagnosticsFor(template, //
-				d(2, 7, 2, 15, QuteErrorCode.UndefinedVariable, //
-						"`itemsXXX` cannot be resolved to a variable.", //
-						DiagnosticSeverity.Warning), //
+
+		Diagnostic d = d(2, 7, 2, 15, QuteErrorCode.UndefinedVariable, //
+				"`itemsXXX` cannot be resolved to a variable.", DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("itemsXXX", true));
+
+		testDiagnosticsFor(template, d, //
 				d(3, 2, 3, 4, QuteErrorCode.UnkwownType, //
 						"`it` cannot be resolved to a type.", //
 						DiagnosticSeverity.Error));
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.util.List itemsXXX}\r\n")));
 	}
 
 	@Test

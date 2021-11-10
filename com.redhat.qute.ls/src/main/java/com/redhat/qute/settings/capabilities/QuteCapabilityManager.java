@@ -7,6 +7,7 @@
  *******************************************************************************/
 package com.redhat.qute.settings.capabilities;
 
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.CODE_ACTION_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.CODE_LENS_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.COMPLETION_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DEFAULT_CODELENS_OPTIONS;
@@ -17,6 +18,7 @@ import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_LINK_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_SYMBOL_ID;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.HOVER_ID;
+import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_CODE_ACTION;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_CODE_LENS;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_COMPLETION;
 import static com.redhat.qute.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DEFINITION;
@@ -59,6 +61,9 @@ public class QuteCapabilityManager {
 	 * side preferences turning on/off
 	 */
 	public void initializeCapabilities() {
+		if (this.getClientCapabilities().isCodeActionDynamicRegistered()) {
+			registerCapability(CODE_ACTION_ID, TEXT_DOCUMENT_CODE_ACTION);
+		}
 		if (this.getClientCapabilities().isDocumentHighlightDynamicRegistered()) {
 			registerCapability(DOCUMENT_HIGHLIGHT_ID, TEXT_DOCUMENT_HIGHLIGHT);
 		}
@@ -84,19 +89,6 @@ public class QuteCapabilityManager {
 			registerCapability(DOCUMENT_LINK_ID, TEXT_DOCUMENT_LINK, DEFAULT_DOCUMENT_LINK_OPTIONS);
 		}
 		/*
-		 * if (this.getClientCapabilities().isCodeActionDynamicRegistered()) {
-		 * registerCapability(CODE_ACTION_ID, TEXT_DOCUMENT_CODE_ACTION); } if
-		 * (this.getClientCapabilities().isCodeLensDynamicRegistered()) {
-		 * registerCapability(CODE_LENS_ID, TEXT_DOCUMENT_CODE_LENS); } if
-		 * (this.getClientCapabilities().isCompletionDynamicRegistrationSupported()) {
-		 * registerCapability(COMPLETION_ID, TEXT_DOCUMENT_COMPLETION,
-		 * DEFAULT_COMPLETION_OPTIONS); } if
-		 * (this.getClientCapabilities().isHoverDynamicRegistered()) {
-		 * registerCapability(HOVER_ID, TEXT_DOCUMENT_HOVER); } if
-		 * (this.getClientCapabilities().isDocumentSymbolDynamicRegistrationSupported())
-		 * { registerCapability(DOCUMENT_SYMBOL_ID, TEXT_DOCUMENT_DOCUMENT_SYMBOL); } if
-		 * (this.getClientCapabilities().isDefinitionDynamicRegistered()) {
-		 * registerCapability(DEFINITION_ID, TEXT_DOCUMENT_DEFINITION); } if
 		 * (this.getClientCapabilities().isFormattingDynamicRegistered()) {
 		 * registerCapability(FORMATTING_ID, TEXT_DOCUMENT_FORMATTING); } if
 		 * (this.getClientCapabilities().isFormattingDynamicRegistered()) {

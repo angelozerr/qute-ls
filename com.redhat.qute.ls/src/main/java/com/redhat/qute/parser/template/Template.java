@@ -99,6 +99,10 @@ public class Template extends Node {
 	public String getText() {
 		return textDocument.getText();
 	}
+	
+	public TextDocument getTextDocument() {
+		return textDocument;
+	}
 
 	public String getText(RangeOffset range) {
 		return getText(range.getStart(), range.getEnd());

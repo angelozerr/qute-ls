@@ -14,6 +14,8 @@ package com.redhat.qute.services;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
@@ -23,10 +25,10 @@ import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
-import com.redhat.qute.commons.ResolvedJavaClassInfo;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
 import com.redhat.qute.settings.QuteCodeLensSettings;
@@ -44,6 +46,7 @@ import com.redhat.qute.settings.SharedSettings;
 public class QuteLanguageService {
 
 	private final QuteCodeLens codelens;
+	private final QuteCodeActions codeActions;
 	private final QuteCompletions completions;
 	private final QuteHover hover;
 	private final QuteHighlighting highlighting;
@@ -55,6 +58,7 @@ public class QuteLanguageService {
 	public QuteLanguageService(JavaDataModelCache javaCache) {
 		this.completions = new QuteCompletions(javaCache);
 		this.codelens = new QuteCodeLens(javaCache);
+		this.codeActions = new QuteCodeActions();
 		this.hover = new QuteHover(javaCache);
 		this.highlighting = new QuteHighlighting();
 		this.definition = new QuteDefinition(javaCache);
@@ -88,6 +92,11 @@ public class QuteLanguageService {
 	public CompletableFuture<Hover> doHover(Template template, Position position, SharedSettings sharedSettings,
 			CancelChecker cancelChecker) {
 		return hover.doHover(template, position, sharedSettings, cancelChecker);
+	}
+	
+	public CompletableFuture<List<CodeAction>> doCodeActions(Template template, CodeActionContext context, Range range,
+			SharedSettings sharedSettings) {
+		return codeActions.doCodeActions(template, context, range, sharedSettings);
 	}
 
 	public List<DocumentHighlight> findDocumentHighlights(Template template, Position position,

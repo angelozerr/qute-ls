@@ -64,6 +64,8 @@ public abstract class AbstractTextDocumentService implements TextDocumentService
 
 	private boolean definitionLinkSupport;
 
+	private boolean codeActionLiteralSupport;
+
 	public AbstractTextDocumentService(QuteLanguageServer quteLanguageServer, SharedSettings sharedSettings) {
 		this.quteLanguageServer = quteLanguageServer;
 		this.sharedSettings = sharedSettings;
@@ -85,6 +87,8 @@ public abstract class AbstractTextDocumentService implements TextDocumentService
 			definitionLinkSupport = textDocumentClientCapabilities.getDefinition() != null
 					&& textDocumentClientCapabilities.getDefinition().getLinkSupport() != null
 					&& textDocumentClientCapabilities.getDefinition().getLinkSupport();
+			codeActionLiteralSupport = textDocumentClientCapabilities.getCodeAction() != null
+					&& textDocumentClientCapabilities.getCodeAction().getCodeActionLiteralSupport() != null;
 		}
 	}
 
@@ -146,6 +150,10 @@ public abstract class AbstractTextDocumentService implements TextDocumentService
 
 	public boolean isDefinitionLinkSupport() {
 		return definitionLinkSupport;
+	}
+
+	public boolean isCodeActionLiteralSupport() {
+		return codeActionLiteralSupport;
 	}
 
 	public SharedSettings getSharedSettings() {

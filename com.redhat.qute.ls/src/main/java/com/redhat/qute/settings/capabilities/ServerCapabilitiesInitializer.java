@@ -45,9 +45,9 @@ public class ServerCapabilitiesInitializer {
 		}
 		serverCapabilities
 				.setDocumentSymbolProvider(!clientCapabilities.isDocumentSymbolDynamicRegistrationSupported());
+		serverCapabilities.setHoverProvider(!clientCapabilities.isHoverDynamicRegistered());
+		serverCapabilities.setCodeActionProvider(!clientCapabilities.isCodeActionDynamicRegistered());
 		/*
-		 * serverCapabilities.setHoverProvider(!clientCapabilities.
-		 * isHoverDynamicRegistered());
 		 * serverCapabilities.setDocumentFormattingProvider(!clientCapabilities.
 		 * isFormattingDynamicRegistered());
 		 * serverCapabilities.setDocumentRangeFormattingProvider(
@@ -59,14 +59,10 @@ public class ServerCapabilitiesInitializer {
 		if (!clientCapabilities.isCodeLensDynamicRegistered()) {
 			serverCapabilities.setCodeLensProvider(DEFAULT_CODELENS_OPTIONS);
 		}
-		if (!clientCapabilities.isHoverDynamicRegistered()) {
-			serverCapabilities.setHoverProvider(!clientCapabilities.isHoverDynamicRegistered());
-		}
+
 		/*
 		 * serverCapabilities.setDefinitionProvider(!clientCapabilities.
 		 * isDefinitionDynamicRegistered()); if
-		 * (!clientCapabilities.isCodeLensDynamicRegistered()) {
-		 * serverCapabilities.setCodeLensProvider(DEFAULT_CODELENS_OPTIONS); }
 		 */
 		return serverCapabilities;
 	}

@@ -11,9 +11,13 @@
 *******************************************************************************/
 package com.redhat.qute.services.diagnostics;
 
+import static com.redhat.qute.QuteAssert.ca;
 import static com.redhat.qute.QuteAssert.d;
+import static com.redhat.qute.QuteAssert.te;
+import static com.redhat.qute.QuteAssert.testCodeActionsFor;
 import static com.redhat.qute.QuteAssert.testDiagnosticsFor;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Test;
 
@@ -28,9 +32,14 @@ public class QuteDiagnosticsInExpressionWithWithSectionTest {
 	public void undefinedObject() throws Exception {
 		String template = "{#with item}\r\n" + //
 				"{/with}";
-		testDiagnosticsFor(template, //
-				d(0, 7, 0, 11, QuteErrorCode.UndefinedVariable, "`item` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+
+		Diagnostic d = d(0, 7, 0, 11, QuteErrorCode.UndefinedVariable, "`item` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("item", false));
+
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String item}\r\n")));
 	}
 
 	@Test
@@ -57,8 +66,14 @@ public class QuteDiagnosticsInExpressionWithWithSectionTest {
 				"	<h1>{data:item.name}</h1>\r\n" + //
 				"  {/with}\r\n" + //
 				"{/with}";
-		testDiagnosticsFor(template, //
-				d(6, 5, 6, 12, QuteErrorCode.UndefinedVariable, "`average` cannot be resolved to a variable.",
-						DiagnosticSeverity.Warning));
+
+		Diagnostic d = d(6, 5, 6, 12, QuteErrorCode.UndefinedVariable, "`average` cannot be resolved to a variable.",
+				DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("average", false));
+
+		testDiagnosticsFor(template, d);
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.lang.String average}\r\n")));
+
 	}
 }

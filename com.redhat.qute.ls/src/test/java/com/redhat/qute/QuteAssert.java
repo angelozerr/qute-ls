@@ -20,15 +20,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionCapabilities;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemCapabilities;
 import org.eclipse.lsp4j.CompletionList;
+import org.eclipse.lsp4j.CreateFile;
+import org.eclipse.lsp4j.CreateFileOptions;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticRelatedInformation;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -43,12 +48,17 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.ResourceOperation;
+import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.redhat.qute.commons.ProjectInfo;
 import com.redhat.qute.indexing.QuteProjectRegistry;
 import com.redhat.qute.ls.commons.BadLocationException;
+import com.redhat.qute.ls.commons.TextDocument;
 import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.TemplateParser;
 import com.redhat.qute.services.QuteLanguageService;
@@ -501,4 +511,112 @@ public class QuteAssert {
 		}
 	}
 
+	// ------------------- CodeAction assert
+
+	public static void testCodeActionsFor(String value, Diagnostic diagnostic, CodeAction... expected)
+			throws Exception {
+		testCodeActionsFor(value, diagnostic, FILE_URI, PROJECT_URI, DEFAULT_JAVA_DATA_MODEL_CACHE, expected);
+	}
+
+	public static void testCodeActionsFor(String value, Diagnostic diagnostic, String fileUri, String projectUri,
+			JavaDataModelCache javaCache, CodeAction... expected) throws Exception {
+		int offset = value.indexOf('|');
+		Range range = null;
+
+		if (offset != -1) {
+			value = value.substring(0, offset) + value.substring(offset + 1);
+		}
+		TextDocument document = new TextDocument(value.toString(), FILE_URI);
+
+		if (offset != -1) {
+			Position position = document.positionAt(offset);
+			range = new Range(position, position);
+		} else {
+			range = diagnostic.getRange();
+		}
+
+		CodeActionContext context = new CodeActionContext();
+		context.setDiagnostics(Arrays.asList(diagnostic));
+
+		Template template = TemplateParser.parse(value, fileUri != null ? fileUri : FILE_URI);
+		QuteLanguageService languageService = new QuteLanguageService(javaCache);
+		List<CodeAction> actual = languageService.doCodeActions(template, context, range, new SharedSettings()).get();
+		assertCodeActions(actual, expected);
+	}
+
+	public static void assertCodeActions(List<CodeAction> actual, CodeAction... expected) {
+		actual.stream().forEach(ca -> {
+			// we don't want to compare title, etc
+			ca.setKind(null);
+			ca.setTitle("");
+			if (ca.getDiagnostics() != null) {
+				ca.getDiagnostics().forEach(d -> {
+					d.setSeverity(null);
+					d.setMessage("");
+					d.setSource(null);
+				});
+			}
+		});
+
+		assertEquals(expected.length, actual.size());
+		assertArrayEquals(expected, actual.toArray());
+	}
+
+	public static CodeAction ca(Diagnostic d, TextEdit... te) {
+		CodeAction codeAction = new CodeAction();
+		codeAction.setTitle("");
+		codeAction.setDiagnostics(Arrays.asList(d));
+
+		TextDocumentEdit textDocumentEdit = tde(FILE_URI, 0, te);
+		WorkspaceEdit workspaceEdit = new WorkspaceEdit(Collections.singletonList(Either.forLeft(textDocumentEdit)));
+		codeAction.setEdit(workspaceEdit);
+		return codeAction;
+	}
+
+	/**
+	 * Mock code action for creating a command code action
+	 */
+	public static CodeAction ca(Diagnostic d, Command c) {
+		CodeAction codeAction = new CodeAction();
+		codeAction.setTitle("");
+		codeAction.setDiagnostics(Arrays.asList(d));
+
+		codeAction.setCommand(c);
+
+		return codeAction;
+	}
+
+	public static TextDocumentEdit tde(String uri, int version, TextEdit... te) {
+		VersionedTextDocumentIdentifier versionedTextDocumentIdentifier = new VersionedTextDocumentIdentifier(uri,
+				version);
+		return new TextDocumentEdit(versionedTextDocumentIdentifier, Arrays.asList(te));
+	}
+
+	public static CodeAction ca(Diagnostic d, Either<TextDocumentEdit, ResourceOperation>... ops) {
+		CodeAction codeAction = new CodeAction();
+		codeAction.setDiagnostics(Collections.singletonList(d));
+		codeAction.setEdit(new WorkspaceEdit(Arrays.asList(ops)));
+		codeAction.setTitle("");
+		return codeAction;
+	}
+
+	public static TextEdit te(int startLine, int startCharacter, int endLine, int endCharacter, String newText) {
+		TextEdit textEdit = new TextEdit();
+		textEdit.setNewText(newText);
+		textEdit.setRange(r(startLine, startCharacter, endLine, endCharacter));
+		return textEdit;
+	}
+
+	public static Either<TextDocumentEdit, ResourceOperation> createFile(String uri, boolean overwrite) {
+		CreateFileOptions options = new CreateFileOptions();
+		options.setIgnoreIfExists(!overwrite);
+		options.setOverwrite(overwrite);
+		return Either.forRight(new CreateFile(uri, options));
+	}
+
+	public static Either<TextDocumentEdit, ResourceOperation> teOp(String uri, int startLine, int startChar,
+			int endLine, int endChar, String newText) {
+		return Either.forLeft(new TextDocumentEdit(new VersionedTextDocumentIdentifier(uri, 0),
+				Collections.singletonList(te(startLine, startChar, endLine, endChar, newText))));
+	}
 }

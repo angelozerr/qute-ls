@@ -11,6 +11,8 @@
 *******************************************************************************/
 package com.redhat.qute.services;
 
+import static com.redhat.qute.services.diagnostics.QuteDiagnosticContants.QUTE_SOURCE;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ import com.redhat.qute.parser.template.Template;
 import com.redhat.qute.parser.template.sections.IncludeSection;
 import com.redhat.qute.parser.template.sections.LoopSection;
 import com.redhat.qute.services.datamodel.JavaDataModelCache;
+import com.redhat.qute.services.diagnostics.DiagnosticDataFactory;
 import com.redhat.qute.services.diagnostics.IQuteErrorCode;
 import com.redhat.qute.services.diagnostics.QuteErrorCode;
 import com.redhat.qute.settings.QuteValidationSettings;
@@ -59,8 +62,6 @@ import io.quarkus.qute.TemplateException;
  *
  */
 class QuteDiagnostics {
-
-	private static final String QUTE_SOURCE = "qute";
 
 	private static final ResolvedJavaClassInfo NOW = new ResolvedJavaClassInfo();
 
@@ -435,10 +436,13 @@ class QuteDiagnostics {
 
 		JavaTypeInfoProvider javaTypeInfo = objectPart.resolveJavaType();
 		if (javaTypeInfo == null) {
-			// ex : {item}
+			// ex : {item} --> undefined variable
 			Range range = QutePositionUtility.createRange(objectPart);
 			Diagnostic diagnostic = createDiagnostic(range, DiagnosticSeverity.Warning, QuteErrorCode.UndefinedVariable,
 					objectPart.getPartName());
+			// Create data information helpful for code action
+			diagnostic.setData(DiagnosticDataFactory.createUndefinedVariableData(objectPart.getPartName(),
+					ownerSection != null && ownerSection.isIterable()));
 			diagnostics.add(diagnostic);
 			return null;
 		}

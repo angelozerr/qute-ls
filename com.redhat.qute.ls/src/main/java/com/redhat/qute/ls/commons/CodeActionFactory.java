@@ -176,10 +176,12 @@ public class CodeActionFactory {
 	 *
 	 * @param title         The displayed name of the CodeAction
 	 * @param commandId     The id of the given command to add as CodeAction
-	 * @param commandParams The document URI of the document the command is called on
+	 * @param commandParams The document URI of the document the command is called
+	 *                      on
 	 * @param diagnostic    The diagnostic that this CodeAction will fix
 	 */
-	public static CodeAction createCommand(String title, String commandId, List<Object> commandParams, Diagnostic diagnostic) {
+	public static CodeAction createCommand(String title, String commandId, List<Object> commandParams,
+			Diagnostic diagnostic) {
 		CodeAction codeAction = new CodeAction(title);
 		Command command = new Command(title, commandId, commandParams);
 		codeAction.setCommand(command);
@@ -187,5 +189,12 @@ public class CodeActionFactory {
 		codeAction.setKind(CodeActionKind.QuickFix);
 
 		return codeAction;
+	}
+
+	public static boolean isDiagnosticCode(Either<String, Integer> diagnosticCode, String code) {
+		if (diagnosticCode == null || diagnosticCode.isRight()) {
+			return false;
+		}
+		return code.equals(diagnosticCode.getLeft());
 	}
 }

@@ -1,8 +1,12 @@
 package com.redhat.qute.services.diagnostics;
 
+import static com.redhat.qute.QuteAssert.ca;
 import static com.redhat.qute.QuteAssert.d;
+import static com.redhat.qute.QuteAssert.te;
+import static com.redhat.qute.QuteAssert.testCodeActionsFor;
 import static com.redhat.qute.QuteAssert.testDiagnosticsFor;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +22,26 @@ public class QuteDiagnosticsInExpressionWithForSectionTest {
 		testDiagnosticsFor(template);
 	}
 
+	@Test
+	public void undefinedVariable() throws Exception {
+		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
+				" \r\n" + //
+				"{#for item in itemsXXX}\r\n" + //
+				"	{item.name}    \r\n" + //
+				"{/for}";
+
+		Diagnostic d = d(2, 14, 2, 22, QuteErrorCode.UndefinedVariable, //
+				"`itemsXXX` cannot be resolved to a variable.", DiagnosticSeverity.Warning);
+		d.setData(DiagnosticDataFactory.createUndefinedVariableData("itemsXXX", true));
+
+		testDiagnosticsFor(template, d, //
+				d(3, 2, 3, 6, QuteErrorCode.UnkwownType, //
+						"`item` cannot be resolved to a type.", //
+						DiagnosticSeverity.Error));
+		testCodeActionsFor(template, d, //
+				ca(d, te(0, 0, 0, 0, "{@java.util.List itemsXXX}\r\n")));
+	}
+	
 	@Test
 	public void unkwownProperty() throws Exception {
 		String template = "{@java.util.List<org.acme.Item> items}\r\n" + //
