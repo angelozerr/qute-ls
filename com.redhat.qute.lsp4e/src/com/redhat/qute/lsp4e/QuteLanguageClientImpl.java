@@ -23,18 +23,18 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 
-import com.redhat.qute.commons.JavaClassInfo;
+import com.redhat.qute.commons.JavaTypeInfo;
 import com.redhat.qute.commons.ProjectInfo;
-import com.redhat.qute.commons.QuteJavaClassesParams;
+import com.redhat.qute.commons.QuteJavaTypesParams;
 import com.redhat.qute.commons.QuteJavaCodeLensParams;
 import com.redhat.qute.commons.QuteJavaDefinitionParams;
 import com.redhat.qute.commons.QuteProjectParams;
-import com.redhat.qute.commons.QuteResolvedJavaClassParams;
-import com.redhat.qute.commons.ResolvedJavaClassInfo;
-import com.redhat.qute.commons.datamodel.ParameterDataModel;
-import com.redhat.qute.commons.datamodel.ProjectDataModel;
-import com.redhat.qute.commons.datamodel.QuteProjectDataModelParams;
-import com.redhat.qute.commons.datamodel.TemplateDataModel;
+import com.redhat.qute.commons.QuteResolvedJavaTypeParams;
+import com.redhat.qute.commons.ResolvedJavaTypeInfo;
+import com.redhat.qute.commons.datamodel.DataModelParameter;
+import com.redhat.qute.commons.datamodel.DataModelProject;
+import com.redhat.qute.commons.datamodel.QuteDataModelProjectParams;
+import com.redhat.qute.commons.datamodel.DataModelTemplate;
 import com.redhat.qute.jdt.IJavaDataModelChangedListener;
 import com.redhat.qute.jdt.QutePlugin;
 import com.redhat.qute.jdt.QuteSupportForJava;
@@ -77,12 +77,12 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<ProjectDataModel<TemplateDataModel<ParameterDataModel>>> getProjectDataModel(
-			QuteProjectDataModelParams params) {
+	public CompletableFuture<DataModelProject<DataModelTemplate<DataModelParameter>>> getDataModelProject(
+			QuteDataModelProjectParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return QuteSupportForTemplate.getInstance().getProjectDataModel(params, JDTUtilsImpl.getInstance(),
+				return QuteSupportForTemplate.getInstance().getDataModelProject(params, JDTUtilsImpl.getInstance(),
 						monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
@@ -92,11 +92,11 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<List<JavaClassInfo>> getJavaClasses(QuteJavaClassesParams params) {
+	public CompletableFuture<List<JavaTypeInfo>> getJavaTypes(QuteJavaTypesParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return QuteSupportForTemplate.getInstance().getJavaClasses(params, JDTUtilsImpl.getInstance(), monitor);
+				return QuteSupportForTemplate.getInstance().getJavaTypes(params, JDTUtilsImpl.getInstance(), monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
 				return Collections.emptyList();
@@ -105,11 +105,11 @@ public class QuteLanguageClientImpl extends LanguageClientImpl implements QuteLa
 	}
 
 	@Override
-	public CompletableFuture<ResolvedJavaClassInfo> getResolvedJavaClass(QuteResolvedJavaClassParams params) {
+	public CompletableFuture<ResolvedJavaTypeInfo> getResolvedJavaType(QuteResolvedJavaTypeParams params) {
 		return CompletableFutures.computeAsync((cancelChecker) -> {
 			try {
 				IProgressMonitor monitor = getProgressMonitor(cancelChecker);
-				return QuteSupportForTemplate.getInstance().getResolvedJavaClass(params, JDTUtilsImpl.getInstance(),
+				return QuteSupportForTemplate.getInstance().getResolvedJavaType(params, JDTUtilsImpl.getInstance(),
 						monitor);
 			} catch (CoreException e) {
 				QuteLSPPlugin.logException(e.getLocalizedMessage(), e);
